@@ -3,14 +3,14 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppHeader } from "../components/AppHeader";
 import { Avatar } from "../components/Avatar";
-import { meetings } from "../data/socialFeed";
+import { meetings } from "../data/connections";
 import { colors } from "../theme/colors";
 import { screenPadding, spacing } from "../theme/spacing";
 import type { MeetingType } from "../types/social";
 
 type MeetingFilter = "All" | MeetingType;
 
-const filters: MeetingFilter[] = ["All", "Event", "Coffee", "Call"];
+const filters: MeetingFilter[] = ["All", "Conference", "Coffee", "Office", "Dinner", "Call"];
 
 export function MeetingsScreen() {
   const [filter, setFilter] = useState<MeetingFilter>("All");
@@ -48,12 +48,13 @@ export function MeetingsScreen() {
             <View style={styles.meetingCard}>
               <Text style={styles.meetingDate}>{meeting.date}</Text>
               <View style={styles.meetingTop}>
-                <Avatar initials={meeting.name.split(" ").map((part) => part[0]).join("")} size={42} />
+                <Avatar initials={meeting.initials} imageUrl={meeting.photoUrl} size={42} />
                 <View style={styles.meetingIdentity}>
                   <Text style={styles.meetingName}>{meeting.name}</Text>
                   <Text style={styles.meetingCompany}>
                     {meeting.company} - {meeting.type}
                   </Text>
+                  <Text style={styles.meetingLocation}>{meeting.location}</Text>
                 </View>
               </View>
               <Text style={styles.meetingLabel}>Discussed</Text>
@@ -127,6 +128,11 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginTop: spacing.sm,
     textTransform: "uppercase",
+  },
+  meetingLocation: {
+    color: colors.textMuted,
+    fontSize: 12,
+    marginTop: 2,
   },
   meetingName: {
     color: colors.text,

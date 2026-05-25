@@ -1,18 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ConnectionDetailScreen } from "../screens/ConnectionDetailScreen";
 import { MeetingsScreen } from "../screens/MeetingsScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
 import { ShareScreen } from "../screens/ShareScreen";
 import { colors } from "../theme/colors";
 import { navigationTheme } from "../theme/navigationTheme";
-import type { RootTabParamList } from "../types/social";
+import type { HomeStackParamList, RootTabParamList } from "../types/social";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 
 const tabIcons: Record<
   keyof RootTabParamList,
@@ -23,6 +26,15 @@ const tabIcons: Record<
   Share: { focused: "paper-plane", unfocused: "paper-plane-outline" },
   Profile: { focused: "person", unfocused: "person-outline" },
 };
+
+function HomeStackNavigator() {
+  return (
+    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+      <HomeStack.Screen name="HomeList" component={HomeScreen} />
+      <HomeStack.Screen name="ConnectionDetail" component={ConnectionDetailScreen} />
+    </HomeStack.Navigator>
+  );
+}
 
 export function MainNavigator() {
   const insets = useSafeAreaInsets();
@@ -50,7 +62,7 @@ export function MainNavigator() {
           },
         })}
       >
-        <Tab.Screen name="Home" component={HomeScreen} />
+        <Tab.Screen name="Home" component={HomeStackNavigator} />
         <Tab.Screen name="Meetings" component={MeetingsScreen} />
         <Tab.Screen name="Share" component={ShareScreen} />
         <Tab.Screen name="Profile" component={ProfileScreen} />
