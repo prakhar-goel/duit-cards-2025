@@ -1,0 +1,15 @@
+export const colors = {
+  background: "#F3F2EF",
+  surface: "#FFFFFF",
+  border: "#DADADA",
+  borderStrong: "#B5B5B5",
+  text: "#191919",
+  textMuted: "#666666",
+  textSubtle: "#777777",
+  linkedInBlue: "#0A66C2",
+  linkedInGreen: "#057642",
+  searchBackground: "#EEF3F8",
+  matchBackground: "#EAF3FC",
+  timelineLine: "#D1D5DB",
+  white: "#FFFFFF",
+} as const;
