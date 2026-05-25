@@ -20,7 +20,15 @@ export type BusinessCard = {
 
 export type MeetingType = "Conference" | "Coffee" | "Office" | "Dinner" | "Call";
 
-export type ConnectionCategory = "Founder" | "Investor" | "Product" | "Engineering" | "Sales";
+export type ConnectionCategory = "Founder" | "Investor" | "Product" | "Engineering" | "Sales" | "Marketing";
+
+export type DateBucket = "Today" | "Yesterday" | "This week" | "Older";
+
+export type BusinessCardTheme = {
+  backgroundColor: string;
+  accentColor: string;
+  textColor: string;
+};
 
 export type Connection = {
   id: string;
@@ -29,13 +37,19 @@ export type Connection = {
   company: string;
   initials: string;
   photoUrl: string;
-  meetingImageUrl: string;
+  businessCardImageUrl: string;
+  businessCardTheme: BusinessCardTheme;
   dateLabel: string;
+  dateBucket: DateBucket;
   timeAgo: string;
+  city: string;
   location: string;
+  conferenceName?: string;
   exchangeType: "Shared my card" | "Received their card" | "Both exchanged cards";
   category: ConnectionCategory;
   meetingType: MeetingType;
+  oneLiner: string;
+  relevanceShort: string;
   summary: string;
   relevance: string;
   nextStep: string;

@@ -1,11 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Avatar } from "../components/Avatar";
+import { BusinessCardThumbnail } from "../components/BusinessCardThumbnail";
 import { connections } from "../data/connections";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
+import { getTagTone } from "../theme/tags";
 import type { HomeStackParamList } from "../types/social";
 
 type ConnectionDetailProps = NativeStackScreenProps<HomeStackParamList, "ConnectionDetail">;
@@ -24,7 +26,6 @@ export function ConnectionDetailScreen({ navigation, route }: ConnectionDetailPr
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <Image source={{ uri: connection.meetingImageUrl }} style={styles.heroImage} />
         <View style={styles.profileCard}>
           <Avatar initials={connection.initials} imageUrl={connection.photoUrl} size={64} />
           <View style={styles.profileText}>
@@ -33,8 +34,16 @@ export function ConnectionDetailScreen({ navigation, route }: ConnectionDetailPr
               {connection.role} at {connection.company}
             </Text>
             <Text style={styles.meta}>
-              {connection.dateLabel} - {connection.location}
+              {connection.dateLabel} - {connection.location}, {connection.city}
             </Text>
+          </View>
+        </View>
+
+        <View style={styles.businessCardPreview}>
+          <BusinessCardThumbnail connection={connection} size="large" />
+          <View style={styles.businessCardText}>
+            <Text style={styles.cardLabel}>Business card received</Text>
+            <Text style={styles.businessCardTitle}>{connection.oneLiner}</Text>
           </View>
         </View>
 
@@ -59,9 +68,9 @@ export function ConnectionDetailScreen({ navigation, route }: ConnectionDetailPr
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tags</Text>
           <View style={styles.tagRow}>
-            {connection.tags.map((tag) => (
-              <View key={tag} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
+            {[connection.exchangeType, ...connection.tags].map((tag) => (
+              <View key={tag} style={[styles.tag, { backgroundColor: getTagTone(tag).backgroundColor }]}>
+                <Text style={[styles.tagText, { color: getTagTone(tag).color }]}>{tag}</Text>
               </View>
             ))}
           </View>
@@ -81,6 +90,26 @@ function DetailSection({ title, body, emphasis }: { title: string; body: string;
 }
 
 const styles = StyleSheet.create({
+  businessCardPreview: {
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: spacing.md,
+    marginTop: spacing.md,
+    padding: spacing.md,
+  },
+  businessCardText: {
+    flex: 1,
+  },
+  businessCardTitle: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "800",
+    lineHeight: 21,
+  },
   cardLabel: {
     color: colors.textSubtle,
     fontSize: 11,
@@ -127,12 +156,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 17,
     fontWeight: "800",
-  },
-  heroImage: {
-    borderRadius: 16,
-    height: 184,
-    marginBottom: spacing.md,
-    width: "100%",
   },
   iconButton: {
     alignItems: "center",
@@ -193,7 +216,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   tag: {
-    backgroundColor: colors.matchBackground,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
