@@ -7,7 +7,7 @@ import { BusinessCardThumbnail } from "../components/BusinessCardThumbnail";
 import { connections } from "../data/connections";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
-import { getTagTone } from "../theme/tags";
+import { getTagTone, isCardExchangeTag } from "../theme/tags";
 import type { HomeStackParamList } from "../types/social";
 
 type ConnectionDetailProps = NativeStackScreenProps<HomeStackParamList, "ConnectionDetail">;
@@ -68,11 +68,23 @@ export function ConnectionDetailScreen({ navigation, route }: ConnectionDetailPr
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tags</Text>
           <View style={styles.tagRow}>
-            {[connection.exchangeType, ...connection.tags].map((tag) => (
-              <View key={tag} style={[styles.tag, { backgroundColor: getTagTone(tag).backgroundColor }]}>
-                <Text style={[styles.tagText, { color: getTagTone(tag).color }]}>{tag}</Text>
-              </View>
-            ))}
+            {[connection.exchangeType, ...connection.tags].map((tag) => {
+              const tone = getTagTone(tag);
+              if (isCardExchangeTag(tag)) {
+                return (
+                  <View key={tag} style={[styles.exchangeTag, { backgroundColor: tone.backgroundColor }]}>
+                    <Ionicons name="card-outline" size={15} color={tone.color} />
+                    <Text style={[styles.exchangeTagText, { color: tone.color }]}>{tag}</Text>
+                  </View>
+                );
+              }
+
+              return (
+                <View key={tag} style={[styles.tag, { backgroundColor: tone.backgroundColor }]}>
+                  <Text style={[styles.tagText, { color: tone.color }]}>{tag}</Text>
+                </View>
+              );
+            })}
           </View>
         </View>
       </ScrollView>
@@ -140,6 +152,18 @@ const styles = StyleSheet.create({
   exchangeText: {
     color: colors.text,
     fontSize: 15,
+    fontWeight: "800",
+  },
+  exchangeTag: {
+    alignItems: "center",
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  exchangeTagText: {
+    fontSize: 12,
     fontWeight: "800",
   },
   header: {

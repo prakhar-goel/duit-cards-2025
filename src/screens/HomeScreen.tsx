@@ -27,6 +27,10 @@ type ConferenceFilter =
   | "Fintech Week India"
   | "SME Growth Summit"
   | "North India Startup Mixer";
+type ConnectionMonthGroup = {
+  monthYear: string;
+  items: Connection[];
+};
 
 const filters: FilterId[] = ["Today", "This week", "Conference", "Founder", "Investor", "Nearby"];
 const sortOptions: SortId[] = ["Recent", "Most relevant", "Name"];
@@ -100,6 +104,18 @@ function sortConnections(items: Connection[], sortBy: SortId) {
   return next;
 }
 
+function groupConnectionsByMonth(items: Connection[]): ConnectionMonthGroup[] {
+  return items.reduce<ConnectionMonthGroup[]>((groups, connection) => {
+    const existingGroup = groups.find((group) => group.monthYear === connection.monthYear);
+    if (existingGroup) {
+      existingGroup.items.push(connection);
+      return groups;
+    }
+
+    return [...groups, { monthYear: connection.monthYear, items: [connection] }];
+  }, []);
+}
+
 export function HomeScreen({ navigation }: HomeScreenProps) {
   const [activeFilters, setActiveFilters] = useState<FilterId[]>([]);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
@@ -125,7 +141,10 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
             matchesSelectedFilters(conferenceFilter, (filter) => connection.conferenceName === filter) &&
             textIncludes(connection.city, customCity) &&
             textIncludes(connection.conferenceName ?? connection.location, customConference) &&
-            textIncludes(`${connection.dateLabel} ${connection.dateBucket} ${connection.timeAgo}`, customDateQuery)
+            textIncludes(
+              `${connection.dateLabel} ${connection.dateBucket} ${connection.timeAgo} ${connection.monthYear} ${connection.dateSearchText}`,
+              customDateQuery
+            )
         ),
         sortBy
       ),
@@ -142,6 +161,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       sortBy,
     ]
   );
+  const groupedConnections = useMemo(() => groupConnectionsByMonth(filteredConnections), [filteredConnections]);
 
   return (
     <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
@@ -209,8 +229,11 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
               <FilterInput
                 value={customDateQuery}
                 onChangeText={setCustomDateQuery}
-                placeholder="Type date, e.g. 2 months back"
+                placeholder="Try: 2 Oct 2025 - 17 Nov 2025"
               />
+              <Text style={styles.inputHint}>
+                You can also type cues like "2nd week of Jan", "Feb 2025", "last month", or "2 months back".
+              </Text>
             </FilterGroup>
             <FilterGroup title="City / geolocation">
               {cityFilters.map((option) => (
@@ -251,12 +274,25 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           </View>
         ) : null}
 
-        {filteredConnections.map((connection) => (
-          <ConnectionCard
-            key={connection.id}
-            connection={connection}
-            onPress={() => navigation.navigate("ConnectionDetail", { connectionId: connection.id })}
-          />
+        {groupedConnections.map((group) => (
+          <View key={group.monthYear} style={styles.monthSection}>
+            <View style={styles.monthHeader}>
+              <View style={styles.monthDot} />
+              <View>
+                <Text style={styles.monthTitle}>{group.monthYear}</Text>
+                <Text style={styles.monthSubtitle}>
+                  {group.items.length} {group.items.length === 1 ? "card exchange" : "card exchanges"}
+                </Text>
+              </View>
+            </View>
+            {group.items.map((connection) => (
+              <ConnectionCard
+                key={connection.id}
+                connection={connection}
+                onPress={() => navigation.navigate("ConnectionDetail", { connectionId: connection.id })}
+              />
+            ))}
+          </View>
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -363,6 +399,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 9,
   },
+  inputHint: {
+    color: colors.textSubtle,
+    fontSize: 12,
+    lineHeight: 17,
+  },
   filterWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -381,6 +422,35 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     marginHorizontal: spacing.lg,
     padding: spacing.md,
+  },
+  monthDot: {
+    backgroundColor: colors.linkedInBlue,
+    borderColor: colors.white,
+    borderRadius: 7,
+    borderWidth: 2,
+    height: 14,
+    width: 14,
+  },
+  monthHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  monthSection: {
+    borderTopColor: colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  monthSubtitle: {
+    color: colors.textMuted,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  monthTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "800",
   },
   panelChip: {
     backgroundColor: "#F8FAFC",

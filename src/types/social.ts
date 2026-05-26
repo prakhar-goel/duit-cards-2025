@@ -41,6 +41,8 @@ export type Connection = {
   businessCardTheme: BusinessCardTheme;
   dateLabel: string;
   dateBucket: DateBucket;
+  monthYear: string;
+  dateSearchText: string;
   timeAgo: string;
   city: string;
   location: string;

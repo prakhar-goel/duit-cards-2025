@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
-import { getTagTone } from "../theme/tags";
+import { getTagTone, isCardExchangeTag } from "../theme/tags";
 import type { Connection } from "../types/social";
 import { Avatar } from "./Avatar";
 import { BusinessCardThumbnail } from "./BusinessCardThumbnail";
@@ -13,6 +13,8 @@ type ConnectionCardProps = {
 };
 
 export function ConnectionCard({ connection, onPress }: ConnectionCardProps) {
+  const visibleTags = [connection.exchangeType, ...connection.tags].slice(0, 3);
+
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={styles.card}>
       <View style={styles.topRow}>
@@ -32,18 +34,20 @@ export function ConnectionCard({ connection, onPress }: ConnectionCardProps) {
         <BusinessCardThumbnail connection={connection} />
       </View>
 
-      {connection.relevanceShort ? (
-        <View style={styles.compactInsight}>
-          <Ionicons name="sparkles-outline" size={15} color={colors.linkedInBlue} />
-          <Text style={styles.compactInsightText}>{connection.relevanceShort}</Text>
-        </View>
-      ) : null}
-
       <Text style={styles.oneLiner}>{connection.oneLiner}</Text>
 
       <View style={styles.tagRow}>
-        {[connection.exchangeType, ...connection.tags].slice(0, 3).map((tag) => {
+        {visibleTags.map((tag) => {
           const tone = getTagTone(tag);
+          if (isCardExchangeTag(tag)) {
+            return (
+              <View key={tag} style={[styles.exchangeTag, { backgroundColor: tone.backgroundColor }]}>
+                <Ionicons name="card-outline" size={15} color={tone.color} />
+                <Text style={[styles.exchangeTagText, { color: tone.color }]}>{tag}</Text>
+              </View>
+            );
+          }
+
           return (
             <View key={tag} style={[styles.tag, { backgroundColor: tone.backgroundColor }]}>
               <Text style={[styles.tagText, { color: tone.color }]}>{tag}</Text>
@@ -89,19 +93,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
   },
-  compactInsight: {
+  exchangeTag: {
     alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: colors.matchBackground,
     borderRadius: 999,
     flexDirection: "row",
     gap: 6,
-    marginTop: spacing.md,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  compactInsightText: {
-    color: colors.linkedInBlue,
+  exchangeTagText: {
     fontSize: 12,
     fontWeight: "800",
   },
