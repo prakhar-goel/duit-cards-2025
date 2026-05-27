@@ -1,4 +1,4 @@
-import type { BusinessCard, Connection, Meeting } from "../types/social";
+import type { BusinessCard, BusinessCardTheme, Connection, ConnectionCategory, Meeting, MeetingType } from "../types/social";
 
 export const myCards: BusinessCard[] = [
   {
@@ -24,7 +24,7 @@ export const myCards: BusinessCard[] = [
   },
 ];
 
-export const connections: Connection[] = [
+const baseConnections: Connection[] = [
   {
     id: "aisha-rahman",
     name: "Aisha Rahman",
@@ -288,6 +288,145 @@ export const connections: Connection[] = [
     },
   },
 ];
+
+const generatedNames = [
+  ["Ananya Mehta", "AM"],
+  ["Kabir Sethi", "KS"],
+  ["Leah Tan", "LT"],
+  ["Omar Farouk", "OF"],
+  ["Isha Nair", "IN"],
+  ["Tomoko Sato", "TS"],
+  ["Luis Herrera", "LH"],
+  ["Fatima Khan", "FK"],
+  ["Wei Zhang", "WZ"],
+  ["Grace Miller", "GM"],
+  ["Nikhil Rao", "NR"],
+  ["Elena Petrova", "EP"],
+  ["Chen Wei", "CW"],
+  ["Sara Haddad", "SH"],
+  ["Andre Gomes", "AG"],
+  ["Meera Iyer", "MI"],
+  ["Noah Brooks", "NB"],
+  ["Priyanka Das", "PD"],
+  ["Hiro Mori", "HM"],
+  ["Tara Singh", "TS"],
+] as const;
+
+const generatedRoles = [
+  ["Founder", "Orbitly", "Founder"],
+  ["Product Manager", "NovaPay", "Product"],
+  ["Engineering Lead", "CloudNest", "Engineering"],
+  ["VP Sales", "TradeSpark", "Sales"],
+  ["Growth Lead", "MarketLoop", "Marketing"],
+  ["Partner", "Summit Ventures", "Investor"],
+] as const satisfies readonly (readonly [string, string, ConnectionCategory])[];
+
+const generatedCities = [
+  ["Mumbai", "Jio World Convention Centre", "India SaaS Summit"],
+  ["Delhi", "India Habitat Centre", "Founder Circle Delhi"],
+  ["Hyderabad", "T-Hub Hyderabad", "T-Hub Startup Mixer"],
+  ["Pune", "Koregaon Park coffee meetup", undefined],
+  ["Chennai", "IIT Madras Research Park", "SaaSBOOMi Chennai"],
+  ["Dubai", "Dubai World Trade Centre", "GITEX Global"],
+  ["London", "Shoreditch House", "London Product Meetup"],
+  ["San Francisco", "Moscone Center", "TechCrunch Disrupt"],
+  ["New York", "SoHo House New York", "NYC Operator Dinner"],
+  ["Bangkok", "Queen Sirikit Convention Center", "Asia SME Expo"],
+] as const;
+
+const generatedDates = [
+  ["May 2026", "May 18, 2026", "last week", "this month may 2026"],
+  ["April 2026", "Apr 24, 2026", "1mo ago", "april 2026 last month"],
+  ["March 2026", "Mar 14, 2026", "2mo ago", "march 2026 2 months back"],
+  ["February 2026", "Feb 7, 2026", "3mo ago", "february feb 2026"],
+  ["January 2026", "Jan 16, 2026", "4mo ago", "january jan 2026 2nd week of jan"],
+  ["December 2025", "Dec 11, 2025", "5mo ago", "december dec 2025"],
+  ["November 2025", "Nov 17, 2025", "6mo ago", "november nov 2025 17 nov 2025"],
+  ["October 2025", "Oct 2, 2025", "7mo ago", "october oct 2025 2 oct 2025"],
+] as const;
+
+const exchangeTypes: Connection["exchangeType"][] = ["Shared my card", "Received their card", "Both exchanged cards"];
+const meetingTypes: MeetingType[] = ["Conference", "Coffee", "Office", "Dinner", "Call"];
+const themes: BusinessCardTheme[] = [
+  { backgroundColor: "#0F172A", accentColor: "#38BDF8", textColor: "#FFFFFF" },
+  { backgroundColor: "#FFF7ED", accentColor: "#EA580C", textColor: "#1F2937" },
+  { backgroundColor: "#ECFEFF", accentColor: "#0891B2", textColor: "#164E63" },
+  { backgroundColor: "#FDF2F8", accentColor: "#DB2777", textColor: "#831843" },
+  { backgroundColor: "#111827", accentColor: "#F59E0B", textColor: "#FFFFFF" },
+];
+
+const portraitUrls = [
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&auto=format&fit=crop",
+];
+
+const tagByCategory: Record<ConnectionCategory, string[]> = {
+  Engineering: ["Engineering", "Integration"],
+  Founder: ["Founder", "Warm intro"],
+  Investor: ["Investor", "Fundraising"],
+  Marketing: ["Marketing", "Potential customer"],
+  Product: ["Product", "Workshop"],
+  Sales: ["Sales tools", "Potential customer"],
+};
+
+function slugify(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function buildGeneratedConnection(index: number): Connection {
+  const [name, initials] = generatedNames[index % generatedNames.length];
+  const [role, company, category] = generatedRoles[index % generatedRoles.length];
+  const [city, location, conferenceName] = generatedCities[index % generatedCities.length];
+  const [monthYear, calendarDate, timeAgo, dateSearchText] = generatedDates[index % generatedDates.length];
+  const meetingType = meetingTypes[index % meetingTypes.length];
+  const exchangeType = exchangeTypes[index % exchangeTypes.length];
+  const isConference = meetingType === "Conference";
+
+  return {
+    id: `${slugify(name)}-${index + 1}`,
+    name,
+    role,
+    company,
+    initials,
+    photoUrl: portraitUrls[index % portraitUrls.length],
+    businessCardImageUrl: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=600&auto=format&fit=crop",
+    businessCardTheme: themes[index % themes.length],
+    dateLabel: `${calendarDate}, ${9 + (index % 8)}:${index % 2 === 0 ? "15" : "45"} ${index % 3 === 0 ? "AM" : "PM"}`,
+    dateBucket: "Older",
+    monthYear,
+    dateSearchText: `${dateSearchText} ${calendarDate} ${timeAgo}`,
+    timeAgo,
+    city,
+    location,
+    conferenceName: isConference ? conferenceName : undefined,
+    exchangeType,
+    category,
+    meetingType,
+    oneLiner: `${role} at ${company}, met around ${location} in ${city}.`,
+    relevanceShort: index % 4 === 0 ? "Potential follow-up for event workflows." : "",
+    summary: `Met ${name.split(" ")[0]} at ${location} in ${city}. The conversation covered how teams remember context after meeting new people in person.`,
+    relevance:
+      index % 5 === 0
+        ? "Low immediate relevance, but useful to keep as context if this industry becomes a focus."
+        : "Relevant for understanding how different professional teams exchange cards, qualify contacts, and decide who to follow up with.",
+    nextStep:
+      index % 3 === 0
+        ? "Send a short follow-up with the Duit Cards prototype and ask for feedback."
+        : "Keep warm and reconnect when there is a relevant event or product update.",
+    tags: tagByCategory[category],
+    contact: {
+      email: `${slugify(name)}@${slugify(company)}.example`,
+      phone: `+91 90000 ${String(10000 + index).slice(-5)}`,
+    },
+  };
+}
+
+const generatedConnections = Array.from({ length: 52 }, (_, index) => buildGeneratedConnection(index));
+
+export const connections: Connection[] = [...baseConnections, ...generatedConnections];
 
 export const meetings: Meeting[] = connections.map((connection) => ({
   id: connection.id,

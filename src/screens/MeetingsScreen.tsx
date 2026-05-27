@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppHeader } from "../components/AppHeader";
 import { Avatar } from "../components/Avatar";
-import { meetings } from "../data/connections";
+import { getMeetings } from "../data/socialRepository";
 import { colors } from "../theme/colors";
 import { layout } from "../theme/layout";
 import { screenPadding, spacing } from "../theme/spacing";
@@ -12,6 +12,7 @@ import type { MeetingType } from "../types/social";
 type MeetingFilter = "All" | MeetingType;
 
 const filters: MeetingFilter[] = ["All", "Conference", "Coffee", "Office", "Dinner", "Call"];
+const meetings = getMeetings();
 
 export function MeetingsScreen() {
   const [filter, setFilter] = useState<MeetingFilter>("All");

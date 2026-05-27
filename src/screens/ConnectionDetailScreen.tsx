@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Avatar } from "../components/Avatar";
 import { BusinessCardThumbnail } from "../components/BusinessCardThumbnail";
-import { connections } from "../data/connections";
+import { getConnectionById, getConnections } from "../data/socialRepository";
 import { colors } from "../theme/colors";
 import { layout } from "../theme/layout";
 import { spacing } from "../theme/spacing";
@@ -14,7 +14,7 @@ import type { HomeStackParamList } from "../types/social";
 type ConnectionDetailProps = NativeStackScreenProps<HomeStackParamList, "ConnectionDetail">;
 
 export function ConnectionDetailScreen({ navigation, route }: ConnectionDetailProps) {
-  const connection = connections.find((item) => item.id === route.params.connectionId) ?? connections[0];
+  const connection = getConnectionById(route.params.connectionId) ?? getConnections()[0];
 
   return (
     <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>

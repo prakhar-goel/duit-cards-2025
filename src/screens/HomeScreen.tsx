@@ -2,51 +2,40 @@ import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, SectionList, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppHeader } from "../components/AppHeader";
 import { ConnectionCard } from "../components/ConnectionCard";
 import { MyCardsSection } from "../components/MyCardsSection";
-import { connections } from "../data/connections";
+import { getConnectionFilterOptions, getConnections } from "../data/socialRepository";
 import { colors } from "../theme/colors";
 import { layout } from "../theme/layout";
 import { spacing } from "../theme/spacing";
-import type { Connection, HomeStackParamList } from "../types/social";
+import type { Connection, ConnectionCategory, HomeStackParamList } from "../types/social";
 
 type HomeScreenProps = NativeStackScreenProps<HomeStackParamList, "HomeList">;
 
 type FilterId = "Today" | "This week" | "Conference" | "Founder" | "Investor" | "Nearby";
 type SortId = "Recent" | "Name" | "Most relevant";
 type ExchangeFilter = "Shared by me" | "Received by me";
-type CategoryFilter = "Founder" | "Investor" | "Product" | "Engineering" | "Sales" | "Marketing";
+type CategoryFilter = ConnectionCategory;
 type DateRangeFilter = "Today" | "Yesterday" | "This week";
-type CityFilter = "Jakarta" | "Singapore" | "Gurgaon" | "Bengaluru";
-type ConferenceFilter =
-  | "Jakarta Design Week"
-  | "SEA Founders Dinner"
-  | "Gurgaon Retail Meetup"
-  | "Fintech Week India"
-  | "SME Growth Summit"
-  | "North India Startup Mixer";
+type CityFilter = string;
+type ConferenceFilter = string;
 type ConnectionMonthGroup = {
   monthYear: string;
-  items: Connection[];
+  data: Connection[];
 };
 
 const filters: FilterId[] = ["Today", "This week", "Conference", "Founder", "Investor", "Nearby"];
 const sortOptions: SortId[] = ["Recent", "Most relevant", "Name"];
 const exchangeFilters: ExchangeFilter[] = ["Shared by me", "Received by me"];
-const categoryFilters: CategoryFilter[] = ["Founder", "Investor", "Product", "Engineering", "Sales", "Marketing"];
 const dateRangeFilters: DateRangeFilter[] = ["Today", "Yesterday", "This week"];
-const cityFilters: CityFilter[] = ["Jakarta", "Singapore", "Gurgaon", "Bengaluru"];
-const conferenceFilters: ConferenceFilter[] = [
-  "Jakarta Design Week",
-  "SEA Founders Dinner",
-  "Gurgaon Retail Meetup",
-  "Fintech Week India",
-  "SME Growth Summit",
-  "North India Startup Mixer",
-];
+const connections = getConnections();
+const filterOptions = getConnectionFilterOptions(connections);
+const categoryFilters: CategoryFilter[] = filterOptions.categories;
+const cityFilters: CityFilter[] = filterOptions.cities;
+const conferenceFilters: ConferenceFilter[] = filterOptions.conferences;
 
 function matchesFilter(connection: Connection, filter: FilterId) {
   switch (filter) {
@@ -108,11 +97,11 @@ function groupConnectionsByMonth(items: Connection[]): ConnectionMonthGroup[] {
   return items.reduce<ConnectionMonthGroup[]>((groups, connection) => {
     const existingGroup = groups.find((group) => group.monthYear === connection.monthYear);
     if (existingGroup) {
-      existingGroup.items.push(connection);
+      existingGroup.data.push(connection);
       return groups;
     }
 
-    return [...groups, { monthYear: connection.monthYear, items: [connection] }];
+    return [...groups, { monthYear: connection.monthYear, data: [connection] }];
   }, []);
 }
 
@@ -166,8 +155,15 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   return (
     <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
       <AppHeader />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <View style={styles.contentShell}>
+      <SectionList
+        sections={groupedConnections}
+        keyExtractor={(connection) => connection.id}
+        showsVerticalScrollIndicator={false}
+        stickySectionHeadersEnabled={false}
+        style={styles.list}
+        contentContainerStyle={styles.content}
+        ListHeaderComponent={
+          <>
           <MyCardsSection />
 
           <View style={styles.sectionHeader}>
@@ -276,29 +272,28 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
               </FilterGroup>
             </View>
           ) : null}
-
-          {groupedConnections.map((group) => (
-            <View key={group.monthYear} style={styles.monthSection}>
-              <View style={styles.monthHeader}>
-                <View style={styles.monthDot} />
-                <View style={styles.monthCopy}>
-                  <Text style={styles.monthTitle}>{group.monthYear}</Text>
-                  <Text style={styles.monthSubtitle}>
-                    {group.items.length} {group.items.length === 1 ? "card exchange" : "card exchanges"}
-                  </Text>
-                </View>
+          </>
+        }
+        renderSectionHeader={({ section }) => (
+          <View style={styles.monthSection}>
+            <View style={styles.monthHeader}>
+              <View style={styles.monthDot} />
+              <View style={styles.monthCopy}>
+                <Text style={styles.monthTitle}>{section.monthYear}</Text>
+                <Text style={styles.monthSubtitle}>
+                  {section.data.length} {section.data.length === 1 ? "card exchange" : "card exchanges"}
+                </Text>
               </View>
-              {group.items.map((connection) => (
-                <ConnectionCard
-                  key={connection.id}
-                  connection={connection}
-                  onPress={() => navigation.navigate("ConnectionDetail", { connectionId: connection.id })}
-                />
-              ))}
             </View>
-          ))}
-        </View>
-      </ScrollView>
+          </View>
+        )}
+        renderItem={({ item }) => (
+          <ConnectionCard
+            connection={item}
+            onPress={() => navigation.navigate("ConnectionDetail", { connectionId: item.id })}
+          />
+        )}
+      />
     </SafeAreaView>
   );
 }
@@ -356,7 +351,7 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: 96,
   },
-  contentShell: {
+  list: {
     alignSelf: "center",
     maxWidth: layout.contentMaxWidth,
     width: "100%",

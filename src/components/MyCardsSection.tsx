@@ -1,8 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { myCards } from "../data/connections";
+import { getMyCards } from "../data/socialRepository";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
+
+const myCards = getMyCards();
 
 export function MyCardsSection() {
   return (
