@@ -3,6 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { layout } from "../theme/layout";
 import { getAiFollowUpContent, getPlanBullets } from "./mockAi";
 import {
   buildProfilePayload,
@@ -459,32 +460,41 @@ const styles = StyleSheet.create({
   gradient: { flex: 1 },
   safe: { flex: 1 },
   topBar: {
-    flexDirection: "row",
     alignItems: "center",
+    alignSelf: "center",
+    flexDirection: "row",
     justifyContent: "space-between",
+    maxWidth: layout.contentMaxWidth,
     paddingHorizontal: 8,
     paddingTop: 4,
     minHeight: 44,
+    width: "100%",
   },
   iconBtn: { width: 44, height: 44, justifyContent: "center", alignItems: "flex-start" },
   iconBtnHidden: { opacity: 0 },
   skipWrap: { paddingHorizontal: 12, paddingVertical: 8 },
   skipText: { color: "#475569", fontSize: 16, fontWeight: "600" },
   progressTrack: {
+    alignSelf: "center",
     flexDirection: "row",
     gap: 5,
     paddingHorizontal: 20,
     marginTop: 6,
     marginBottom: 8,
+    maxWidth: layout.contentMaxWidth,
+    width: "100%",
   },
   progressSeg: { flex: 1, height: 4, borderRadius: 999 },
   progressSegFill: { backgroundColor: TEXT_PRIMARY },
   progressSegRest: { backgroundColor: "#E2E8F0" },
   scroll: { flex: 1 },
   scrollContent: {
+    alignSelf: "center",
+    maxWidth: layout.contentMaxWidth,
     paddingHorizontal: 22,
     paddingBottom: 24,
     flexGrow: 1,
+    width: "100%",
   },
   block: { paddingTop: 8, gap: 8 },
   centerBlock: {
@@ -532,7 +542,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0FDF4",
   },
   optionEmoji: { fontSize: 22 },
-  optionLabel: { flex: 1, fontSize: 16, color: TEXT_PRIMARY, fontWeight: "500" },
+  optionLabel: { flex: 1, fontSize: 16, color: TEXT_PRIMARY, fontWeight: "500", minWidth: 0 },
   optionLabelSelected: { fontWeight: "600" },
   checkOuter: {
     width: 24,
@@ -567,12 +577,15 @@ const styles = StyleSheet.create({
   planRow: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
   planText: { flex: 1, fontSize: 16, color: "#334155", lineHeight: 24 },
   footer: {
+    alignSelf: "center",
+    maxWidth: layout.contentMaxWidth,
     paddingHorizontal: 22,
     paddingBottom: 20,
     paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "rgba(15,23,42,0.06)",
     backgroundColor: "rgba(255,255,255,0.65)",
+    width: "100%",
   },
   disclaimer: {
     textAlign: "center",

@@ -2,42 +2,45 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-nati
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Avatar } from "../components/Avatar";
 import { colors } from "../theme/colors";
+import { layout } from "../theme/layout";
 import { spacing } from "../theme/spacing";
 
 export function ProfileScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.profileHero}>
-          <Image
-            source={{ uri: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200" }}
-            style={styles.cover}
-          />
-          <View style={styles.profileAvatar}>
-            <Avatar initials="PG" size={88} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <View style={styles.profileShell}>
+          <View style={styles.profileHero}>
+            <Image
+              source={{ uri: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200" }}
+              style={styles.cover}
+            />
+            <View style={styles.profileAvatar}>
+              <Avatar initials="PG" size={88} />
+            </View>
           </View>
-        </View>
-        <View style={styles.profilePanel}>
-          <Text style={styles.profileName}>Prakhar Goel</Text>
-          <Text style={styles.profileHeadline}>
-            Senior full-stack engineer and product designer building Duit Cards
-          </Text>
-          <Text style={styles.profileMeta}>Jakarta, Indonesia - 1,248 connections</Text>
-          <View style={styles.profileActions}>
-            <Pressable accessibilityRole="button" style={styles.primaryPill}>
-              <Text style={styles.primaryPillText}>Open to</Text>
-            </Pressable>
-            <Pressable accessibilityRole="button" style={styles.secondaryPill}>
-              <Text style={styles.secondaryPillText}>Add profile section</Text>
-            </Pressable>
+          <View style={styles.profilePanel}>
+            <Text style={styles.profileName}>Prakhar Goel</Text>
+            <Text style={styles.profileHeadline}>
+              Senior full-stack engineer and product designer building Duit Cards
+            </Text>
+            <Text style={styles.profileMeta}>Jakarta, Indonesia - 1,248 connections</Text>
+            <View style={styles.profileActions}>
+              <Pressable accessibilityRole="button" style={styles.primaryPill}>
+                <Text style={styles.primaryPillText}>Open to</Text>
+              </Pressable>
+              <Pressable accessibilityRole="button" style={styles.secondaryPill}>
+                <Text style={styles.secondaryPillText}>Add profile section</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
-        <View style={styles.aboutCard}>
-          <Text style={styles.aboutTitle}>About</Text>
-          <Text style={styles.aboutText}>
-            Duit Cards helps professionals turn business card exchanges into meaningful relationships,
-            follow-ups, and lightweight CRM workflows.
-          </Text>
+          <View style={styles.aboutCard}>
+            <Text style={styles.aboutTitle}>About</Text>
+            <Text style={styles.aboutText}>
+              Duit Cards helps professionals turn business card exchanges into meaningful relationships,
+              follow-ups, and lightweight CRM workflows.
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -69,6 +72,9 @@ const styles = StyleSheet.create({
     height: 116,
     width: "100%",
   },
+  content: {
+    paddingBottom: 96,
+  },
   primaryPill: {
     backgroundColor: colors.linkedInBlue,
     borderRadius: 20,
@@ -81,6 +87,7 @@ const styles = StyleSheet.create({
   },
   profileActions: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.sm,
     marginTop: 14,
   },
@@ -119,6 +126,11 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.sm,
+  },
+  profileShell: {
+    alignSelf: "center",
+    maxWidth: layout.contentMaxWidth,
+    width: "100%",
   },
   screen: {
     backgroundColor: colors.background,

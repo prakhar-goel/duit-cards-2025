@@ -4,6 +4,7 @@ import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, Vie
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppHeader } from "../components/AppHeader";
 import { colors } from "../theme/colors";
+import { layout } from "../theme/layout";
 import { screenPadding, spacing } from "../theme/spacing";
 
 const cardUrl = "https://duit.cards/prakhar";
@@ -41,7 +42,9 @@ export function ShareScreen() {
           <View style={styles.businessContent}>
             <Text style={styles.businessName}>Prakhar Goel</Text>
             <Text style={styles.businessRole}>Full-stack engineer - Product designer</Text>
-            <Text style={styles.businessLink}>duit.cards/prakhar</Text>
+            <Text style={styles.businessLink} numberOfLines={1}>
+              duit.cards/prakhar
+            </Text>
           </View>
           <View style={styles.qrBlock}>
             <Ionicons name="qr-code-outline" size={66} color={colors.text} />
@@ -72,6 +75,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.md,
     justifyContent: "space-between",
     marginTop: spacing.lg,
@@ -79,6 +83,7 @@ const styles = StyleSheet.create({
   },
   businessContent: {
     flex: 1,
+    minWidth: 190,
   },
   businessLink: {
     color: colors.linkedInBlue,
@@ -103,8 +108,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
   },
   page: {
+    alignSelf: "center",
+    maxWidth: layout.contentMaxWidth,
     padding: screenPadding,
     paddingBottom: 96,
+    width: "100%",
   },
   pageSubtitle: {
     color: colors.textMuted,

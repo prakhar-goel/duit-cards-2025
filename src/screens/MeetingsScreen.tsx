@@ -5,6 +5,7 @@ import { AppHeader } from "../components/AppHeader";
 import { Avatar } from "../components/Avatar";
 import { meetings } from "../data/connections";
 import { colors } from "../theme/colors";
+import { layout } from "../theme/layout";
 import { screenPadding, spacing } from "../theme/spacing";
 import type { MeetingType } from "../types/social";
 
@@ -71,10 +72,13 @@ export function MeetingsScreen() {
 
 const styles = StyleSheet.create({
   filterChip: {
+    alignItems: "center",
     backgroundColor: colors.surface,
     borderColor: colors.borderStrong,
     borderRadius: 18,
     borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 38,
     paddingHorizontal: 14,
     paddingVertical: spacing.sm,
   },
@@ -88,7 +92,10 @@ const styles = StyleSheet.create({
   },
   filterText: {
     color: "#444444",
+    includeFontPadding: false,
     fontWeight: "700",
+    lineHeight: 18,
+    textAlignVertical: "center",
   },
   filterTextActive: {
     color: colors.white,
@@ -121,6 +128,7 @@ const styles = StyleSheet.create({
   },
   meetingIdentity: {
     flex: 1,
+    minWidth: 0,
   },
   meetingLabel: {
     color: colors.textSubtle,
@@ -146,8 +154,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   page: {
+    alignSelf: "center",
+    maxWidth: layout.contentMaxWidth,
     padding: screenPadding,
     paddingBottom: 96,
+    width: "100%",
   },
   pageSubtitle: {
     color: colors.textMuted,

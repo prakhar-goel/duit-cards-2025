@@ -1,24 +1,23 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { colors } from "../theme/colors";
+import { layout } from "../theme/layout";
 import { spacing } from "../theme/spacing";
 import { Avatar } from "./Avatar";
 
 export function AppHeader() {
   return (
     <View style={styles.header}>
-      <Avatar initials="PG" size={36} />
-      <View style={styles.searchBox}>
-        <Ionicons name="search" size={18} color="#5E6A75" />
-        <TextInput
-          placeholder="Search"
-          placeholderTextColor="#5E6A75"
-          style={styles.searchInput}
-        />
+      <View style={styles.headerContent}>
+        <Avatar initials="PG" size={36} />
+        <View style={styles.searchBox}>
+          <Ionicons name="search" size={18} color="#5E6A75" />
+          <TextInput placeholder="Search" placeholderTextColor="#5E6A75" style={styles.searchInput} />
+        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Messages" style={styles.headerIcon}>
+          <Ionicons name="chatbubble-ellipses-outline" size={24} color="#424B54" />
+        </Pressable>
       </View>
-      <Pressable accessibilityRole="button" accessibilityLabel="Messages" style={styles.headerIcon}>
-        <Ionicons name="chatbubble-ellipses-outline" size={24} color="#424B54" />
-      </Pressable>
     </View>
   );
 }
@@ -29,10 +28,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomColor: colors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    height: 56,
+  },
+  headerContent: {
+    alignItems: "center",
+    alignSelf: "center",
     flexDirection: "row",
     gap: spacing.md,
     height: 56,
+    maxWidth: layout.contentMaxWidth,
     paddingHorizontal: spacing.md,
+    width: "100%",
   },
   headerIcon: {
     alignItems: "center",

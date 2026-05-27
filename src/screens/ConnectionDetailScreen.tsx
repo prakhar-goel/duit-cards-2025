@@ -6,6 +6,7 @@ import { Avatar } from "../components/Avatar";
 import { BusinessCardThumbnail } from "../components/BusinessCardThumbnail";
 import { connections } from "../data/connections";
 import { colors } from "../theme/colors";
+import { layout } from "../theme/layout";
 import { spacing } from "../theme/spacing";
 import { getTagTone, isCardExchangeTag } from "../theme/tags";
 import type { HomeStackParamList } from "../types/social";
@@ -26,65 +27,67 @@ export function ConnectionDetailScreen({ navigation, route }: ConnectionDetailPr
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <View style={styles.profileCard}>
-          <Avatar initials={connection.initials} imageUrl={connection.photoUrl} size={64} />
-          <View style={styles.profileText}>
-            <Text style={styles.name}>{connection.name}</Text>
-            <Text style={styles.role}>
-              {connection.role} at {connection.company}
-            </Text>
-            <Text style={styles.meta}>
-              {connection.dateLabel} - {connection.location}, {connection.city}
-            </Text>
+        <View style={styles.contentShell}>
+          <View style={styles.profileCard}>
+            <Avatar initials={connection.initials} imageUrl={connection.photoUrl} size={64} />
+            <View style={styles.profileText}>
+              <Text style={styles.name}>{connection.name}</Text>
+              <Text style={styles.role}>
+                {connection.role} at {connection.company}
+              </Text>
+              <Text style={styles.meta}>
+                {connection.dateLabel} - {connection.location}, {connection.city}
+              </Text>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.businessCardPreview}>
-          <BusinessCardThumbnail connection={connection} size="large" />
-          <View style={styles.businessCardText}>
-            <Text style={styles.cardLabel}>Business card received</Text>
-            <Text style={styles.businessCardTitle}>{connection.oneLiner}</Text>
+          <View style={styles.businessCardPreview}>
+            <BusinessCardThumbnail connection={connection} size="large" />
+            <View style={styles.businessCardText}>
+              <Text style={styles.cardLabel}>Business card received</Text>
+              <Text style={styles.businessCardTitle}>{connection.oneLiner}</Text>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.exchangeCard}>
-          <Text style={styles.cardLabel}>Card exchange</Text>
-          <View style={styles.exchangeRow}>
-            <Ionicons name="card-outline" size={22} color={colors.linkedInBlue} />
-            <Text style={styles.exchangeText}>{connection.exchangeType}</Text>
+          <View style={styles.exchangeCard}>
+            <Text style={styles.cardLabel}>Card exchange</Text>
+            <View style={styles.exchangeRow}>
+              <Ionicons name="card-outline" size={22} color={colors.linkedInBlue} />
+              <Text style={styles.exchangeText}>{connection.exchangeType}</Text>
+            </View>
           </View>
-        </View>
 
-        <DetailSection title="What happened" body={connection.summary} />
-        <DetailSection title="Why this person is relevant" body={connection.relevance} emphasis />
-        <DetailSection title="Suggested next step" body={connection.nextStep} />
+          <DetailSection title="What happened" body={connection.summary} />
+          <DetailSection title="Why this person is relevant" body={connection.relevance} emphasis />
+          <DetailSection title="Suggested next step" body={connection.nextStep} />
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contact</Text>
-          <Text style={styles.sectionBody}>{connection.contact.email}</Text>
-          <Text style={styles.sectionBody}>{connection.contact.phone}</Text>
-        </View>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Contact</Text>
+            <Text style={styles.sectionBody}>{connection.contact.email}</Text>
+            <Text style={styles.sectionBody}>{connection.contact.phone}</Text>
+          </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tags</Text>
-          <View style={styles.tagRow}>
-            {[connection.exchangeType, ...connection.tags].map((tag) => {
-              const tone = getTagTone(tag);
-              if (isCardExchangeTag(tag)) {
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Tags</Text>
+            <View style={styles.tagRow}>
+              {[connection.exchangeType, ...connection.tags].map((tag) => {
+                const tone = getTagTone(tag);
+                if (isCardExchangeTag(tag)) {
+                  return (
+                    <View key={tag} style={[styles.exchangeTag, { backgroundColor: tone.backgroundColor }]}>
+                      <Ionicons name="card-outline" size={15} color={tone.color} />
+                      <Text style={[styles.exchangeTagText, { color: tone.color }]}>{tag}</Text>
+                    </View>
+                  );
+                }
+
                 return (
-                  <View key={tag} style={[styles.exchangeTag, { backgroundColor: tone.backgroundColor }]}>
-                    <Ionicons name="card-outline" size={15} color={tone.color} />
-                    <Text style={[styles.exchangeTagText, { color: tone.color }]}>{tag}</Text>
+                  <View key={tag} style={[styles.tag, { backgroundColor: tone.backgroundColor }]}>
+                    <Text style={[styles.tagText, { color: tone.color }]}>{tag}</Text>
                   </View>
                 );
-              }
-
-              return (
-                <View key={tag} style={[styles.tag, { backgroundColor: tone.backgroundColor }]}>
-                  <Text style={[styles.tagText, { color: tone.color }]}>{tag}</Text>
-                </View>
-              );
-            })}
+              })}
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -109,12 +112,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.md,
     marginTop: spacing.md,
     padding: spacing.md,
   },
   businessCardText: {
     flex: 1,
+    minWidth: 180,
   },
   businessCardTitle: {
     color: colors.text,
@@ -132,6 +137,11 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
     paddingBottom: 96,
+  },
+  contentShell: {
+    alignSelf: "center",
+    maxWidth: layout.detailMaxWidth,
+    width: "100%",
   },
   emphasisSection: {
     backgroundColor: "#F8FAFC",
@@ -159,12 +169,17 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     flexDirection: "row",
     gap: 6,
+    justifyContent: "center",
+    minHeight: 30,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 5,
   },
   exchangeTagText: {
+    includeFontPadding: false,
     fontSize: 12,
     fontWeight: "800",
+    lineHeight: 15,
+    textAlignVertical: "center",
   },
   header: {
     alignItems: "center",
@@ -209,6 +224,7 @@ const styles = StyleSheet.create({
   },
   profileText: {
     flex: 1,
+    minWidth: 0,
   },
   role: {
     color: "#424B54",
@@ -240,9 +256,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   tag: {
+    alignItems: "center",
     borderRadius: 999,
+    justifyContent: "center",
+    minHeight: 30,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 5,
   },
   tagRow: {
     flexDirection: "row",
@@ -253,5 +272,8 @@ const styles = StyleSheet.create({
     color: colors.linkedInBlue,
     fontSize: 12,
     fontWeight: "800",
+    includeFontPadding: false,
+    lineHeight: 15,
+    textAlignVertical: "center",
   },
 });

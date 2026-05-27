@@ -21,13 +21,15 @@ export function ConnectionCard({ connection, onPress }: ConnectionCardProps) {
         <Avatar initials={connection.initials} imageUrl={connection.photoUrl} size={54} />
         <View style={styles.identity}>
           <View style={styles.nameRow}>
-            <Text style={styles.name}>{connection.name}</Text>
+            <Text style={styles.name} numberOfLines={1}>
+              {connection.name}
+            </Text>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </View>
-          <Text style={styles.role}>
+          <Text style={styles.role} numberOfLines={2}>
             {connection.role} at {connection.company}
           </Text>
-          <Text style={styles.meta}>
+          <Text style={styles.meta} numberOfLines={2}>
             {connection.timeAgo} - {connection.location}, {connection.city}
           </Text>
         </View>
@@ -71,6 +73,7 @@ const styles = StyleSheet.create({
   },
   identity: {
     flex: 1,
+    minWidth: 0,
   },
   meta: {
     color: colors.textMuted,
@@ -98,12 +101,17 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     flexDirection: "row",
     gap: 6,
+    justifyContent: "center",
+    minHeight: 30,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 5,
   },
   exchangeTagText: {
+    includeFontPadding: false,
     fontSize: 12,
     fontWeight: "800",
+    lineHeight: 15,
+    textAlignVertical: "center",
   },
   role: {
     color: "#424B54",
@@ -111,7 +119,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   tag: {
+    alignItems: "center",
     borderRadius: 999,
+    justifyContent: "center",
+    minHeight: 30,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
@@ -125,6 +136,9 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 12,
     fontWeight: "700",
+    includeFontPadding: false,
+    lineHeight: 15,
+    textAlignVertical: "center",
   },
   topRow: {
     alignItems: "flex-start",

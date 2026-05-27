@@ -9,6 +9,7 @@ import { ConnectionCard } from "../components/ConnectionCard";
 import { MyCardsSection } from "../components/MyCardsSection";
 import { connections } from "../data/connections";
 import { colors } from "../theme/colors";
+import { layout } from "../theme/layout";
 import { spacing } from "../theme/spacing";
 import type { Connection, HomeStackParamList } from "../types/social";
 
@@ -18,7 +19,7 @@ type FilterId = "Today" | "This week" | "Conference" | "Founder" | "Investor" | 
 type SortId = "Recent" | "Name" | "Most relevant";
 type ExchangeFilter = "Shared by me" | "Received by me";
 type CategoryFilter = "Founder" | "Investor" | "Product" | "Engineering" | "Sales" | "Marketing";
-type DateRangeFilter = "Today" | "Yesterday" | "This week" | "Older" | "2 months back";
+type DateRangeFilter = "Today" | "Yesterday" | "This week";
 type CityFilter = "Jakarta" | "Singapore" | "Gurgaon" | "Bengaluru";
 type ConferenceFilter =
   | "Jakarta Design Week"
@@ -36,7 +37,7 @@ const filters: FilterId[] = ["Today", "This week", "Conference", "Founder", "Inv
 const sortOptions: SortId[] = ["Recent", "Most relevant", "Name"];
 const exchangeFilters: ExchangeFilter[] = ["Shared by me", "Received by me"];
 const categoryFilters: CategoryFilter[] = ["Founder", "Investor", "Product", "Engineering", "Sales", "Marketing"];
-const dateRangeFilters: DateRangeFilter[] = ["Today", "Yesterday", "This week", "Older", "2 months back"];
+const dateRangeFilters: DateRangeFilter[] = ["Today", "Yesterday", "This week"];
 const cityFilters: CityFilter[] = ["Jakarta", "Singapore", "Gurgaon", "Bengaluru"];
 const conferenceFilters: ConferenceFilter[] = [
   "Jakarta Design Week",
@@ -81,7 +82,6 @@ function matchesSelectedFilters<T>(selected: T[], predicate: (filter: T) => bool
 }
 
 function matchesDateRange(connection: Connection, filter: DateRangeFilter) {
-  if (filter === "2 months back") return connection.dateLabel.toLowerCase().includes("2 months");
   return connection.dateBucket === filter;
 }
 
@@ -167,133 +167,137 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
     <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
       <AppHeader />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <MyCardsSection />
+        <View style={styles.contentShell}>
+          <MyCardsSection />
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.title}>People you met</Text>
-          <Text style={styles.subtitle}>Card exchanges and in-person context, not social posts.</Text>
-        </View>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.title}>People you met</Text>
+            <Text style={styles.subtitle}>Card exchanges and in-person context, not social posts.</Text>
+          </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setShowMoreFilters((current) => !current)}
-            style={[styles.filterChip, showMoreFilters && styles.moreFilterActive]}
-          >
-            <Ionicons name="options-outline" size={16} color={showMoreFilters ? colors.white : "#444444"} />
-            <Text style={[styles.filterText, showMoreFilters && styles.filterTextActive]}>More filters</Text>
-          </Pressable>
-          {filters.map((filter) => (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
             <Pressable
-              key={filter}
               accessibilityRole="button"
-              onPress={() => setActiveFilters((current) => toggleSelection(current, filter))}
-              style={[styles.filterChip, activeFilters.includes(filter) && styles.filterChipActive]}
+              onPress={() => setShowMoreFilters((current) => !current)}
+              style={[styles.filterChip, showMoreFilters && styles.moreFilterActive]}
             >
-              <Text style={[styles.filterText, activeFilters.includes(filter) && styles.filterTextActive]}>{filter}</Text>
+              <Ionicons name="options-outline" size={16} color={showMoreFilters ? colors.white : "#444444"} />
+              <Text style={[styles.filterText, showMoreFilters && styles.filterTextActive]}>More filters</Text>
             </Pressable>
-          ))}
-        </ScrollView>
-
-        {showMoreFilters ? (
-          <View style={styles.morePanel}>
-            <FilterGroup title="Sort by">
-              {sortOptions.map((option) => (
-                <FilterButton
-                  key={option}
-                  label={option}
-                  selected={sortBy === option}
-                  onPress={() => setSortBy(option)}
-                />
-              ))}
-            </FilterGroup>
-            <FilterGroup title="Card exchange">
-              {exchangeFilters.map((option) => (
-                <FilterButton
-                  key={option}
-                  label={option}
-                  selected={exchangeFilter.includes(option)}
-                  onPress={() => setExchangeFilter((current) => toggleSelection(current, option))}
-                />
-              ))}
-            </FilterGroup>
-            <FilterGroup title="Date range">
-              {dateRangeFilters.map((option) => (
-                <FilterButton
-                  key={option}
-                  label={option}
-                  selected={dateRangeFilter.includes(option)}
-                  onPress={() => setDateRangeFilter((current) => toggleSelection(current, option))}
-                />
-              ))}
-              <FilterInput
-                value={customDateQuery}
-                onChangeText={setCustomDateQuery}
-                placeholder="Try: 2 Oct 2025 - 17 Nov 2025"
-              />
-              <Text style={styles.inputHint}>
-                You can also type cues like "2nd week of Jan", "Feb 2025", "last month", or "2 months back".
-              </Text>
-            </FilterGroup>
-            <FilterGroup title="City / geolocation">
-              {cityFilters.map((option) => (
-                <FilterButton
-                  key={option}
-                  label={option}
-                  selected={cityFilter.includes(option)}
-                  onPress={() => setCityFilter((current) => toggleSelection(current, option))}
-                />
-              ))}
-              <FilterInput value={customCity} onChangeText={setCustomCity} placeholder="Enter city, e.g. Gurgaon" />
-            </FilterGroup>
-            <FilterGroup title="Conference / event">
-              {conferenceFilters.map((option) => (
-                <FilterButton
-                  key={option}
-                  label={option}
-                  selected={conferenceFilter.includes(option)}
-                  onPress={() => setConferenceFilter((current) => toggleSelection(current, option))}
-                />
-              ))}
-              <FilterInput
-                value={customConference}
-                onChangeText={setCustomConference}
-                placeholder="Enter conference / event"
-              />
-            </FilterGroup>
-            <FilterGroup title="Type of person">
-              {categoryFilters.map((option) => (
-                <FilterButton
-                  key={option}
-                  label={option}
-                  selected={categoryFilter.includes(option)}
-                  onPress={() => setCategoryFilter((current) => toggleSelection(current, option))}
-                />
-              ))}
-            </FilterGroup>
-          </View>
-        ) : null}
-
-        {groupedConnections.map((group) => (
-          <View key={group.monthYear} style={styles.monthSection}>
-            <View style={styles.monthHeader}>
-              <View style={styles.monthDot} />
-              <View>
-                <Text style={styles.monthTitle}>{group.monthYear}</Text>
-                <Text style={styles.monthSubtitle}>
-                  {group.items.length} {group.items.length === 1 ? "card exchange" : "card exchanges"}
+            {filters.map((filter) => (
+              <Pressable
+                key={filter}
+                accessibilityRole="button"
+                onPress={() => setActiveFilters((current) => toggleSelection(current, filter))}
+                style={[styles.filterChip, activeFilters.includes(filter) && styles.filterChipActive]}
+              >
+                <Text style={[styles.filterText, activeFilters.includes(filter) && styles.filterTextActive]}>
+                  {filter}
                 </Text>
-              </View>
-            </View>
-            {group.items.map((connection) => (
-              <ConnectionCard
-                key={connection.id}
-                connection={connection}
-                onPress={() => navigation.navigate("ConnectionDetail", { connectionId: connection.id })}
-              />
+              </Pressable>
             ))}
-          </View>
-        ))}
+          </ScrollView>
+
+          {showMoreFilters ? (
+            <View style={styles.morePanel}>
+              <FilterGroup title="Sort by">
+                {sortOptions.map((option) => (
+                  <FilterButton
+                    key={option}
+                    label={option}
+                    selected={sortBy === option}
+                    onPress={() => setSortBy(option)}
+                  />
+                ))}
+              </FilterGroup>
+              <FilterGroup title="Card exchange">
+                {exchangeFilters.map((option) => (
+                  <FilterButton
+                    key={option}
+                    label={option}
+                    selected={exchangeFilter.includes(option)}
+                    onPress={() => setExchangeFilter((current) => toggleSelection(current, option))}
+                  />
+                ))}
+              </FilterGroup>
+              <FilterGroup title="Date range">
+                {dateRangeFilters.map((option) => (
+                  <FilterButton
+                    key={option}
+                    label={option}
+                    selected={dateRangeFilter.includes(option)}
+                    onPress={() => setDateRangeFilter((current) => toggleSelection(current, option))}
+                  />
+                ))}
+                <FilterInput
+                  value={customDateQuery}
+                  onChangeText={setCustomDateQuery}
+                  placeholder="Try: 2 Oct 2025 - 17 Nov 2025"
+                />
+                <Text style={styles.inputHint}>
+                  You can also type cues like "2nd week of Jan", "Feb 2025", "last month", or "2 months back".
+                </Text>
+              </FilterGroup>
+              <FilterGroup title="City / geolocation">
+                {cityFilters.map((option) => (
+                  <FilterButton
+                    key={option}
+                    label={option}
+                    selected={cityFilter.includes(option)}
+                    onPress={() => setCityFilter((current) => toggleSelection(current, option))}
+                  />
+                ))}
+                <FilterInput value={customCity} onChangeText={setCustomCity} placeholder="Enter city, e.g. Gurgaon" />
+              </FilterGroup>
+              <FilterGroup title="Conference / event">
+                {conferenceFilters.map((option) => (
+                  <FilterButton
+                    key={option}
+                    label={option}
+                    selected={conferenceFilter.includes(option)}
+                    onPress={() => setConferenceFilter((current) => toggleSelection(current, option))}
+                  />
+                ))}
+                <FilterInput
+                  value={customConference}
+                  onChangeText={setCustomConference}
+                  placeholder="Enter conference / event"
+                />
+              </FilterGroup>
+              <FilterGroup title="Type of person">
+                {categoryFilters.map((option) => (
+                  <FilterButton
+                    key={option}
+                    label={option}
+                    selected={categoryFilter.includes(option)}
+                    onPress={() => setCategoryFilter((current) => toggleSelection(current, option))}
+                  />
+                ))}
+              </FilterGroup>
+            </View>
+          ) : null}
+
+          {groupedConnections.map((group) => (
+            <View key={group.monthYear} style={styles.monthSection}>
+              <View style={styles.monthHeader}>
+                <View style={styles.monthDot} />
+                <View style={styles.monthCopy}>
+                  <Text style={styles.monthTitle}>{group.monthYear}</Text>
+                  <Text style={styles.monthSubtitle}>
+                    {group.items.length} {group.items.length === 1 ? "card exchange" : "card exchanges"}
+                  </Text>
+                </View>
+              </View>
+              {group.items.map((connection) => (
+                <ConnectionCard
+                  key={connection.id}
+                  connection={connection}
+                  onPress={() => navigation.navigate("ConnectionDetail", { connectionId: connection.id })}
+                />
+              ))}
+            </View>
+          ))}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -352,6 +356,11 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: 96,
   },
+  contentShell: {
+    alignSelf: "center",
+    maxWidth: layout.contentMaxWidth,
+    width: "100%",
+  },
   filterChip: {
     alignItems: "center",
     backgroundColor: colors.surface,
@@ -360,6 +369,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: "row",
     gap: 6,
+    minHeight: 38,
     paddingHorizontal: 14,
     paddingVertical: spacing.sm,
   },
@@ -374,7 +384,10 @@ const styles = StyleSheet.create({
   },
   filterText: {
     color: "#444444",
+    includeFontPadding: false,
     fontWeight: "700",
+    lineHeight: 18,
+    textAlignVertical: "center",
   },
   filterTextActive: {
     color: colors.white,
@@ -437,6 +450,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
+  },
+  monthCopy: {
+    flex: 1,
+    minWidth: 0,
   },
   monthSection: {
     borderTopColor: colors.border,
