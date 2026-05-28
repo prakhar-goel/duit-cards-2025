@@ -12,7 +12,15 @@ type ConnectionCardProps = {
   onPress: () => void;
 };
 
+/**
+ * Compact list item for the Home feed.
+ *
+ * It shows the relationship context first: who the person is, where/when you
+ * met, a mini card preview, and a small set of tags. Keep this component
+ * presentation-only; filtering and data loading should stay in screen/data code.
+ */
 export function ConnectionCard({ connection, onPress }: ConnectionCardProps) {
+  // Exchange status is displayed as the first tag because it is core context.
   const visibleTags = [connection.exchangeType, ...connection.tags].slice(0, 3);
 
   return (

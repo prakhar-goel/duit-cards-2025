@@ -8,6 +8,7 @@ const defaultTone: TagTone = {
   color: "#475569",
 };
 
+// Centralized tag colors keep chips consistent across list and detail screens.
 const tagTones: Record<string, TagTone> = {
   "B2B SaaS": { backgroundColor: "#EEF2FF", color: "#4338CA" },
   "Both exchanged cards": { backgroundColor: "#EAF3FC", color: "#0A66C2" },
@@ -27,6 +28,7 @@ const tagTones: Record<string, TagTone> = {
   Workshop: { backgroundColor: "#DCFCE7", color: "#15803D" },
 };
 
+/** Card-exchange tags get an icon treatment in addition to the shared chip tone. */
 export function isCardExchangeTag(tag: string): boolean {
   return tag === "Shared my card" || tag === "Received their card" || tag === "Both exchanged cards";
 }

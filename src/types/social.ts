@@ -1,3 +1,10 @@
+/**
+ * Shared domain and navigation types for the relationship-management prototype.
+ *
+ * Keep screen components dependent on these shapes rather than on raw backend
+ * payloads. When an API is introduced, map API responses into these app-level
+ * types inside the data/repository layer.
+ */
 export type RootTabParamList = {
   Home: undefined;
   Meetings: undefined;
@@ -30,6 +37,13 @@ export type BusinessCardTheme = {
   textColor: string;
 };
 
+/**
+ * A saved business-card exchange with the relationship context needed by the UI.
+ *
+ * The important product distinction is that this is not a social post. It is a
+ * record of an in-person meeting: where/when it happened, how cards were
+ * exchanged, why the person may matter, and what follow-up should happen next.
+ */
 export type Connection = {
   id: string;
   name: string;
@@ -41,7 +55,9 @@ export type Connection = {
   businessCardTheme: BusinessCardTheme;
   dateLabel: string;
   dateBucket: DateBucket;
+  /** Month header used by the home feed's SectionList grouping. */
   monthYear: string;
+  /** Search-only copy for natural date queries such as "Feb 2025" or "2 months back". */
   dateSearchText: string;
   timeAgo: string;
   city: string;

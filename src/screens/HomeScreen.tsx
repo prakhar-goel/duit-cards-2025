@@ -37,6 +37,8 @@ const categoryFilters: CategoryFilter[] = filterOptions.categories;
 const cityFilters: CityFilter[] = filterOptions.cities;
 const conferenceFilters: ConferenceFilter[] = filterOptions.conferences;
 
+// Top-row quick filters intentionally stay broad. More precise filters live in
+// the expanded panel so the default home screen remains lightweight.
 function matchesFilter(connection: Connection, filter: FilterId) {
   switch (filter) {
     case "Today":
@@ -66,6 +68,8 @@ function matchesOneExchange(connection: Connection, filter: ExchangeFilter) {
   }
 }
 
+// Multi-select groups use OR behavior within one group, then AND across groups.
+// Example: (Founder OR Investor) AND (Gurgaon OR Singapore).
 function matchesSelectedFilters<T>(selected: T[], predicate: (filter: T) => boolean) {
   return selected.length === 0 || selected.some(predicate);
 }
@@ -93,6 +97,8 @@ function sortConnections(items: Connection[], sortBy: SortId) {
   return next;
 }
 
+// SectionList expects sections shaped as { title-ish metadata, data }.
+// We group by precomputed monthYear so the UI can mimic a photo timeline.
 function groupConnectionsByMonth(items: Connection[]): ConnectionMonthGroup[] {
   return items.reduce<ConnectionMonthGroup[]>((groups, connection) => {
     const existingGroup = groups.find((group) => group.monthYear === connection.monthYear);
@@ -117,6 +123,9 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   const [customCity, setCustomCity] = useState("");
   const [customConference, setCustomConference] = useState("");
   const [customDateQuery, setCustomDateQuery] = useState("");
+
+  // Filtering is kept client-side for the prototype. When data moves to an API,
+  // this predicate can become request params while the UI state stays similar.
   const filteredConnections = useMemo(
     () =>
       sortConnections(
@@ -164,114 +173,114 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         contentContainerStyle={styles.content}
         ListHeaderComponent={
           <>
-          <MyCardsSection />
+            <MyCardsSection />
 
-          <View style={styles.sectionHeader}>
-            <Text style={styles.title}>People you met</Text>
-            <Text style={styles.subtitle}>Card exchanges and in-person context, not social posts.</Text>
-          </View>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setShowMoreFilters((current) => !current)}
-              style={[styles.filterChip, showMoreFilters && styles.moreFilterActive]}
-            >
-              <Ionicons name="options-outline" size={16} color={showMoreFilters ? colors.white : "#444444"} />
-              <Text style={[styles.filterText, showMoreFilters && styles.filterTextActive]}>More filters</Text>
-            </Pressable>
-            {filters.map((filter) => (
-              <Pressable
-                key={filter}
-                accessibilityRole="button"
-                onPress={() => setActiveFilters((current) => toggleSelection(current, filter))}
-                style={[styles.filterChip, activeFilters.includes(filter) && styles.filterChipActive]}
-              >
-                <Text style={[styles.filterText, activeFilters.includes(filter) && styles.filterTextActive]}>
-                  {filter}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-
-          {showMoreFilters ? (
-            <View style={styles.morePanel}>
-              <FilterGroup title="Sort by">
-                {sortOptions.map((option) => (
-                  <FilterButton
-                    key={option}
-                    label={option}
-                    selected={sortBy === option}
-                    onPress={() => setSortBy(option)}
-                  />
-                ))}
-              </FilterGroup>
-              <FilterGroup title="Card exchange">
-                {exchangeFilters.map((option) => (
-                  <FilterButton
-                    key={option}
-                    label={option}
-                    selected={exchangeFilter.includes(option)}
-                    onPress={() => setExchangeFilter((current) => toggleSelection(current, option))}
-                  />
-                ))}
-              </FilterGroup>
-              <FilterGroup title="Date range">
-                {dateRangeFilters.map((option) => (
-                  <FilterButton
-                    key={option}
-                    label={option}
-                    selected={dateRangeFilter.includes(option)}
-                    onPress={() => setDateRangeFilter((current) => toggleSelection(current, option))}
-                  />
-                ))}
-                <FilterInput
-                  value={customDateQuery}
-                  onChangeText={setCustomDateQuery}
-                  placeholder="Try: 2 Oct 2025 - 17 Nov 2025"
-                />
-                <Text style={styles.inputHint}>
-                  You can also type cues like "2nd week of Jan", "Feb 2025", "last month", or "2 months back".
-                </Text>
-              </FilterGroup>
-              <FilterGroup title="City / geolocation">
-                {cityFilters.map((option) => (
-                  <FilterButton
-                    key={option}
-                    label={option}
-                    selected={cityFilter.includes(option)}
-                    onPress={() => setCityFilter((current) => toggleSelection(current, option))}
-                  />
-                ))}
-                <FilterInput value={customCity} onChangeText={setCustomCity} placeholder="Enter city, e.g. Gurgaon" />
-              </FilterGroup>
-              <FilterGroup title="Conference / event">
-                {conferenceFilters.map((option) => (
-                  <FilterButton
-                    key={option}
-                    label={option}
-                    selected={conferenceFilter.includes(option)}
-                    onPress={() => setConferenceFilter((current) => toggleSelection(current, option))}
-                  />
-                ))}
-                <FilterInput
-                  value={customConference}
-                  onChangeText={setCustomConference}
-                  placeholder="Enter conference / event"
-                />
-              </FilterGroup>
-              <FilterGroup title="Type of person">
-                {categoryFilters.map((option) => (
-                  <FilterButton
-                    key={option}
-                    label={option}
-                    selected={categoryFilter.includes(option)}
-                    onPress={() => setCategoryFilter((current) => toggleSelection(current, option))}
-                  />
-                ))}
-              </FilterGroup>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.title}>People you met</Text>
+              <Text style={styles.subtitle}>Card exchanges and in-person context, not social posts.</Text>
             </View>
-          ) : null}
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setShowMoreFilters((current) => !current)}
+                style={[styles.filterChip, showMoreFilters && styles.moreFilterActive]}
+              >
+                <Ionicons name="options-outline" size={16} color={showMoreFilters ? colors.white : "#444444"} />
+                <Text style={[styles.filterText, showMoreFilters && styles.filterTextActive]}>More filters</Text>
+              </Pressable>
+              {filters.map((filter) => (
+                <Pressable
+                  key={filter}
+                  accessibilityRole="button"
+                  onPress={() => setActiveFilters((current) => toggleSelection(current, filter))}
+                  style={[styles.filterChip, activeFilters.includes(filter) && styles.filterChipActive]}
+                >
+                  <Text style={[styles.filterText, activeFilters.includes(filter) && styles.filterTextActive]}>
+                    {filter}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+
+            {showMoreFilters ? (
+              <View style={styles.morePanel}>
+                <FilterGroup title="Sort by">
+                  {sortOptions.map((option) => (
+                    <FilterButton
+                      key={option}
+                      label={option}
+                      selected={sortBy === option}
+                      onPress={() => setSortBy(option)}
+                    />
+                  ))}
+                </FilterGroup>
+                <FilterGroup title="Card exchange">
+                  {exchangeFilters.map((option) => (
+                    <FilterButton
+                      key={option}
+                      label={option}
+                      selected={exchangeFilter.includes(option)}
+                      onPress={() => setExchangeFilter((current) => toggleSelection(current, option))}
+                    />
+                  ))}
+                </FilterGroup>
+                <FilterGroup title="Date range">
+                  {dateRangeFilters.map((option) => (
+                    <FilterButton
+                      key={option}
+                      label={option}
+                      selected={dateRangeFilter.includes(option)}
+                      onPress={() => setDateRangeFilter((current) => toggleSelection(current, option))}
+                    />
+                  ))}
+                  <FilterInput
+                    value={customDateQuery}
+                    onChangeText={setCustomDateQuery}
+                    placeholder="Try: 2 Oct 2025 - 17 Nov 2025"
+                  />
+                  <Text style={styles.inputHint}>
+                    You can also type cues like "2nd week of Jan", "Feb 2025", "last month", or "2 months back".
+                  </Text>
+                </FilterGroup>
+                <FilterGroup title="City / geolocation">
+                  {cityFilters.map((option) => (
+                    <FilterButton
+                      key={option}
+                      label={option}
+                      selected={cityFilter.includes(option)}
+                      onPress={() => setCityFilter((current) => toggleSelection(current, option))}
+                    />
+                  ))}
+                  <FilterInput value={customCity} onChangeText={setCustomCity} placeholder="Enter city, e.g. Gurgaon" />
+                </FilterGroup>
+                <FilterGroup title="Conference / event">
+                  {conferenceFilters.map((option) => (
+                    <FilterButton
+                      key={option}
+                      label={option}
+                      selected={conferenceFilter.includes(option)}
+                      onPress={() => setConferenceFilter((current) => toggleSelection(current, option))}
+                    />
+                  ))}
+                  <FilterInput
+                    value={customConference}
+                    onChangeText={setCustomConference}
+                    placeholder="Enter conference / event"
+                  />
+                </FilterGroup>
+                <FilterGroup title="Type of person">
+                  {categoryFilters.map((option) => (
+                    <FilterButton
+                      key={option}
+                      label={option}
+                      selected={categoryFilter.includes(option)}
+                      onPress={() => setCategoryFilter((current) => toggleSelection(current, option))}
+                    />
+                  ))}
+                </FilterGroup>
+              </View>
+            ) : null}
           </>
         }
         renderSectionHeader={({ section }) => (

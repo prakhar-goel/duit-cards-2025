@@ -27,6 +27,10 @@ const tabIcons: Record<
   Profile: { focused: "person", unfocused: "person-outline" },
 };
 
+/**
+ * Home gets its own stack so the tab remains selected while users drill into a
+ * connection detail page. Other tabs are currently single-screen flows.
+ */
 function HomeStackNavigator() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
@@ -38,6 +42,7 @@ function HomeStackNavigator() {
 
 export function MainNavigator() {
   const insets = useSafeAreaInsets();
+  // Android gesture/nav bars vary by device; keep at least 18px below tabs.
   const bottomInset = Math.max(insets.bottom, 18);
 
   return (

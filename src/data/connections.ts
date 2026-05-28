@@ -1,5 +1,11 @@
 import type { BusinessCard, BusinessCardTheme, Connection, ConnectionCategory, Meeting, MeetingType } from "../types/social";
 
+/**
+ * Mock data for the Phase 1 frontend prototype.
+ *
+ * UI code should not import this file directly. Use socialRepository instead,
+ * so this file can be deleted or replaced once real backend APIs are available.
+ */
 export const myCards: BusinessCard[] = [
   {
     id: "designer",
@@ -24,6 +30,7 @@ export const myCards: BusinessCard[] = [
   },
 ];
 
+// Hand-written examples keep the first screenful polished and product-specific.
 const baseConnections: Connection[] = [
   {
     id: "aisha-rahman",
@@ -289,6 +296,8 @@ const baseConnections: Connection[] = [
   },
 ];
 
+// Deterministic generated contacts let us stress-test list performance and
+// visual grouping without maintaining 50+ hand-written records.
 const generatedNames = [
   ["Ananya Mehta", "AM"],
   ["Kabir Sethi", "KS"],
@@ -428,6 +437,7 @@ const generatedConnections = Array.from({ length: 52 }, (_, index) => buildGener
 
 export const connections: Connection[] = [...baseConnections, ...generatedConnections];
 
+// Meetings are a timeline projection of the same source data, not separate mock truth.
 export const meetings: Meeting[] = connections.map((connection) => ({
   id: connection.id,
   date: connection.dateLabel,

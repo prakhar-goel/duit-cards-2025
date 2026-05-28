@@ -6,6 +6,13 @@ type BusinessCardThumbnailProps = {
   size?: "small" | "large";
 };
 
+/**
+ * Visual placeholder for a received business card.
+ *
+ * In production this can render an uploaded/scanned card image. For the
+ * prototype, we use structured connection data and a theme so every contact
+ * still looks like they have a distinct card.
+ */
 export function BusinessCardThumbnail({ connection, size = "small" }: BusinessCardThumbnailProps) {
   const theme = connection.businessCardTheme;
   const isLarge = size === "large";

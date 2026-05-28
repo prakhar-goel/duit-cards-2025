@@ -6,6 +6,12 @@ import { spacing } from "../theme/spacing";
 
 const myCards = getMyCards();
 
+/**
+ * Horizontal strip of the user's own cards.
+ *
+ * This stays separate from the connection feed because sharing your own card is
+ * a primary action and should remain visible even when the contact list grows.
+ */
 export function MyCardsSection() {
   return (
     <View style={styles.section}>
