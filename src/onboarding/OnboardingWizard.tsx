@@ -1,10 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { layout } from "../theme/layout";
-import { getAiFollowUpContent, getPlanBullets } from "./mockAi";
+import { fetchAiFollowUp, fetchPlanBullets } from "../api/onboardingApi";
+import { getAiFollowUpContent, getPlanBullets, type AiFollowUpOption } from "./mockAi";
 import {
   buildProfilePayload,
   canProceed,
@@ -90,17 +91,59 @@ export function OnboardingWizard({ onComplete }: Props) {
 
   const step = ONBOARDING_STEPS[stepIndex];
   const totalSteps = ONBOARDING_STEPS.length;
-  const aiContent = useMemo(() => getAiFollowUpContent(form), [form]);
-  const planBullets = useMemo(() => getPlanBullets(form), [form]);
+
+  const [aiContent, setAiContent] = useState<{
+    headline: string;
+    subtitle: string;
+    options: AiFollowUpOption[];
+  } | null>(null);
+  const [planBullets, setPlanBullets] = useState<string[] | null>(null);
+
+  const formRef = useRef(form);
+  formRef.current = form;
 
   useEffect(() => {
+    if (step !== "ai_followup") return;
+    let cancelled = false;
+    setAiContent(null);
+    fetchAiFollowUp(formRef.current)
+      .then((content) => {
+        if (!cancelled) setAiContent(content);
+      })
+      .catch(() => {
+        if (!cancelled) setAiContent(getAiFollowUpContent(formRef.current));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [step]);
+
+  useEffect(() => {
+    if (step !== "plan_summary") return;
+    let cancelled = false;
+    setPlanBullets(null);
+    fetchPlanBullets(formRef.current)
+      .then((bullets) => {
+        if (!cancelled) setPlanBullets(bullets);
+      })
+      .catch(() => {
+        if (!cancelled) setPlanBullets(getPlanBullets(formRef.current));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [step]);
+
+  useEffect(() => {
+    if (!aiContent) return;
     const validIds = new Set(aiContent.options.map((o) => o.id));
     if (form.aiFollowUpChoice && !validIds.has(form.aiFollowUpChoice)) {
       setForm((f) => ({ ...f, aiFollowUpChoice: null }));
     }
-  }, [aiContent.options, form.aiFollowUpChoice]);
+  }, [aiContent, form.aiFollowUpChoice]);
 
-  const disableContinue = !canProceed(step, form);
+  const disableContinue =
+    !canProceed(step, form) || (step === "plan_summary" && planBullets === null);
 
   const ctaLabel =
     step === "complete" ? "Enter Duit Cards" : "Continue";
@@ -222,8 +265,8 @@ function renderStepBody(
   step: OnboardingStepId,
   form: OnboardingForm,
   setForm: React.Dispatch<React.SetStateAction<OnboardingForm>>,
-  aiContent: ReturnType<typeof getAiFollowUpContent>,
-  planBullets: string[],
+  aiContent: { headline: string; subtitle: string; options: AiFollowUpOption[] } | null,
+  planBullets: string[] | null,
   onToggleIntent: (id: NetworkingIntentId) => void,
   onSelectAiOption: (id: string) => void
 ) {
@@ -399,6 +442,13 @@ function renderStepBody(
       );
 
     case "ai_followup":
+      if (!aiContent) {
+        return (
+          <View style={styles.centerBlock}>
+            <ActivityIndicator color={CTA_GREEN} />
+          </View>
+        );
+      }
       return (
         <View style={styles.block}>
           <Text style={styles.questionTitle}>{aiContent.headline}</Text>
@@ -427,6 +477,13 @@ function renderStepBody(
       );
 
     case "plan_summary":
+      if (!planBullets) {
+        return (
+          <View style={styles.centerBlock}>
+            <ActivityIndicator color={CTA_GREEN} />
+          </View>
+        );
+      }
       return (
         <View style={styles.block}>
           <Text style={styles.questionTitle}>Got it! We will help you:</Text>
