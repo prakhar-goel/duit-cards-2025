@@ -2,7 +2,7 @@
 
 **Audience:** Backend engineer/agent designing the API, data model, and infrastructure for this product.
 **Status of this doc:** Rewritten from scratch against the current mobile app code (previous version was written against an earlier prototype and is substantially out of date — see §0 if a backend already exists).
-**Source:** [App.tsx](../App.tsx), [src/types/social.ts](../src/types/social.ts), [src/data/](../src/data/), [src/screens/](../src/screens/), [src/components/](../src/components/), [src/onboarding/](../src/onboarding/), [src/api/](../src/api/)
+**Source:** [App.tsx](../apps/mobile/App.tsx), [src/types/social.ts](../apps/mobile/src/types/social.ts), [src/data/](../apps/mobile/src/data/), [src/screens/](../apps/mobile/src/screens/), [src/components/](../apps/mobile/src/components/), [src/onboarding/](../apps/mobile/src/onboarding/), [src/api/](../apps/mobile/src/api/)
 
 ---
 
@@ -19,9 +19,9 @@ Reconcile the data model against §3 of this doc before adding new endpoints on 
 
 ## 1. What's already wired to a real backend today
 
-Only one integration exists in the client right now. Everything else in the app still runs on local mock data ([src/data/connections.ts](../src/data/connections.ts)) with no network calls.
+Only onboarding/signup-related integration exists in the client right now. Everything else in the app still runs on local mock data ([src/data/connections.ts](../apps/mobile/src/data/connections.ts)) with no network calls.
 
-**Onboarding AI steps** — [src/onboarding/OnboardingWizard.tsx](../src/onboarding/OnboardingWizard.tsx) calls [src/api/onboardingApi.ts](../src/api/onboardingApi.ts), which posts to:
+**Onboarding AI steps** — [src/onboarding/OnboardingWizard.tsx](../apps/mobile/src/onboarding/OnboardingWizard.tsx) calls [src/api/onboardingApi.ts](../apps/mobile/src/api/onboardingApi.ts), which posts to:
 
 ```
 POST {EXPO_PUBLIC_API_URL}/onboarding/ai-step
@@ -33,9 +33,9 @@ Body: { step: "followup" | "plan", answers: {
 
 - `step: "followup"` must return `{ headline: string; subtitle: string; options: { id: string; emoji: string; label: string }[] }`.
 - `step: "plan"` must return `{ bullets: string[] }`.
-- The client base URL defaults to `http://localhost:4000/api/v1` (see [.env.example](../.env.example), overridable via `EXPO_PUBLIC_API_URL`).
-- **The client tolerates backend failure** — on any request error it silently falls back to the local mock implementation ([src/onboarding/mockAi.ts](../src/onboarding/mockAi.ts)) so onboarding never blocks. Don't rely on the client surfacing backend errors to the user here.
-- Onboarding completion itself (`fullName`, `roleTitle`, etc. plus `completedAt`/`mockAiVersion`) is still only written to `AsyncStorage` locally — there is a code comment marking this as provisional pending `POST /auth/signup` with the onboarding profile attached (see [App.tsx](../App.tsx), `handleOnboardingComplete`). No signup/auth call exists in the client yet.
+- The client base URL defaults to `http://localhost:4000/api/v1` (see [.env.example](../apps/mobile/.env.example), overridable via `EXPO_PUBLIC_API_URL`).
+- **The client tolerates backend failure** — on any request error it silently falls back to the local mock implementation ([src/onboarding/mockAi.ts](../apps/mobile/src/onboarding/mockAi.ts)) so onboarding never blocks. Don't rely on the client surfacing backend errors to the user here.
+- Onboarding completion transitions into [SignupScreen.tsx](../apps/mobile/src/onboarding/SignupScreen.tsx), which calls `POST /auth/signup` through [src/api/authApi.ts](../apps/mobile/src/api/authApi.ts) with the onboarding profile attached. If the user skips signup, or after signup succeeds, the onboarding profile is also cached in `AsyncStorage` for fast boot/offline use.
 - Onboarding itself is live in the app again — `App.tsx` gates on `AsyncStorage` + `featureFlags.onboardingWizardV1` and shows `OnboardingWizard` before `MainNavigator` until the user completes or skips it.
 
 Everything below this point (§2 onward) describes what the client will eventually need, based on what's rendered today — none of it has a network call wired up yet except the piece above.
@@ -44,11 +44,11 @@ Everything below this point (§2 onward) describes what the client will eventual
 
 Duit Cards has shifted from a simple "contact list + reminders" concept to a LinkedIn-adjacent relationship app: a feed of **Connections** (people you exchanged business cards with, in person, at a specific place/time), a **Meetings** timeline view of the same encounters, a **Share** flow for sending your own card over WhatsApp, and a **Profile** page for the user's own presence. Onboarding still personalizes the experience via AI-generated follow-up questions.
 
-The defining product idea, per code comments in [src/types/social.ts](../src/types/social.ts): *"this is not a social post. It is a record of an in-person meeting: where/when it happened, how cards were exchanged, why the person may matter, and what follow-up should happen next."*
+The defining product idea, per code comments in [src/types/social.ts](../apps/mobile/src/types/social.ts): *"this is not a social post. It is a record of an in-person meeting: where/when it happened, how cards were exchanged, why the person may matter, and what follow-up should happen next."*
 
 ## 3. Core entities
 
-These map directly to types in [src/types/social.ts](../src/types/social.ts) and the screens that render them.
+These map directly to types in [src/types/social.ts](../apps/mobile/src/types/social.ts) and the screens that render them.
 
 ### 3.1 Connection (the core entity — replaces the old "Contact" concept)
 
@@ -80,7 +80,7 @@ These map directly to types in [src/types/social.ts](../src/types/social.ts) and
 
 **Backend design flag:** `oneLiner`, `relevanceShort`, `summary`, `relevance`, and `nextStep` read like AI-generated relationship insights, not user-typed fields — no UI anywhere lets a user type a "relevance" paragraph. This is the real AI requirement for this app, bigger than the onboarding copy: **given a raw exchange (a scanned/entered card + whatever context is captured about the meeting), generate these narrative fields, plus a suggested `category` and `tags`.** Treat this as the primary new AI/LLM capability to design, separate from and larger than the onboarding-step endpoint in §1. Nothing in the client calls out to generate these today — they're static in mock data — so there's no existing contract to preserve; design it fresh.
 
-`dateLabel`, `timeAgo`, `dateSearchText`, and `monthYear` are all display/search conveniences precomputed client-side against static mock data today. A real backend should store one real `occurredAt` timestamp and either replicate this precomputation server-side (for consistent formatting) or move formatting to the client and only send raw timestamps — recommend the latter to avoid duplicating locale/timezone logic. `dateSearchText` in particular exists to support free-text queries like *"2nd week of Jan"* or *"2 months back"* (see the Date filter panel in [HomeScreen.tsx](../src/screens/HomeScreen.tsx)) — decide whether this natural-language date matching happens client-side against a real `occurredAt`, or needs a backend/NLP-assisted search endpoint once data volume grows past what the client can filter locally.
+`dateLabel`, `timeAgo`, `dateSearchText`, and `monthYear` are all display/search conveniences precomputed client-side against static mock data today. A real backend should store one real `occurredAt` timestamp and either replicate this precomputation server-side (for consistent formatting) or move formatting to the client and only send raw timestamps — recommend the latter to avoid duplicating locale/timezone logic. `dateSearchText` in particular exists to support free-text queries like *"2nd week of Jan"* or *"2 months back"* (see the Date filter panel in [HomeScreen.tsx](../apps/mobile/src/screens/HomeScreen.tsx)) — decide whether this natural-language date matching happens client-side against a real `occurredAt`, or needs a backend/NLP-assisted search endpoint once data volume grows past what the client can filter locally.
 
 ### 3.2 Meeting (currently just a projection of Connection — needs a product decision)
 
@@ -88,11 +88,11 @@ These map directly to types in [src/types/social.ts](../src/types/social.ts) and
 { id, date, name, company, initials, photoUrl, location, summary, nextStep, type: MeetingType }
 ```
 
-In [src/data/connections.ts:441](../src/data/connections.ts#L441), `meetings` is a straight `.map()` over `connections` — every connection produces exactly one meeting, with the same id. **This needs a product decision before backend design:** is `Meeting` a genuinely separate, repeatable entity (a connection could have multiple meetings over time — coffee today, a call next month), or is the Meetings tab just an alternate view/filter over the same Connection records? The current mock data is consistent with either interpretation. If meetings should support a real history (multiple touchpoints per relationship), design `Meeting` as its own table with a `connectionId` foreign key, not a derived view — this also gives you a natural home for what used to be called "interaction history" (see §3.4).
+In [src/data/connections.ts:441](../apps/mobile/src/data/connections.ts#L441), `meetings` is a straight `.map()` over `connections` — every connection produces exactly one meeting, with the same id. **This needs a product decision before backend design:** is `Meeting` a genuinely separate, repeatable entity (a connection could have multiple meetings over time — coffee today, a call next month), or is the Meetings tab just an alternate view/filter over the same Connection records? The current mock data is consistent with either interpretation. If meetings should support a real history (multiple touchpoints per relationship), design `Meeting` as its own table with a `connectionId` foreign key, not a derived view — this also gives you a natural home for what used to be called "interaction history" (see §3.4).
 
 ### 3.3 Profile (LinkedIn-style — not the same as onboarding profile)
 
-[ProfileScreen.tsx](../src/screens/ProfileScreen.tsx) currently hardcodes: full name, headline (one line), cover photo, avatar, location + connection count, an "Open to" pill and "Add profile section" button (both no-ops), and an About paragraph. None of this reads from the onboarding payload in `AsyncStorage` — the two are currently disconnected in the code. Needed fields once wired to a real account:
+[ProfileScreen.tsx](../apps/mobile/src/screens/ProfileScreen.tsx) currently hardcodes: full name, headline (one line), cover photo, avatar, location + connection count, an "Open to" pill and "Add profile section" button (both no-ops), and an About paragraph. None of this reads from the onboarding payload in `AsyncStorage` — the two are currently disconnected in the code. Needed fields once wired to a real account:
 
 ```
 Profile {
@@ -108,7 +108,7 @@ Decide whether this should simply *be* the onboarding profile enriched over time
 
 ### 3.4 BusinessCard ("My Cards" — the user's own card personas)
 
-New concept, not in any earlier version of this app. From [src/types/social.ts](../src/types/social.ts) and rendered in [MyCardsSection.tsx](../src/components/MyCardsSection.tsx) (horizontal strip at the top of the Home feed):
+New concept, not in any earlier version of this app. From [src/types/social.ts](../apps/mobile/src/types/social.ts) and rendered in [MyCardsSection.tsx](../apps/mobile/src/components/MyCardsSection.tsx) (horizontal strip at the top of the Home feed):
 
 ```ts
 { id: string; title: string; subtitle: string; accentColor: string; imageUrl: string }
@@ -125,10 +125,10 @@ Mock data shows a user maintaining multiple personas (e.g. "Designer," "Engineer
 ## 4. Functional requirements by screen
 
 ### 4.1 Onboarding
-Already has a partial contract — see §1. Remaining work: wire onboarding completion to a real signup/profile endpoint instead of `AsyncStorage`-only (the client code already anticipates this — see the comment in `App.tsx`).
+Already has a partial contract — see §1. Remaining work: implement the real signup/profile endpoint and decide how local onboarding cache reconciles with server state after login.
 
 ### 4.2 Home (feed)
-[HomeScreen.tsx](../src/screens/HomeScreen.tsx) is the most complex screen in the app. All of the following is currently client-side filtering over the full mock `connections` array — a real backend should support these as query parameters once data volume makes client-side filtering impractical:
+[HomeScreen.tsx](../apps/mobile/src/screens/HomeScreen.tsx) is the most complex screen in the app. All of the following is currently client-side filtering over the full mock `connections` array — a real backend should support these as query parameters once data volume makes client-side filtering impractical:
 
 - **Sort**: Recent (default), Name, Most relevant (currently: tag count descending, then name — a placeholder heuristic worth replacing with something real once relevance is AI-generated per §3.1).
 - **Quick filters**: Today, This week, Conference, Founder, Investor, Nearby (hardcoded to `city === "Jakarta"` today — real geolocation is implied but not implemented).
@@ -140,13 +140,13 @@ Already has a partial contract — see §1. Remaining work: wire onboarding comp
 - **My Cards strip**: renders `BusinessCard[]` (§3.4) at the top of the feed.
 
 ### 4.3 Connection Detail
-[ConnectionDetailScreen.tsx](../src/screens/ConnectionDetailScreen.tsx) is read-only today — fetch-by-id only, no edit affordances anywhere in the UI (no edit button, no note-taking field). If editing is wanted, it isn't speced by the current UI at all — flag as an open question rather than assuming a shape.
+[ConnectionDetailScreen.tsx](../apps/mobile/src/screens/ConnectionDetailScreen.tsx) is read-only today — fetch-by-id only, no edit affordances anywhere in the UI (no edit button, no note-taking field). If editing is wanted, it isn't speced by the current UI at all — flag as an open question rather than assuming a shape.
 
 ### 4.4 Meetings
-[MeetingsScreen.tsx](../src/screens/MeetingsScreen.tsx) — list/timeline of meetings with a type filter (All/Conference/Coffee/Office/Dinner/Call). See §3.2 for the entity-design question this depends on.
+[MeetingsScreen.tsx](../apps/mobile/src/screens/MeetingsScreen.tsx) — list/timeline of meetings with a type filter (All/Conference/Coffee/Office/Dinner/Call). See §3.2 for the entity-design question this depends on.
 
 ### 4.5 Share
-[ShareScreen.tsx](../src/screens/ShareScreen.tsx) — currently:
+[ShareScreen.tsx](../apps/mobile/src/screens/ShareScreen.tsx) — currently:
 - Hardcoded card URL (`https://duit.cards/prakhar`) and hardcoded user identity (name/role) — needs to become the authenticated user's real shareable link.
 - A decorative QR icon (not a real generated QR code from the URL).
 - A WhatsApp share flow: user enters a recipient phone number, client deep-links to `https://wa.me/{digits}?text={message}` — this needs no backend involvement itself (it's a client-side `Linking.openURL` call), but the **card URL it shares** needs a real public-safe endpoint behind it — i.e. someone opening `duit.cards/{slug}` needs a server response with that user's public card info, no auth required for the viewer.
@@ -172,17 +172,17 @@ Two distinct needs, different in scale:
 2. **Connection insight generation** (§3.1) — not wired to anything yet, but implied by the data model itself (`oneLiner`, `relevanceShort`, `summary`, `relevance`, `nextStep`, likely `category`/`tags` suggestions too). This is the larger, unbuilt piece: given raw input from a card exchange (scanned card fields + whatever meeting context gets captured — location, event, conversation notes), generate these fields. No OCR/scan UI currently exists in the app to feed this pipeline (see §3.5) — that needs to be designed alongside this, since right now there's no client entry point that produces the raw input this AI step would consume.
 
 ### 5.5 API shape compatibility note
-Prefer designing request/response bodies to match the TypeScript types in [src/types/social.ts](../src/types/social.ts) directly (`Connection`, `Meeting`, `BusinessCard`) rather than inventing new field names, the same way the onboarding endpoint already matches `OnboardingForm`/`mockAi.ts`'s shapes. Where the client currently precomputes display strings (`dateLabel`, `timeAgo`, `dateSearchText`), prefer sending raw data (timestamps) and letting formatting logic move to the client rather than replicating it server-side — these were prototype conveniences, not a contract worth preserving.
+Prefer designing request/response bodies to match the TypeScript types in [src/types/social.ts](../apps/mobile/src/types/social.ts) directly (`Connection`, `Meeting`, `BusinessCard`) rather than inventing new field names, the same way the onboarding endpoint already matches `OnboardingForm`/`mockAi.ts`'s shapes. Where the client currently precomputes display strings (`dateLabel`, `timeAgo`, `dateSearchText`), prefer sending raw data (timestamps) and letting formatting logic move to the client rather than replicating it server-side — these were prototype conveniences, not a contract worth preserving.
 
 ### 5.6 Environments / secrets
-[.env.example](../.env.example) establishes the pattern: `EXPO_PUBLIC_API_URL` for the API base (including version prefix, e.g. `/api/v1`), `.env` gitignored, `.env.example` tracked. Follow the same discipline for any new env vars (LLM provider keys, OCR/vision provider keys, object storage credentials) — see [docs/ci-cd.md](ci-cd.md) for existing secret-hygiene conventions in this repo.
+[.env.example](../apps/mobile/.env.example) establishes the pattern: `EXPO_PUBLIC_API_URL` for the API base (including version prefix, e.g. `/api/v1`), `.env` gitignored, `.env.example` tracked. Follow the same discipline for any new env vars (LLM provider keys, OCR/vision provider keys, object storage credentials) — see [docs/ci-cd.md](ci-cd.md) for existing secret-hygiene conventions in this repo.
 
 ## 6. Suggested build order
 
 1. ~~Onboarding AI-step endpoint~~ — done, client already calls it (§1).
-2. Auth/signup, and wire `handleOnboardingComplete` in `App.tsx` to persist the onboarding profile server-side instead of `AsyncStorage`-only.
+2. Auth/signup backend for the existing `SignupScreen` contract, including profile persistence and token issuance.
 3. Settle the Meeting-vs-Connection data model question (§3.2) — this blocks designing Connections and Meetings correctly together.
-4. Connections CRUD + the filter/sort/search parameters in §4.2, replacing [src/data/connections.ts](../src/data/connections.ts) and [src/data/socialRepository.ts](../src/data/socialRepository.ts) as the data source.
+4. Connections CRUD + the filter/sort/search parameters in §4.2, replacing [src/data/connections.ts](../apps/mobile/src/data/connections.ts) and [src/data/socialRepository.ts](../apps/mobile/src/data/socialRepository.ts) as the data source.
 5. Connection triage/placement persistence (primary/lessImportant/hidden).
 6. Public share-link endpoint for the Share screen (§4.5), plus real QR generation.
 7. Profile backend (§3.3, §4.6) — after deciding its relationship to the onboarding profile.

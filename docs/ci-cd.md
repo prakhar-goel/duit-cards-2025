@@ -6,11 +6,11 @@
   - Runs on pull requests and pushes to `main`.
   - Security gate: dependency review fails on new high severity runtime dependencies.
   - Quality gates: install, typecheck, and web smoke build.
-  - Uploads `dist` artifact for quick inspection.
+  - Uploads `apps/mobile/dist` artifact for quick inspection.
 - `/.github/workflows/release.yml`
   - Manual release trigger (`workflow_dispatch`).
   - Validates required secrets before starting release build.
-  - Runs typecheck then triggers EAS cloud build.
+  - Runs typecheck then triggers EAS cloud build from `apps/mobile`.
 
 ## Required Secrets
 
