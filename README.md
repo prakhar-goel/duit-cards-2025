@@ -13,6 +13,11 @@ docs/            Product, backend, onboarding, and delivery documentation
 packages/        Shared packages will live here as backend/common code is added
 ```
 
+Key product documents:
+
+- [Product requirements document](docs/PRD.md)
+- [Verbatim product input log](docs/PRODUCT_INPUT_LOG.md)
+
 ## Product Vision
 
 Duit Cards is not only a business card scanner. It is a personal CRM that helps users:
