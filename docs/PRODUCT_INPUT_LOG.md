@@ -32,3 +32,11 @@ Ok the app is working. Help me recap the PRD. Lets discuss the product design et
 ```text
 Create a formal PRD. Add use cases etc. Wear the hat of a senior product manager and work with me to fine tune the product before writing code. Consider competition, market, TAM, SAM etc and anything else that you feel useful
 ```
+
+## Entry 004
+
+**Timestamp:** 2026-08-05T10:47:24+05:30 (Asia/Kolkata)
+
+```text
+lets discuss the PRD and go through it. Help me improve the product before we continue to work on it. Also, do a detailed competitor analysis along with their app/product/website links etc
+```
