@@ -15,3 +15,8 @@
 - `docs/PRODUCT_INPUT_LOG.md` is the verbatim source record of user input.
 - `docs/PRD.md` is the interpreted and structured product source of truth.
 - When the documents conflict, do not silently change the input log. Reconcile the PRD through an explicit product decision and retain the original input history.
+
+## Git workflow
+
+- Whenever a commit is created, push it to the current remote branch in the same workflow.
+- Do not leave a successful local commit unpushed unless pushing is blocked or the user explicitly asks not to push; report either exception clearly.
