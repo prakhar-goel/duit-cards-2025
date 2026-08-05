@@ -69,6 +69,7 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Trigger EAS build
+        working-directory: apps/mobile
         run: |
           PLATFORM="${{ github.event.inputs.platform }}"
           PROFILE="${{ github.event.inputs.profile }}"
