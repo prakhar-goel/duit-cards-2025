@@ -1,5 +1,13 @@
 # CI/CD for Mobile Delivery
 
+## Branching model
+
+- `main` is the only long-lived branch and the repository default.
+- All implementation and documentation work uses a short-lived, descriptive branch.
+- Codex-created branches use the `codex/` prefix, such as `codex/capture-flow`.
+- Changes reach `main` through a pull request with required checks passing.
+- Merged branches are deleted automatically; releases are represented by version tags and EAS build profiles rather than permanent Git branches.
+
 ## Workflows
 
 - `/.github/workflows/ci.yml`

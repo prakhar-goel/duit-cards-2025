@@ -18,5 +18,9 @@
 
 ## Git workflow
 
+- Use `main` as the only long-lived development branch. Create focused pull requests into `main`; do not recreate permanent `develop`, `staging`, release, or hotfix branches.
+- Before changing repository files, create or switch to a short-lived branch whose name describes the work. Use the `codex/` prefix for Codex-created branches, for example `codex/capture-flow` or `codex/dependency-security-updates`.
+- Keep each branch and pull request focused on one coherent milestone. Avoid generic, numbered, or screen-version branch names when a concise work description is available.
 - Whenever a commit is created, push it to the current remote branch in the same workflow.
 - Do not leave a successful local commit unpushed unless pushing is blocked or the user explicitly asks not to push; report either exception clearly.
+- Merge through a pull request after required checks pass, then delete the short-lived branch.
