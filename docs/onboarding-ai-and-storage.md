@@ -7,11 +7,11 @@ This document explains how the onboarding wizard stores data today and how to co
 On completion (or **Skip**), the app persists (two `AsyncStorage.setItem` calls):
 
 - `duit:onboarding:v1:completed` — `"true"` when the user finishes or skips.
-- `duit:onboarding:v1:profile` — JSON string of `OnboardingProfilePayload` from `src/onboarding/state.ts` (name, role, company, website, networking intents, mock AI choice, `completedAt`, `mockAiVersion`).
+- `duit:onboarding:v1:profile` — JSON string of `OnboardingProfilePayload` from `apps/mobile/src/onboarding/state.ts` (name, role, company, website, networking intents, mock AI choice, `completedAt`, `mockAiVersion`).
 
 `AsyncStorage` is suitable for prototypes. For production fintech apps, treat PII as sensitive: prefer encrypted local storage and/or server-side profiles tied to authenticated users.
 
-## Replacing the mock AI (`src/onboarding/mockAi.ts`)
+## Replacing the mock AI (`apps/mobile/src/onboarding/mockAi.ts`)
 
 The functions `getAiFollowUpContent` and `getPlanBullets` are **pure** and synchronous. They stand in for:
 
@@ -67,5 +67,5 @@ Flow that scales:
 
 ## Feature flag and rollback
 
-- Toggle `onboardingWizardV1` in `src/onboarding/featureFlags.ts`.
+- Toggle `onboardingWizardV1` in `apps/mobile/src/onboarding/featureFlags.ts`.
 - To force re-show for QA, clear `duit:onboarding:v1:completed` (and profile if needed) in dev builds.

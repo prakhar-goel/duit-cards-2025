@@ -41,16 +41,16 @@ yarn-error.*
 *.aab
 
 # Android
-android/.gradle/
-android/local.properties
-android/app/debug.keystore
+apps/mobile/android/.gradle/
+apps/mobile/android/local.properties
+apps/mobile/android/app/debug.keystore
 
 # Android Build outputs
-android/app/build/
-android/build/
+apps/mobile/android/app/build/
+apps/mobile/android/build/
 
 # iOS build outputs
-ios/build/
+apps/mobile/ios/build/
 
 # Logs
 *.log
@@ -58,3 +58,4 @@ ios/build/
 # Local env files
 .env
 .env.*
+!.env.example

@@ -1,8 +1,22 @@
-# Duit Cards (Mobile Prototype)
+# Duit Cards 2025
 
 Duit Cards is a modern mobile app concept for digital business cards and lightweight relationship management.
 
-This repository contains a **Phase 1 frontend prototype** built with **Expo + React Native + TypeScript** for both Android and iOS (and optional web preview).
+This repository is now structured as a monorepo for the Duit Cards 2025 product. The current shipped workspace is the **Expo + React Native mobile app** in `apps/mobile`.
+
+## Repository Structure
+
+```text
+apps/
+  mobile/        Expo + React Native app for iOS, Android, and web preview
+docs/            Product, backend, onboarding, and delivery documentation
+packages/        Shared packages will live here as backend/common code is added
+```
+
+Key product documents:
+
+- [Product requirements document](docs/PRD.md)
+- [Verbatim product input log](docs/PRODUCT_INPUT_LOG.md)
 
 ## Product Vision
 
@@ -95,6 +109,12 @@ npm run android
 npm run web
 ```
 
+You can also target the mobile workspace explicitly:
+
+```bash
+npm run start --workspace @duit/mobile
+```
+
 ## Available Scripts
 
 - `npm run start` - Start Expo dev server
@@ -103,22 +123,23 @@ npm run web
 - `npm run web` - Launch web preview
 - `npm run test` - Run unit tests (Vitest)
 - `npm run typecheck` - Run TypeScript checks
-- `npm run build:web` - Export static web build to `dist/`
+- `npm run build:web` - Export static web build to `apps/mobile/dist/`
 - `npm run ci:verify` - Run tests + typecheck + web export validation
 
 ## Feature Flags
 
-- `src/onboarding/featureFlags.ts`
+- `apps/mobile/src/onboarding/featureFlags.ts`
   - `onboardingWizardV1`: controls whether onboarding is shown for users who have not completed it yet.
 
 ## Onboarding + AI notes
 
 - See [docs/onboarding-ai-and-storage.md](docs/onboarding-ai-and-storage.md) for wiring real LLMs, website enrichment, and production storage.
+- See [docs/backend-requirements.md](docs/backend-requirements.md) for the current backend requirements derived from the mobile code.
 
 ## Project Notes
 
 - This is a **prototype**, not production-ready.
-- No backend/database is integrated yet.
+- Backend integration is partial: onboarding AI/signup client calls exist, while most app data is still mock/static.
 - Data is mock/static for rapid UI iteration.
 
 ## Next Suggested Steps (Phase 2)
@@ -131,4 +152,4 @@ npm run web
 
 ## Repository
 
-GitHub: [git@github.com:prakhar-goel/duit-cards-2025-mobileapp.git](git@github.com:prakhar-goel/duit-cards-2025-mobileapp.git)
+GitHub: [git@github.com:prakhar-goel/duit-cards-2025.git](git@github.com:prakhar-goel/duit-cards-2025.git)
