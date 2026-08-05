@@ -15,5 +15,6 @@
     "typecheck": "npm run typecheck --workspace @duit/mobile",
     "build:web": "npm run build:web --workspace @duit/mobile",
     "ci:verify": "npm run ci:verify --workspace @duit/mobile"
-  }
+  },
+  "packageManager": "npm@10.9.2"
 }
