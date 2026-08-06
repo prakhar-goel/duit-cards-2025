@@ -91,6 +91,24 @@ npm install
 
 ### 3) Run the app
 
+Start the complete local development surface with Duit's dedicated high port
+range:
+
+```bash
+npm run dev
+```
+
+This starts Expo for mobile and web, selects an available port starting at
+`48151`, configures the client API port starting at `48152`, and prints all
+local/LAN URLs in the terminal. The API URL is marked as configured-only until
+an `apps/api` workspace is added. Override the preferred ports when needed:
+
+```bash
+DUIT_MOBILE_PORT=49151 DUIT_API_PORT=49152 npm run dev
+```
+
+The lower-level Expo command remains available:
+
 ```bash
 npm run start
 ```
