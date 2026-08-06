@@ -11,6 +11,7 @@ const require = createRequire(import.meta.url);
 const qrcode = require("qrcode-terminal");
 const mobilePortStart = numberFromEnv("DUIT_MOBILE_PORT", 48151);
 const apiPortStart = numberFromEnv("DUIT_API_PORT", 48152);
+const expoHost = expoHostFromEnv();
 const lanIp = findLanIp();
 const apiPackagePath = resolve(rootDir, "apps/api/package.json");
 const hasApiWorkspace = existsSync(apiPackagePath);
@@ -38,6 +39,7 @@ const expoArgs = [
   "--",
   "--web",
   "--go",
+  `--${expoHost}`,
   "--port",
   String(mobilePort),
 ];
@@ -134,6 +136,7 @@ function printDashboard(status) {
   console.log(`${"─".repeat(72)}`);
   console.log(` Web                 ${localWebUrl}`);
   console.log(` Mobile (Expo Go)    ${mobileLanUrl}`);
+  console.log(` Expo connection     ${expoHost}`);
   console.log(` Mobile (simulator)  exp://127.0.0.1:${mobilePort}`);
   console.log(` API                  ${apiStatus}`);
   console.log(` Client API setting   ${apiUrl}`);
@@ -155,6 +158,14 @@ function numberFromEnv(name, fallback) {
     throw new Error(`${name} must be an integer between 1024 and 65535.`);
   }
   return parsed;
+}
+
+function expoHostFromEnv() {
+  const host = process.env.DUIT_EXPO_HOST ?? "lan";
+  if (!["lan", "tunnel", "localhost"].includes(host)) {
+    throw new Error("DUIT_EXPO_HOST must be one of: lan, tunnel, localhost.");
+  }
+  return host;
 }
 
 async function findAvailablePort(startPort, excluded = new Set()) {

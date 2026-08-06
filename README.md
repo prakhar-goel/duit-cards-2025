@@ -118,6 +118,13 @@ preferred ports when needed:
 DUIT_MOBILE_PORT=49151 DUIT_API_PORT=49152 npm run dev
 ```
 
+Your phone and Mac must use the same Wi-Fi network for the default LAN QR code.
+If the network blocks device-to-device traffic, start Expo through a tunnel instead:
+
+```bash
+DUIT_EXPO_HOST=tunnel npm run dev
+```
+
 The lower-level Expo command remains available:
 
 ```bash
