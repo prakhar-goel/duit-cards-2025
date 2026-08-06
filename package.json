@@ -22,6 +22,7 @@
     "postcss": "$postcss"
   },
   "devDependencies": {
-    "postcss": "^8.5.25"
+    "postcss": "^8.5.25",
+    "qrcode-terminal": "0.11.0"
   }
 }
