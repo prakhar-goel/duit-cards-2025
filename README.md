@@ -2,13 +2,14 @@
 
 Duit Cards helps professionals make introductions memorable and actionable. It combines an AI-crafted public pitch and CTA with private relationship memory and a relevance feed.
 
-This repository is now structured as a monorepo for the Duit Cards 2025 product. The current shipped workspace is the **Expo + React Native mobile app** in `apps/mobile`.
+This repository is a monorepo for the Duit Cards 2025 product. It contains the **Expo + React Native mobile app** in `apps/mobile` and an **Express + PostgreSQL API** in `apps/api`.
 
 ## Repository Structure
 
 ```text
 apps/
   mobile/        Expo + React Native app for iOS, Android, and web preview
+  api/           Express API and PostgreSQL-backed MVP domain
 docs/            Product, backend, onboarding, and delivery documentation
 packages/        Shared packages will live here as backend/common code is added
 ```
@@ -29,7 +30,17 @@ Duit structures and presents the user's or company's pitch. Duit is the platform
 
 ## Current Scope (Phase 1)
 
-This version is intentionally frontend-focused and uses mock data only.
+The mobile relationship screens still use prototype mock data while their API integration is designed. Onboarding signup and AI steps already call the API, and the backend now implements the two core MVP loops.
+
+### API MVP
+
+- Authentication and persisted onboarding profiles
+- Owner-approved six-panel pitch drafts and published cards
+- App-free public card retrieval, CTA events, consented lead capture, and lead inbox
+- People, repeatable encounters, preserved original notes, commitments, and AI-assisted recap/follow-up drafts
+- Needs/offers and an explainable private feed for due commitments and relevant people
+
+The API defaults to `postgresql://duit@localhost:5432/2026_duit_cards`. Copy [`apps/api/.env.example`](apps/api/.env.example) to a local `.env` only when overriding that development configuration. The server migrates its schema safely on startup.
 
 ### Implemented Screens
 
@@ -99,8 +110,8 @@ npm run dev
 
 This starts Expo for mobile and web, selects an available port starting at
 `48151`, configures the client API port starting at `48152`, and prints all
-local/LAN URLs plus a scannable Expo Go QR code in the terminal. The API URL is
-marked as configured-only until an `apps/api` workspace is added. Override the
+local/LAN URLs plus a scannable Expo Go QR code in the terminal. The API starts
+alongside the mobile development server. Override the
 preferred ports when needed:
 
 ```bash
@@ -136,6 +147,7 @@ npm run start --workspace @duit/mobile
 ## Available Scripts
 
 - `npm run start` - Start Expo dev server
+- `npm run api` - Start the API only (default `http://localhost:4000/api/v1`)
 - `npm run ios` - Launch on iOS
 - `npm run android` - Launch on Android
 - `npm run web` - Launch web preview
@@ -157,16 +169,13 @@ npm run start --workspace @duit/mobile
 ## Project Notes
 
 - This is a **prototype**, not production-ready.
-- Backend integration is partial: onboarding AI/signup client calls exist, while most app data is still mock/static.
-- Data is mock/static for rapid UI iteration.
+- Backend integration is partial: onboarding AI/signup client calls are live, while most existing relationship screens still use mock/static data.
 
 ## Next Suggested Steps (Phase 2)
 
-- Prototype one complete AI-assisted pitch with an owner-approved hook and CTA
-- Add app-free public viewing, lead capture and Wallet sharing
-- Prototype the private relevance feed using real needs, offers and encounters
-- Add fast post-conversation note capture and grounded follow-up drafting
-- Reconcile the prototype and backend model with [PRD v0.2](docs/PRD.md)
+- Wire the relationship screens to the people, encounter, and feed endpoints
+- Build the owner card editor and app-free public card view against the card APIs
+- Add QR/Wallet pass generation and notifications
 
 ## Repository
 

@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "api": "npm run dev --workspace @duit/api",
     "start": "npm run start --workspace @duit/mobile",
     "android": "npm run android --workspace @duit/mobile",
     "ios": "npm run ios --workspace @duit/mobile",

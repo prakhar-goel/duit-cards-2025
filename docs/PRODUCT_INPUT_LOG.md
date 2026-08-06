@@ -111,3 +111,13 @@ Absoluty correct
 
 Update our PRD and other docs as per our discussion. Remember quality > quantity. Dont make it wordy. Make it readable by being precise and crisp.
 ```
+
+## Entry 009
+
+**Timestamp:** 2026-08-06T12:39:06+05:30 (6 August 2026, 12:39:06 PM IST — Asia/Kolkata)
+
+```text
+Go through the product prd and existing code. And help me create the MVP. Currently it only has the mobile code. Create the backend API code as well in the same repo. DB to be used is "2026_duit_cards". Its on port 5432. username is duit, no password.
+
+Create an MVP, based on the PRD and let me know. You may stop whenever you need my input, call it out
+```
