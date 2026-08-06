@@ -1,6 +1,6 @@
 # Duit Cards 2025
 
-Duit Cards is a modern mobile app concept for digital business cards and lightweight relationship management.
+Duit Cards helps professionals make introductions memorable and actionable. It combines an AI-crafted public pitch and CTA with private relationship memory and a relevance feed.
 
 This repository is now structured as a monorepo for the Duit Cards 2025 product. The current shipped workspace is the **Expo + React Native mobile app** in `apps/mobile`.
 
@@ -20,13 +20,12 @@ Key product documents:
 
 ## Product Vision
 
-Duit Cards is not only a business card scanner. It is a personal CRM that helps users:
+Duit serves both sides of a professional introduction:
 
-- Create and share beautiful digital business cards
-- Save and organize contacts
-- Keep notes and interaction history
-- Set reminders for follow-ups
-- Build meaningful long-term relationships
+- **When sharing:** turn a card into a short, engaging pitch that explains the owner's value and invites a clear next action.
+- **When receiving:** preserve the person and encounter, then resurface who is relevant to something the user needs or can offer now.
+
+Duit structures and presents the user's or company's pitch. Duit is the platform—not the subject of that pitch.
 
 ## Current Scope (Phase 1)
 
@@ -163,11 +162,11 @@ npm run start --workspace @duit/mobile
 
 ## Next Suggested Steps (Phase 2)
 
-- Move mock data into structured state/store modules
-- Add contact creation/edit flows with local persistence
-- Integrate camera + OCR scanning pipeline
-- Add authentication + backend API
-- Improve animations and transitions
+- Prototype one complete AI-assisted pitch with an owner-approved hook and CTA
+- Add app-free public viewing, lead capture and Wallet sharing
+- Prototype the private relevance feed using real needs, offers and encounters
+- Add fast post-conversation note capture and grounded follow-up drafting
+- Reconcile the prototype and backend model with [PRD v0.2](docs/PRD.md)
 
 ## Repository
 

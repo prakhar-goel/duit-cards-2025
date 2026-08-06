@@ -81,3 +81,33 @@ Ok this sounds logical.
 ```text
 now lets go through the PRD again
 ```
+
+## Entry 008
+
+**Timestamp:** 2026-08-06T12:21:53+05:30 (6 August 2026, 12:21:53 PM IST — Asia/Kolkata)
+
+```text
+Duit’s AI should therefore not merely summarize a website. It should structure attention.
+Instead of:
+“We are a technology company offering innovative solutions.”
+
+It should produce:
+“Your sales team met 200 people this quarter. How many valuable promises were forgotten?”
+
+Then:
+“Duit turns each encounter into a relationship memory and actionable follow-up.”
+
+The first output is a hook. The second explains the product.
+
+
+----
+You have understood this well. However, it should be "XYZ company turns each encounter into a relationship...." Duit is the platform where XYZ company is creating their elevator pitch (veritasium style. Of course there is no youtube involved, I was just giving an example of how Veritasium is able to capture attention in 5 secs. We want our users using duit cards, should also be able to create their pitches in such engaging style (which they in turn would be sharing with others)).
+---
+Duit’s feed could ask:
+Who in my network is relevant to something I need or can offer right now?
+
+Absoluty correct
+---
+
+Update our PRD and other docs as per our discussion. Remember quality > quantity. Dont make it wordy. Make it readable by being precise and crisp.
+```

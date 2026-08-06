@@ -1,5 +1,7 @@
 # Duit Cards — Backend Requirements
 
+> **Product-direction note (2026-08-06):** This document records the current prototype and its implementation gaps. The product source of truth is [PRD v0.2](PRD.md), which adds two core loops not represented fully in the current UI: an owner-approved AI pitch with CTA/lead capture, and a private relevance feed grounded in encounters, needs and offers. Do not treat the prototype's `Connection` or `BusinessCard` shapes as the target backend contract.
+
 **Audience:** Backend engineer/agent designing the API, data model, and infrastructure for this product.
 **Status of this doc:** Rewritten from scratch against the current mobile app code (previous version was written against an earlier prototype and is substantially out of date — see §0 if a backend already exists).
 **Source:** [App.tsx](../apps/mobile/App.tsx), [src/types/social.ts](../apps/mobile/src/types/social.ts), [src/data/](../apps/mobile/src/data/), [src/screens/](../apps/mobile/src/screens/), [src/components/](../apps/mobile/src/components/), [src/onboarding/](../apps/mobile/src/onboarding/), [src/api/](../apps/mobile/src/api/)
@@ -40,9 +42,11 @@ Body: { step: "followup" | "plan", answers: {
 
 Everything below this point (§2 onward) describes what the client will eventually need, based on what's rendered today — none of it has a network call wired up yet except the piece above.
 
-## 2. Product summary (current app)
+## 2. Product summary
 
-Duit Cards has shifted from a simple "contact list + reminders" concept to a LinkedIn-adjacent relationship app: a feed of **Connections** (people you exchanged business cards with, in person, at a specific place/time), a **Meetings** timeline view of the same encounters, a **Share** flow for sending your own card over WhatsApp, and a **Profile** page for the user's own presence. Onboarding still personalizes the experience via AI-generated follow-up questions.
+The intended product has two equal loops: **pitch → recipient intent** and **encounter → private relevance → action**. Duit creates an owner-approved pitch for the user or company; it does not describe Duit unless Duit owns the card. The private feed should answer who is relevant to a current need or offer.
+
+The current app implements only an earlier LinkedIn-adjacent prototype: a feed of **Connections**, a **Meetings** view, a WhatsApp **Share** flow and a **Profile** page. Onboarding still personalizes the experience through AI-generated follow-up questions. The gap between this UI and the PRD is intentional and must be resolved before new backend contracts are frozen.
 
 The defining product idea, per code comments in [src/types/social.ts](../apps/mobile/src/types/social.ts): *"this is not a social post. It is a record of an in-person meeting: where/when it happened, how cards were exchanged, why the person may matter, and what follow-up should happen next."*
 
@@ -181,13 +185,12 @@ Prefer designing request/response bodies to match the TypeScript types in [src/t
 
 1. ~~Onboarding AI-step endpoint~~ — done, client already calls it (§1).
 2. Auth/signup backend for the existing `SignupScreen` contract, including profile persistence and token issuance.
-3. Settle the Meeting-vs-Connection data model question (§3.2) — this blocks designing Connections and Meetings correctly together.
-4. Connections CRUD + the filter/sort/search parameters in §4.2, replacing [src/data/connections.ts](../apps/mobile/src/data/connections.ts) and [src/data/socialRepository.ts](../apps/mobile/src/data/socialRepository.ts) as the data source.
-5. Connection triage/placement persistence (primary/lessImportant/hidden).
-6. Public share-link endpoint for the Share screen (§4.5), plus real QR generation.
-7. Profile backend (§3.3, §4.6) — after deciding its relationship to the onboarding profile.
-8. BusinessCard ("My Cards") CRUD (§3.4) — currently the least-built-out area of the UI (every action is a no-op), so lowest urgency unless product prioritizes it.
-9. Connection-insight AI generation + whatever capture flow (scan/manual entry) feeds it (§5.4 item 2) — the largest net-new capability, and the one with no existing UI entry point to build against yet.
+3. Prototype the pitch-generation contract before fixing its persistence model: structured sources in, selectable panels and provenance out.
+4. Implement Card, PitchPanel, CTA, CardVersion and Lead around one app-free public pitch.
+5. Settle Person–Encounter–Commitment–FollowUp boundaries; `Meeting` must be repeatable, not a projection of a contact.
+6. Implement fast note capture and grounded memory AI while preserving original input.
+7. Prototype NeedOffer and explainable FeedItem ranking before committing to a generalized feed API.
+8. Add search, Wallet passes, export/delete and downstream integrations after both loops work end to end.
 
 ## 7. Open questions for backend design to account for
 
