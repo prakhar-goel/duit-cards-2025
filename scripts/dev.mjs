@@ -1,11 +1,14 @@
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { networkInterfaces } from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const require = createRequire(import.meta.url);
+const qrcode = require("qrcode-terminal");
 const mobilePortStart = numberFromEnv("DUIT_MOBILE_PORT", 48151);
 const apiPortStart = numberFromEnv("DUIT_API_PORT", 48152);
 const lanIp = findLanIp();
@@ -135,6 +138,12 @@ function printDashboard(status) {
   console.log(` API                  ${apiStatus}`);
   console.log(` Client API setting   ${apiUrl}`);
   console.log(`${"═".repeat(72)}\n`);
+
+  if (status === "Ready") {
+    console.log(" Scan with Expo Go:\n");
+    qrcode.generate(mobileLanUrl, { small: true });
+    console.log(` ${mobileLanUrl}\n`);
+  }
 }
 
 function numberFromEnv(name, fallback) {
