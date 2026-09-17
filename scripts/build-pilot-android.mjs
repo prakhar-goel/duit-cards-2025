@@ -84,7 +84,7 @@ const credentialsFile = path.join(root, ".local/credentials.json");
 const demoAccount =
   process.env.DUIT_DEMO_PREFILL !== "false" && fs.existsSync(credentialsFile)
     ? JSON.parse(fs.readFileSync(credentialsFile, "utf8")).accounts?.find(
-        (account) => account.email === "maya@demo.duit.test",
+        (account) => account.email === "maya@northstar.example",
       )
     : undefined;
 const env = {

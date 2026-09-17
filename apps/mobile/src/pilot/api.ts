@@ -76,11 +76,7 @@ export function mediaUrl(value?: string | null) {
   if (ownRoute) return server + ownRoute[0].replace(/\?$/, "");
   try {
     const parsed = new URL(value);
-    if (
-      parsed.pathname.startsWith("/demo/") &&
-      ["localhost", "127.0.0.1", "0.0.0.0"].includes(parsed.hostname)
-    )
-      return server + parsed.pathname;
+    if (parsed.pathname.startsWith("/demo/")) return server + parsed.pathname;
   } catch {}
   return value.startsWith("/") ? server + value : value;
 }

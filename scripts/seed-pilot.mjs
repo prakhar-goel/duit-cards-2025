@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // Repeatable local-only demo fixtures. All business activity is fictional.
+import {originalBrands} from './network-expansion-data.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -112,14 +113,15 @@ const contacts=[
  ['samir','Samir Shah','Bridge Notes','Founder','London','GB','Sales enablement','promising','Meeting notes with a clear next owner','A useful event networking pilot','Samir is curious whether explicit buyer needs make follow-up more useful. We agreed to test five opt-in meetings first.','Send Samir the five-meeting pilot outline',11]
 ].map(([key,name,company,role,city,country,tag,stage,offer,need,note,next,day])=>({key,name,company,role,city,country,tag,stage,offer,need,note,next,day}));
 const eventDefinitions=[
- {key:'paris',name:'Paris AI Week (Demo)',venue:'Maison des idées — fictional venue',city:'Paris',countryCode:'FR',latitude:48.8566,longitude:2.3522,startsAt:at(9,8),endsAt:at(11,18),description:'Fictional demo conference. Explore useful business introductions, practical AI workflows and private meeting notes. Map pin is an approximate city location, not a record of real attendance.'},
- {key:'delhi',name:'Delhi Founders Table (Demo)',venue:'The Common Table — fictional venue',city:'New Delhi',countryCode:'IN',latitude:28.6139,longitude:77.209,startsAt:at(4,12),endsAt:at(4,16),description:'Fictional small founder dinner. Sample conversations cover product onboarding, research and logistics.'},
- {key:'singapore',name:'Singapore Builders Night (Demo)',venue:'Cedar Commons — fictional venue',city:'Singapore',countryCode:'SG',latitude:1.3521,longitude:103.8198,startsAt:at(16,10),endsAt:at(16,14),description:'Fictional community evening about practical software, packaging and small-business operations.'},
- {key:'next',name:'Delhi Founders Table — Next edition (Demo)',venue:'The Common Table — fictional venue',city:'New Delhi',countryCode:'IN',latitude:28.6139,longitude:77.209,startsAt:at(24,12),endsAt:at(24,16),description:'Upcoming fictional demo event. Plan who to meet and which open questions to bring.'}
+ {key:'paris',name:'Paris AI Week',venue:'Maison des idées',city:'Paris',countryCode:'FR',latitude:48.8566,longitude:2.3522,startsAt:at(9,8),endsAt:at(11,18),description:'Fictional demo conference. Explore useful business introductions, practical AI workflows and private meeting notes. Map pin is an approximate city location, not a record of real attendance.'},
+ {key:'delhi',name:'Delhi Founders Table',venue:'The Common Table',city:'New Delhi',countryCode:'IN',latitude:28.6139,longitude:77.209,startsAt:at(4,12),endsAt:at(4,16),description:'Fictional small founder dinner. Sample conversations cover product onboarding, research and logistics.'},
+ {key:'singapore',name:'Singapore Builders Night',venue:'Cedar Commons',city:'Singapore',countryCode:'SG',latitude:1.3521,longitude:103.8198,startsAt:at(16,10),endsAt:at(16,14),description:'Fictional community evening about practical software, packaging and small-business operations.'},
+ {key:'next',name:'Delhi Founders Table — Next edition',venue:'The Common Table',city:'New Delhi',countryCode:'IN',latitude:28.6139,longitude:77.209,startsAt:at(24,12),endsAt:at(24,16),description:'Upcoming fictional demo event. Plan who to meet and which open questions to bring.'}
 ];
+for(const owner of owners){const brand=originalBrands.find(b=>b.key===owner.key);if(brand)owner.panels[4]=brand.proof;owner.panels=owner.panels.map(p=>p.replace(/\bdemo\b/gi,'walkthrough'));owner.need=owner.need.replace(/\bdemo\b/gi,'walkthrough');}
 const sessions=new Map(),cards=new Map();
 async function login(owner){
- const email=owner.email||`${owner.key}@demo.duit.test`;
+ const email=owner.email||`${owner.key}@${originalBrands.find(b=>b.key===owner.key)?.domain||owner.key}.example`;
  let credential=credentials.accounts.find(account=>account.email===email);
  if(!credential){credential={email,password:seedPassword,label:owner.name};credentials.accounts.push(credential);await fs.writeFile(credentialsPath,JSON.stringify(credentials,null,2)+'\n',{mode:0o600});await fs.chmod(credentialsPath,0o600);}
  const existing=(await query('SELECT id,profile FROM users WHERE email=$1',[email])).rows[0];
@@ -128,16 +130,16 @@ async function login(owner){
 }
 async function seedOwner(owner){
  const session=await login(owner),token=session.accessToken;
- if(!session.seeded)await api('/me/profile',{token,method:'PATCH',body:{fullName:owner.name,headline:owner.headline,company:owner.company,role:owner.role,city:owner.city,countryCode:owner.country,photoUrl:image(owner.portrait),bio:`Fictional demo profile. ${owner.offer}`,offers:[owner.offer],needs:[owner.need]}});
+ if(!session.seeded)await api('/me/profile',{token,method:'PATCH',body:{fullName:owner.name,headline:owner.headline,company:owner.company,role:owner.role,city:owner.city,countryCode:owner.country,photoUrl:image(owner.portrait),bio:`${owner.offer}`,offers:[owner.offer],needs:[owner.need]}});
  await query("UPDATE users SET data_origin='fictional_demo',profile=profile || $2::jsonb WHERE id=$1",[session.user.id,JSON.stringify({isDemo:true})]);
  const slug=`${owner.portrait}-demo`;
  let card=(await api('/cards?limit=200',{token})).cards.find(card=>card.slug===slug);
- if(!card)card=(await api('/cards',{token,method:'POST',body:{slug,title:owner.name,subtitle:owner.headline,company:owner.company,role:owner.role,imageUrl:image(owner.portrait),businessCardUrl:`${origin}/demo/cards/${owner.key}-card.png`,coverUrl:`${origin}/demo/covers/${owner.key}-cover.png`,bio:`Fictional demo business. ${owner.offer}`,theme:{color:owner.color,style:'editorial'},contact:{email:session.email},ctaType:'enquire',ctaLabel:owner.cta}})).card;
+ if(!card)card=(await api('/cards',{token,method:'POST',body:{slug,title:owner.name,subtitle:owner.headline,company:owner.company,role:owner.role,imageUrl:image(owner.portrait),businessCardUrl:`${origin}/demo/cards/${owner.key}-card-v2.png`,coverUrl:`${origin}/demo/covers/${owner.key}-cover-v2.png`,bio:`${owner.offer}`,theme:{color:owner.color,style:'editorial'},contact:{email:session.email},ctaType:'enquire',ctaLabel:owner.cta}})).card;
  await query("UPDATE cards SET data_origin='fictional_demo' WHERE id=$1",[card.id]);
  if(!card.isPublished){await api(`/cards/${card.id}/panels`,{token,method:'POST',body:{panels:['hook','relevance','offer','outcome','proof','cta'].map((panelType,position)=>({panelType,position,body:owner.panels[position],provenance:'owner',approved:true}))}});card=(await api(`/cards/${card.id}/publish`,{token,method:'POST',body:{}})).card;}
  // A separate original card visual and portfolio image; update only fictional fixtures lacking this iteration.
  if(!card.businessCardUrl){
-  card=(await api(`/cards/${card.id}`,{token,method:'PATCH',body:{businessCardUrl:`${origin}/demo/cards/${owner.key}-card.png`,coverUrl:`${origin}/demo/covers/${owner.key}-cover.png`}})).card;
+  card=(await api(`/cards/${card.id}`,{token,method:'PATCH',body:{businessCardUrl:`${origin}/demo/cards/${owner.key}-card-v2.png`,coverUrl:`${origin}/demo/covers/${owner.key}-cover-v2.png`}})).card;
   if(card.isPublished)card=(await api(`/cards/${card.id}/publish`,{token,method:'POST',body:{}})).card;
  }
  cards.set(owner.key,card);
@@ -151,10 +153,10 @@ async function seedNetwork(ownerKey,people,full=false){
  const peopleMap=new Map();
  for(const contact of people){
   const owner=owners.find(owner=>owner.key===contact.key);
-  const person=(await api('/people',{token,method:'POST',body:{name:contact.name,company:contact.company,role:contact.role,email:`${contact.key}@demo.duit.test`,city:contact.city,countryCode:contact.country,photoUrl:owner?image(owner.portrait):null,tags:['Fictional demo',contact.tag],category:['partner','active'].includes(contact.stage)?'partner':'connection',stage:contact.stage,bio:`Fictional demo contact. Offers: ${contact.offer}. Looking for: ${contact.need}.`,clientId:`${version}:${ownerKey}:person:${contact.key}`}})).person;
+  const person=(await api('/people',{token,method:'POST',body:{name:contact.name,company:contact.company,role:contact.role,email:`${contact.key}@${originalBrands.find(b=>b.key===contact.key)?.domain||contact.company.toLowerCase().replace(/[^a-z]/g,'')}.example`,city:contact.city,countryCode:contact.country,photoUrl:owner?image(owner.portrait):null,tags:[contact.tag],category:['partner','active'].includes(contact.stage)?'partner':'connection',stage:contact.stage,bio:`Offers: ${contact.offer}. Looking for: ${contact.need}.`,clientId:`${version}:${ownerKey}:person:${contact.key}`}})).person;
   if(owner){
    const sourceCard=cards.get(owner.key);
-   await query("UPDATE people SET business_card_url=COALESCE(business_card_url,$2),source_card_id=COALESCE(source_card_id,$3) WHERE id=$1",[person.id,`${origin}/demo/cards/${owner.key}-card.png`,sourceCard.id]);
+   await query("UPDATE people SET business_card_url=COALESCE(business_card_url,$2),source_card_id=COALESCE(source_card_id,$3) WHERE id=$1",[person.id,`${origin}/demo/cards/${owner.key}-card-v2.png`,sourceCard.id]);
   }
   peopleMap.set(contact.key,person);
   await query("UPDATE people SET data_origin='fictional_demo' WHERE id=$1",[person.id]);
@@ -164,7 +166,7 @@ async function seedNetwork(ownerKey,people,full=false){
   const event=events.get(eventKey),person=peopleMap.get(contact.key);
   const texts=round===0?{note:contact.note,next:contact.next}:round===1?{note:`Follow-up with ${contact.name.split(' ')[0]} after ${event.name}. We reviewed the first outline about ${contact.need.toLowerCase()}. They want a small test with a named owner before agreeing to a larger project. No purchase has been agreed.`,next:`Confirm the small-test scope and owner with ${contact.name.split(' ')[0]}`}: {note:`Third conversation with ${contact.name.split(' ')[0]}. We clarified who will review the sample, what information can be shared, and which question the test should answer. The next decision depends on that review; there is no confirmed sale.`,next:`Collect ${contact.name.split(' ')[0]}'s comments on the sample`};
   const commitments=round===0&&index%3!==2?[{text:texts.next,dueAt:at(index%5===0?17:index%5===1?18:21,12)}]:round===1?[{text:texts.next,dueAt:at(22,10)}]:[];
-  const result=await api(`/people/${person.id}/encounters`,{token,method:'POST',body:{clientId:`${version}:${ownerKey}:meeting:${contact.key}:${round}`,occurredAt:at(round===0?contact.day:round===1?17:18,9+index%7),location:round?`Follow-up call after ${event.city}`:event.venue,city:event.city,countryCode:event.countryCode,...(!round?{latitude:event.latitude,longitude:event.longitude}:{}),eventId:event.id,eventName:event.name,meetingType:round?'Call':contact.day===4?'Dinner':'Conference',exchangeType:round?'No cards exchanged':index%4===0?'Shared my card':'Both exchanged cards',originalNote:`Fictional demo note, written by the workspace owner. ${texts.note}`,recap:round?`Reviewed the next step for ${contact.need.toLowerCase()}.`:`${contact.name.split(' ')[0]} offers ${contact.offer.toLowerCase()} and is looking for ${contact.need.toLowerCase()}.`,relevance:`${contact.stage==='partner'?'Potential collaboration':'Worth a practical follow-up'}: ${contact.need}. Grounded in our saved conversation; not a buying commitment.`,proposedFollowUp:texts.next,commitments}});
+  const result=await api(`/people/${person.id}/encounters`,{token,method:'POST',body:{clientId:`${version}:${ownerKey}:meeting:${contact.key}:${round}`,occurredAt:at(round===0?contact.day:round===1?17:18,9+index%7),location:round?`Follow-up call after ${event.city}`:event.venue,city:event.city,countryCode:event.countryCode,...(!round?{latitude:event.latitude,longitude:event.longitude}:{}),eventId:event.id,eventName:event.name,meetingType:round?'Call':contact.day===4?'Dinner':'Conference',exchangeType:round?'No cards exchanged':index%4===0?'Shared my card':'Both exchanged cards',originalNote:`${texts.note}`,recap:round?`Reviewed the next step for ${contact.need.toLowerCase()}.`:`${contact.name.split(' ')[0]} offers ${contact.offer.toLowerCase()} and is looking for ${contact.need.toLowerCase()}.`,relevance:`${contact.stage==='partner'?'Potential collaboration':'Worth a practical follow-up'}: ${contact.need}. Grounded in our saved conversation; not a buying commitment.`,proposedFollowUp:texts.next,commitments}});
   if(result._status===201&&round===0&&index%4===0)for(const commitment of result.commitments)await api(`/commitments/${commitment.id}`,{token,method:'PATCH',body:{status:'done'}});
  }
  for(let index=0;index<people.length;index++)await encounter(people[index],index,0);
@@ -191,7 +193,7 @@ async function seedPublicActivity(){
   for(const [index,key]of keys.entries()){
    const person=contacts.find(contact=>contact.key===key),source=`${version}:lead:${ownerKey}:${key}`;
    if((await query('SELECT 1 FROM leads WHERE card_id=$1 AND source=$2',[card.id,source])).rowCount)continue;
-   const lead=(await api(`/public/cards/${card.slug}/leads`,{method:'POST',body:{name:person.name,email:`${key}@demo.duit.test`,intent:`Fictional demo enquiry: We discussed ${person.need.toLowerCase()}. I would like to compare a small pilot scope and the first useful deliverable.`,consent:true,source,ctaContext:ownerKey==='maya'?'Product design enquiry':'Event pilot enquiry'}})).lead;
+   const lead=(await api(`/public/cards/${card.slug}/leads`,{method:'POST',body:{name:person.name,email:`${key}@demo.duit.test`,intent:`We discussed ${person.need.toLowerCase()}. I would like to compare a small pilot scope and the first useful deliverable.`,consent:true,source,ctaContext:ownerKey==='maya'?'Product design enquiry':'Event pilot enquiry'}})).lead;
    if(index===1)await api(`/leads/${lead.id}`,{token:session.accessToken,method:'PATCH',body:{status:'responded'}});
    if(index===2)await api(`/leads/${lead.id}`,{token:session.accessToken,method:'PATCH',body:{status:'qualified'}});
   }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Platform, Modal } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
@@ -32,6 +32,7 @@ import {
   Divider,
 } from "./ui";
 import { AIReview } from "./AI";
+import { suggestEvents, type EventSuggestion } from "./meetingContext";
 import { DateTimeField } from "./DateTimeField";
 export async function chooseImage(camera = false, purpose = "portrait") {
   if (camera) {
@@ -90,6 +91,31 @@ export function CaptureSheet({
   const [audio, setAudio] = useState<any>(null);
   const [locating, setLocating] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [events, setEvents] = useState<EventSuggestion[]>([]);
+  const locationRevision = useRef(0);
+  const [locationSource, setLocationSource] = useState("");
+  useEffect(() => {
+    const revision = ++locationRevision.current;
+    if (!visible) return;
+    let active = true;
+    setLocating(false);
+    setLocationSource("");
+    get("/events?limit=200")
+      .then((r) => {
+        if (active) setEvents(r.events || []);
+      })
+      .catch(() => {});
+    Location.getForegroundPermissionsAsync()
+      .then((p) => {
+        if (p.granted && revision === locationRevision.current)
+          void locate(false);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+      locationRevision.current++;
+    };
+  }, [visible]);
   useEffect(() => {
     if (visible) {
       setDraft({
@@ -157,38 +183,75 @@ export function CaptureSheet({
       setBusy(false);
     }
   }
-  async function locate() {
+  async function locate(requestPermission = true) {
+    const revision = ++locationRevision.current;
     setLocating(true);
-    setError("");
     try {
-      const p = await Location.requestForegroundPermissionsAsync();
-      if (!p.granted)
-        throw new Error("Location access is off. You can type a place below.");
-      const point = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
+      const permission = requestPermission
+        ? await Location.requestForegroundPermissionsAsync()
+        : await Location.getForegroundPermissionsAsync();
+      if (!permission.granted)
+        throw new Error(
+          "Location access is off. You can still choose an event or type a place.",
+        );
+      const point = await Promise.race([
+        Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () =>
+              reject(
+                new Error(
+                  "GPS is taking a while. Choose an event or enter a place.",
+                ),
+              ),
+            15000,
+          ),
+        ),
+      ]);
+      if (revision !== locationRevision.current) return;
       change("coordinates", {
         latitude: point.coords.latitude,
         longitude: point.coords.longitude,
       });
+      setLocationSource("Current GPS location");
       try {
-        const places = await Location.reverseGeocodeAsync(point.coords);
-        const place = places[0];
-        if (place)
-          change(
-            "location",
-            [place.name, place.city].filter(Boolean).join(", "),
-          );
-      } catch {
-        notify("Location saved. You can add a place name too.");
-      }
+        const [place] = await Location.reverseGeocodeAsync(point.coords);
+        if (revision === locationRevision.current && place)
+          setDraft((d) => ({
+            ...d,
+            location: [place.name, place.street]
+              .filter((v, i, a) => v && a.indexOf(v) === i)
+              .join(", "),
+            city: place.city || place.subregion || "",
+            countryCode: place.isoCountryCode || "",
+          }));
+      } catch {}
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Could not locate this meeting.",
-      );
+      if (requestPermission && revision === locationRevision.current)
+        setError(e instanceof Error ? e.message : "Location unavailable.");
     } finally {
-      setLocating(false);
+      if (revision === locationRevision.current) setLocating(false);
     }
+  }
+  function selectEvent(event: EventSuggestion) {
+    locationRevision.current++;
+    setLocating(false);
+    setDraft((d) => ({
+      ...d,
+      eventId: event.id,
+      eventName: event.name,
+      location: event.venue || "",
+      city: event.city || "",
+      countryCode: event.countryCode || "",
+      meetingType: "Conference",
+      coordinates:
+        event.latitude != null && event.longitude != null
+          ? { latitude: event.latitude, longitude: event.longitude }
+          : undefined,
+    }));
+    setLocationSource("Event venue");
   }
   async function toggleRecording() {
     setError("");
@@ -294,7 +357,8 @@ export function CaptureSheet({
         onClose={() => {
           if (recording) void recorder.stop();
           setRecording(false);
-          onClose();
+          if (!existing && step === "form") setStep("choose");
+          else onClose();
         }}
         footer={
           step === "form" ? (
@@ -542,6 +606,114 @@ export function CaptureSheet({
                 </Body>
               </View>
             )}
+            <View
+              style={[s.card, { marginBottom: 20, backgroundColor: C.soft }]}
+            >
+              <DateTimeField
+                value={draft.occurredAt}
+                onChange={(value) => change("occurredAt", value)}
+              />
+              <Field
+                label="Place"
+                value={draft.location}
+                onChangeText={(v) => {
+                  locationRevision.current++;
+                  setLocating(false);
+                  setLocationSource("");
+                  setDraft((d) => ({
+                    ...d,
+                    location: v,
+                    coordinates: undefined,
+                  }));
+                }}
+                placeholder="Venue or city"
+              />
+              <Button
+                tone="quiet"
+                small
+                icon="location-outline"
+                busy={locating}
+                onPress={() => void locate()}
+              >
+                {draft.coordinates
+                  ? "Refresh GPS location"
+                  : "Use current location"}
+              </Button>
+              {draft.coordinates && (
+                <Text style={s.hint}>
+                  {locationSource} · {draft.coordinates.latitude.toFixed(4)},{" "}
+                  {draft.coordinates.longitude.toFixed(4)}
+                </Text>
+              )}
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <View style={{ flex: 2 }}>
+                  <Field
+                    label="City"
+                    value={draft.city || ""}
+                    onChangeText={(v) => {
+                      locationRevision.current++;
+                      setLocating(false);
+                      change("city", v);
+                    }}
+                    placeholder="City"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Field
+                    label="Country"
+                    value={draft.countryCode || ""}
+                    onChangeText={(v) => {
+                      locationRevision.current++;
+                      setLocating(false);
+                      change("countryCode", v.toUpperCase());
+                    }}
+                    placeholder="IN"
+                  />
+                </View>
+              </View>
+              <Field
+                label="Event"
+                value={draft.eventName}
+                onChangeText={(v) =>
+                  setDraft((d) => ({ ...d, eventName: v, eventId: undefined }))
+                }
+                placeholder="Conference, dinner or meetup"
+              />
+              {suggestEvents(events, draft.occurredAt, draft.coordinates).map(
+                ({ event, nearby, current }) => (
+                  <Pressable
+                    key={event.id}
+                    onPress={() => selectEvent(event)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Use ${event.name}`}
+                    style={{
+                      paddingVertical: 10,
+                      borderTopWidth: 1,
+                      borderColor: C.line,
+                    }}
+                  >
+                    <Text
+                      style={{ fontSize: 13, color: C.teal, fontWeight: "600" }}
+                    >
+                      {event.name}
+                    </Text>
+                    <Text
+                      style={{ fontSize: 11, color: C.muted, marginTop: 4 }}
+                    >
+                      {[
+                        event.city,
+                        current ? "Around this date" : "Previous or upcoming",
+                        nearby != null && nearby < 25
+                          ? `${nearby.toFixed(1)} km away`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </Text>
+                  </Pressable>
+                ),
+              )}
+            </View>
             <Field
               label="What’s worth remembering?"
               value={draft.originalNote}
@@ -595,32 +767,6 @@ export function CaptureSheet({
                 before using it.
               </Notice>
             )}
-            <Field
-              label="Where did you meet?"
-              value={draft.location}
-              onChangeText={(v) => change("location", v)}
-              placeholder="A place, venue or city"
-            />
-            <Button
-              tone="quiet"
-              small
-              icon="location-outline"
-              busy={locating}
-              onPress={() => void locate()}
-              style={{
-                alignSelf: "flex-start",
-                marginTop: -7,
-                marginBottom: 17,
-              }}
-            >
-              Use current location
-            </Button>
-            <Field
-              label="Event · optional"
-              value={draft.eventName}
-              onChangeText={(v) => change("eventName", v)}
-              placeholder="Paris AI Summit, founder dinner…"
-            />
             <Label>TYPE OF MEETING</Label>
             <View
               style={{
@@ -641,10 +787,6 @@ export function CaptureSheet({
                 </Pill>
               ))}
             </View>
-            <DateTimeField
-              value={draft.occurredAt}
-              onChange={(value) => change("occurredAt", value)}
-            />
             <Field
               label="One next step · optional"
               value={draft.commitment}

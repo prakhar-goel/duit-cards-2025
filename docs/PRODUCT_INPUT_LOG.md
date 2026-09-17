@@ -157,3 +157,32 @@ Make this iteration and its walkthrough video and then stop the goal. There is n
 ## 2026-09-18T02:18:46+05:30
 
 keep the email and password prefilled in the login screen for quick entry into demo
+
+
+## 2026-09-18T02:34:43.385746+05:30
+
+1) dont use the words like demo/fictional etc in your pitch/voiceover and the app.
+
+2) The demo data should be absolutely real looking. Dont use words like fake/demo/fictional etc. This is a demo app, we all know that, no need to explicitly mention it
+
+3) The business profile can have multiple images/video, not limited to 1. so profile image + business card (1 or 2 pages) + business profile could together be upto 6-7 slides. Make it like a swipeable carousel like the original old app, with CTA buttons.
+
+
+
+add more realistic profiles to the mix. From various verticals and domains. 
+
+- Fix the back button. For example when I open Noah Morgan's card, and then click on some button like Meeting "record a meeting" or any other button, and then click back button, it should take me back to his card, not the previous all cards list view. Ensure such nuances are followed throughout the app.
+- The GPS location/ or the event/conference and timestamp of where I met a person is central to our idea. Record it and show it. These things should be mostly autofilled, or appropriate suggestions provided to quickly fill and move ahead.
+- There should be only one way to open a particular screen. Right now my card can be opened by - clicking on my card, clicking on the top right profile icon, clicking on "my card" in the bottom nav etc.
+- Simplify the UI further. Remove unnecessary buttons and text. Make it more visual. The cards should open nice carousels, with details displayed neatly below the cards. with appropriate CTA.
+
+Just update the app, make at least 5-6 more cards/meetings from different domains, events etc
+
+
+## 2026-09-18T02:44:48.816553+05:30
+
+The homepage can also have a linkedin like feed system for me. This would give me a reason to open the app repeatedly to show me something new that is relatable to me. Remember, our core function is that either Duit app should help someone to grow/sell their business/services/products or help them save money or improve their business by showing them opportunities/business/services/products from the network.
+
+The location is captured at 3 levels - building/street/location etc where someone met, at city level and lastly country level. These informations are coming via maps api
+
+You may use stock images etc from the internet apart from creating your own. You will find plenty on websites like pexels. You may use any other website as well. You may show videos too in the duit cards carousel that we discussed.

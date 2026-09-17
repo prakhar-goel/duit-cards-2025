@@ -10,7 +10,7 @@ await fs.mkdir(out,{recursive:true});
 const origin=process.env.DUIT_MOBILE_PREVIEW||'http://127.0.0.1:48156';
 const api=process.env.DUIT_API_ORIGIN||'http://localhost:48152';
 if(!['localhost','127.0.0.1'].includes(new URL(api).hostname))throw new Error('Private local recording only.');
-const credential=JSON.parse(await fs.readFile(path.join(root,'.local/credentials.json'),'utf8')).accounts.find(a=>a.email==='maya@demo.duit.test');
+const credential=JSON.parse(await fs.readFile(path.join(root,'.local/credentials.json'),'utf8')).accounts.find(a=>a.email==='maya@northstar.example');
 const response=await fetch(api+'/api/v1/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:credential.email,password:credential.password})});
 if(!response.ok)throw new Error('Could not authenticate fictional demo account.');
 const session=await response.json();

@@ -370,11 +370,13 @@ export function PeopleScreen({
   );
 }
 export function PersonDetail({
+  suspended = false,
   id,
   onClose,
   onCapture,
 }: {
   id: string | null;
+  suspended?: boolean;
   onClose: () => void;
   onCapture: (person: Person) => void;
 }) {
@@ -409,11 +411,16 @@ export function PersonDetail({
   useEffect(() => {
     setDetail(null);
     setEditing(false);
+    setAddingReminder(false);
+    setAiTask("");
     setView("card");
     setPublishedCard(null);
     setError("");
     if (id) void load();
   }, [id]);
+  useEffect(() => {
+    if (id) void load();
+  }, [data.updatedAt]);
   const p = detail?.person ?? data.people.find((x) => x.id === id);
   useEffect(() => {
     let active = true;
@@ -496,7 +503,13 @@ export function PersonDetail({
               : p?.company || "Card wallet"
         }
         subtitle={view === "memory" && !editing ? p?.name : undefined}
-        onClose={onClose}
+        onClose={() =>
+          editing
+            ? setEditing(false)
+            : view === "memory"
+              ? setView("card")
+              : onClose()
+        }
         footer={
           editing ? (
             <Button busy={busy} onPress={() => void save()}>
@@ -523,6 +536,7 @@ export function PersonDetail({
         }
       >
         {error && <Notice error>{error}</Notice>}
+        {p&&<View style={{display:!editing&&view==="card"?"flex":"none"}}><CardStory person={p} card={publishedCard} visible={!suspended&&!editing&&view==="card"}/></View>}
         {!p ? (
           <Empty
             title="Loading this connection"
@@ -570,7 +584,30 @@ export function PersonDetail({
           </>
         ) : (
           <>
-            {view === "card" && <CardStory person={p} card={publishedCard} />}
+            {view === "card" && detail?.encounters[0] && (
+              <View
+                style={{
+                  marginTop: 16,
+                  padding: 14,
+                  borderRadius: 14,
+                  backgroundColor: C.soft,
+                }}
+              >
+                <Text style={{ fontSize: 11, color: C.muted }}>
+                  LAST MET · {dateLabel(detail.encounters[0].occurredAt, true)}
+                </Text>
+                <Text style={{ fontSize: 13, color: C.ink, marginTop: 5 }}>
+                  {[
+                    detail.encounters[0].eventName,
+                    detail.encounters[0].location,
+                    detail.encounters[0].city,
+                    detail.encounters[0].countryCode,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </Text>
+              </View>
+            )}
             <View
               style={{
                 flexDirection: "row",
@@ -694,7 +731,26 @@ export function PersonDetail({
                           {e.eventName || e.location || e.meetingType}
                         </Text>
                         {e.eventName && e.location && (
-                          <Text style={s.hint}>{e.location}</Text>
+                          <Text style={s.hint}>
+                            {[e.location, e.city, e.countryCode]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </Text>
+                        )}
+                        {e.latitude != null && e.longitude != null && (
+                          <Button
+                            tone="quiet"
+                            small
+                            icon="map-outline"
+                            onPress={() =>
+                              void Linking.openURL(
+                                `https://www.google.com/maps/search/?api=1&query=${e.latitude},${e.longitude}`,
+                              ).catch(() => notify("Could not open Maps."))
+                            }
+                          >
+                            {e.latitude.toFixed(4)}, {e.longitude.toFixed(4)} ·
+                            Map
+                          </Button>
                         )}
                         <Body style={{ marginTop: 12 }}>
                           {e.originalNote ||

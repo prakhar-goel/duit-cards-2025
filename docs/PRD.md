@@ -436,3 +436,12 @@ The user authorized a complete modern implementation in this newer repository, w
 The core product remains a business pitch plus private encounter memory. New explicit requirements include editable AI improvements to uploaded portraits/cards, recipient profiles bootstrapped from sender-supplied private drafts with verified ownership, useful event/place views, grounded needs/offers suggestions, a protected admin workspace, a standalone Samsung APK, and a narrated walkthrough of the implemented product. High-quality fictional scenarios and private archival examples must be distinguished from live usage. Real AI requires configured credentials and an agreed cost limit; simulated results must never be presented as working AI.
 
 For this pilot, Wallet distribution is conditional on real platform issuer credentials; QR/link/vCard and native sharing are the required working paths. The admin workspace manages the pilot, not an enterprise CRM. Publishing a web card, accessing private historical records, and sending a follow-up are distinct authorization actions.
+
+
+## Visual cards and useful network feed · 18 September 2026
+
+The app presents cards and people naturally, without prototype labels in product copy. Internal provenance remains available to operators and development tooling. A card story has a portrait, one or two visiting-card sides, and up to four business images or videos: seven slides maximum. Artwork retains its original proportions. Captions and CTAs sit beneath the visual. Videos play only when the viewer chooses.
+
+Today is a visual business feed, with Grow, Improve and Network views. Its suggestions come from the signed-in person's saved needs, offers and meeting evidence. It should help someone sell, find a useful supplier, save money or improve how their business works. It must not imply an actual buying commitment merely because details match. My Card has one dedicated destination in the bottom navigation.
+
+Meeting context is central: editable timestamp; venue, street or building; city; country; GPS coordinates; and event name/ID. The device's reverse-geocoding service fills location fields after permission, and saved events are suggested by date and distance. A selected event supplies its venue coordinates, explicitly distinguished from current GPS. Back unwinds the current detail, editor or meeting form and preserves the underlying card or event group.

@@ -30,6 +30,9 @@ export function MeetingsScreen({
   const [view, setView] = useState<"Timeline" | "Events" | "Places">(
     "Timeline",
   );
+  const [placeLevel, setPlaceLevel] = useState<"Venue" | "City" | "Country">(
+    "City",
+  );
   const [days, setDays] = useState(0);
   const [group, setGroup] = useState<string | null>(null);
   const encounters = useMemo(
@@ -52,11 +55,17 @@ export function MeetingsScreen({
       const label =
         view === "Events"
           ? e.eventName || "Outside an event"
-          : (e as any).city || e.location || "Place not recorded";
+          : placeLevel === "Country"
+            ? e.countryCode || "Country not recorded"
+            : placeLevel === "Venue"
+              ? [e.location, e.city].filter(Boolean).join(" · ") ||
+                "Venue not recorded"
+              : [e.city, e.countryCode].filter(Boolean).join(" · ") ||
+                "City not recorded";
       (result[label] ??= []).push(e);
     }
     return Object.entries(result).sort((a, b) => b[1].length - a[1].length);
-  }, [encounters, view]);
+  }, [encounters, view, placeLevel]);
   const current = groups.find(([name]) => name === group);
   function row(e: Encounter, compact = false) {
     const p = data.people.find((p) => p.id === e.personId);
@@ -64,7 +73,6 @@ export function MeetingsScreen({
       <Pressable
         key={e.id}
         onPress={() => {
-          setGroup(null);
           onPerson(e.personId);
         }}
         style={[s.card, { marginBottom: 13, padding: 19 }]}
@@ -130,11 +138,12 @@ export function MeetingsScreen({
             color={C.muted}
           />
           <Text
-            numberOfLines={1}
+            numberOfLines={2}
             style={{ fontSize: 11, color: C.muted, flex: 1 }}
           >
-            {[e.eventName, e.location].filter(Boolean).join(" · ") ||
-              "Place not recorded"}
+            {[e.eventName, e.location, e.city, e.countryCode]
+              .filter(Boolean)
+              .join(" · ") || "Place not recorded"}
           </Text>
         </View>
       </Pressable>
@@ -192,6 +201,22 @@ export function MeetingsScreen({
           </Pill>
         ))}
       </View>
+      {view === "Places" && (
+        <View style={{ flexDirection: "row", gap: 8, marginBottom: 18 }}>
+          {(["Venue", "City", "Country"] as const).map((level) => (
+            <Pill
+              key={level}
+              active={placeLevel === level}
+              onPress={() => {
+                setPlaceLevel(level);
+                setGroup(null);
+              }}
+            >
+              {level}
+            </Pill>
+          ))}
+        </View>
+      )}
       <View style={[s.row, { marginBottom: 21 }]}>
         <Label>{encounters.length} MEETINGS REMEMBERED</Label>
         <View style={{ flexDirection: "row", gap: 13 }}>

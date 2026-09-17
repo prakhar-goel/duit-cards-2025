@@ -119,7 +119,10 @@ export function capturePayload(d: CaptureDraft) {
   return {
     occurredAt: d.occurredAt,
     location: d.location || undefined,
+    city: d.city || "",
+    countryCode: d.countryCode || "",
     eventName: d.eventName || undefined,
+    eventId: d.eventId,
     meetingType: d.meetingType,
     exchangeType: d.exchangeType,
     originalNote: d.originalNote,

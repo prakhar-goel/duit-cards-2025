@@ -158,3 +158,8 @@ node --env-file=.env.local --test --test-timeout=30000 apps/api/test/*.test.js
 ```
 
 Tests refuse any database except `duit_2026_pilot_test`. API/provider tests make no paid calls. Launcher verification used an alternate local port and a mocked `cloudflared` executable; it did not open a public tunnel or stop the existing app server.
+
+
+### Expanded visual network
+
+After the base setup, `node --env-file=.env.local scripts/expand-network.mjs` previews the six-profile expansion. Add `--apply` to apply it once. It takes a private recovery snapshot under `.local` and records its completion there; it changes only authored fixture workspaces. The supplied legacy archive is excluded. The generated visual assets are in `apps/web/public/demo`; artwork can be reproduced with `scripts/create-network-artwork.mjs` and motion portfolios with `scripts/create-business-clips.mjs`. Production image/video uploads use authenticated media storage and become accessible through shared cards only after publication.

@@ -20,6 +20,7 @@ import { AuthScreen } from "./Auth";
 import { TodayScreen } from "./Today";
 import { PeopleScreen, PersonDetail } from "./People";
 import { MeetingsScreen } from "./Meetings";
+import {CardStory} from "./CardStory";
 import { MyCardScreen } from "./Cards";
 import { CaptureSheet } from "./Capture";
 import {
@@ -107,7 +108,6 @@ function Main() {
     }).start();
   }
   function openCapture(p?: Person) {
-    setPersonId(null);
     setCapturePerson(p ?? null);
     setCapture(true);
   }
@@ -146,7 +146,6 @@ function Main() {
           <TodayScreen
             onPerson={setPersonId}
             onPeople={() => navigate("People")}
-            onMyCard={() => navigate("My Card")}
             onCapture={() => openCapture()}
           />
         ) : tab === "People" ? (
@@ -278,6 +277,7 @@ function Main() {
         </View>
       )}
       <PersonDetail
+        suspended={capture}
         id={personId}
         onClose={() => setPersonId(null)}
         onCapture={openCapture}
@@ -288,8 +288,7 @@ function Main() {
         onClose={() => setCapture(false)}
         onSaved={(id) => {
           if (id) {
-            setTab("People");
-            setPersonId(id);
+            if (!personId) setPersonId(id);
           }
         }}
       />
@@ -320,30 +319,7 @@ function Main() {
         }
       >
         {linkError && <Notice error>{linkError}</Notice>}
-        {publicCard && (
-          <>
-            <View style={{ alignItems: "center", marginBottom: 24 }}>
-              <Avatar
-                name={publicCard.title}
-                url={publicCard.imageUrl}
-                size={98}
-                square
-              />
-              <Title size={30} style={{ marginTop: 20, textAlign: "center" }}>
-                {publicCard.title}
-              </Title>
-              <Body muted style={{ marginTop: 11, textAlign: "center" }}>
-                {publicCard.subtitle}
-              </Body>
-            </View>
-            {publicCard.panels?.map((p) => (
-              <View key={p.panelType} style={{ marginBottom: 24 }}>
-                <Label>{p.panelType}</Label>
-                <Body style={{ marginTop: 10 }}>{p.body}</Body>
-              </View>
-            ))}
-          </>
-        )}
+        {publicCard && <CardStory card={publicCard}/>}
       </Sheet>
     </SafeAreaView>
   );

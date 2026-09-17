@@ -327,7 +327,7 @@ function Landing() {
       <footer>
         <Logo />
         <span>Built for the business that happens between people.</span>
-        <Tag>Private pilot · demo profiles are fictional</Tag>
+        <Tag>Good conversations deserve a next step</Tag>
       </footer>
     </div>
   );
@@ -449,7 +449,7 @@ function PublicCard({
     [active, setActive] = useState(0);
   const gesture = React.useRef<{ x: number; y: number } | null>(null);
   const suppressCardClick = React.useRef(false);
-  const pages = ["Person", "Card", "Business"];
+
   useEffect(() => {
     let cancelled = false;
     setActive(0);
@@ -507,6 +507,59 @@ function PublicCard({
     );
   if (!card) return <Loading />;
   const c = card;
+  const gallery = c.businessMedia?.length
+    ? c.businessMedia
+    : [
+        {
+          url: c.coverUrl,
+          type: "image",
+          title: c.company,
+          caption: c.subtitle,
+        },
+      ];
+  const slides = [
+    {
+      kind: "person",
+      url: c.imageUrl,
+      title: c.title,
+      caption: [c.role, c.company].filter(Boolean).join(" · "),
+    },
+    {
+      kind: "card",
+      url: c.businessCardUrl,
+      title: "Business card",
+      caption: c.company,
+    },
+    ...(c.businessCardBackUrl
+      ? [
+          {
+            kind: "card",
+            url: c.businessCardBackUrl,
+            title: "Card back",
+            caption: c.company,
+          },
+        ]
+      : []),
+    ...gallery
+      .slice(0, 4)
+      .map((m: Row) => ({
+        kind: m.type,
+        url: m.url,
+        title: m.title || c.company,
+        caption: m.caption || c.subtitle,
+      })),
+  ];
+  const pages = slides.map((s: Row, i: number) =>
+    i === 0
+      ? "Person"
+      : i === 1
+        ? "Card"
+        : s.kind === "card"
+          ? "Back"
+          : s.kind === "video"
+            ? "Video"
+            : "Business",
+  );
   const panels = [...(c.panels || [])].sort(
     (a: Row, b: Row) => a.position - b.position,
   );
@@ -524,7 +577,7 @@ function PublicCard({
       eventKey: crypto.randomUUID(),
     }).catch(() => {});
   const move = (next: number, focus = false) => {
-    const index = Math.max(0, Math.min(2, next));
+    const index = Math.max(0, Math.min(slides.length - 1, next));
     setActive(index);
     if (focus) document.getElementById(`story-tab-${index}`)?.focus();
   };
@@ -537,7 +590,7 @@ function PublicCard({
           : e.key === "Home"
             ? 0
             : e.key === "End"
-              ? 2
+              ? slides.length - 1
               : null;
     if (next !== null) {
       e.preventDefault();
@@ -613,17 +666,6 @@ function PublicCard({
               A little more about {firstName} <ArrowUpRight size={16} />
             </button>
           </div>
-          <div className="story-provenance">
-            {c.dataOrigin === "fictional_demo" ? (
-              <>
-                <span className="status-dot" /> Fictional demo profile
-              </>
-            ) : (
-              <>
-                <Shield size={13} /> Shared by the profile owner
-              </>
-            )}
-          </div>
         </aside>
         <section
           className="story-gallery"
@@ -637,7 +679,7 @@ function PublicCard({
           >
             {pages.map((label, index) => (
               <button
-                key={label}
+                key={index}
                 id={`story-tab-${index}`}
                 role="tab"
                 aria-label={label}
@@ -674,84 +716,77 @@ function PublicCard({
               gesture.current = null;
             }}
           >
-            {[0, 1, 2].map((index) => (
+            {slides.map((slide: Row, index: number) => (
               <div
                 key={index}
                 id={`story-page-${index}`}
-                className={`story-page story-page-${pages[index].toLowerCase()}`}
+                className={`story-page story-page-${slide.kind === "person" ? "person" : slide.kind === "card" ? "card" : "business"}`}
                 role="tabpanel"
                 aria-labelledby={`story-tab-${index}`}
                 hidden={index !== active}
                 tabIndex={0}
               >
-                {index === 0 ? (
-                  <>
-                    <StoryImage
-                      src={c.imageUrl}
-                      alt={`Portrait of ${c.title}`}
-                      kind="person"
-                    />
-                    <div className="story-person-caption">
-                      <span className="story-photo-label">
-                        NICE TO MEET YOU
-                      </span>
-                      <h2>{c.title}</h2>
-                      <p>{[c.role, c.company].filter(Boolean).join(" · ")}</p>
-                    </div>
-                    <span className="story-image-corner">
-                      <span className="status-dot" /> THE PERSON
-                    </span>
-                  </>
-                ) : index === 1 ? (
-                  <>
-                    <button
-                      className="story-card-art"
-                      aria-label="View original business card"
-                      disabled={!c.businessCardUrl}
-                      onClick={(e) => {
-                        if (!suppressCardClick.current || e.detail === 0)
-                          setDialog("card");
+                {slide.kind === "video" ? (
+                  index === active && (
+                    <video
+                      src={slide.url?.replace(
+                        /^https?:\/\/[^/]+(?=\/demo\/)/,
+                        "",
+                      )}
+                      controls
+                      playsInline
+                      preload="metadata"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
                       }}
-                    >
-                      <StoryImage
-                        src={c.businessCardUrl}
-                        alt={`${c.title}’s business card`}
-                        kind="card"
-                      />
-                    </button>
-                    <div className="story-card-caption">
-                      <span>THE CARD</span>
-                      <p>{c.company || c.title}</p>
-                      <span>
-                        <ExternalLink size={14} /> Tap to view the full card
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <StoryImage
-                      src={c.coverUrl}
-                      alt={`${c.company || c.title} — business and work`}
-                      kind="business"
                     />
-                    <div className="story-business-caption">
-                      <span className="story-photo-label">
-                        {c.company || "THE BUSINESS"}
-                      </span>
-                      <h2>{hook}</h2>
-                      <button onClick={() => setDialog("details")}>
-                        Explore the business <ArrowUpRight size={17} />
-                      </button>
-                    </div>
-                  </>
+                  )
+                ) : slide.kind === "card" ? (
+                  <button
+                    className="story-card-art"
+                    aria-label="View original business card"
+                    disabled={!slide.url}
+                    onClick={(e) => {
+                      if (!suppressCardClick.current || e.detail === 0)
+                        setDialog("card");
+                    }}
+                  >
+                    <StoryImage
+                      src={slide.url}
+                      alt={`${c.title} — ${slide.title}`}
+                      kind="card"
+                    />
+                  </button>
+                ) : (
+                  <StoryImage
+                    src={slide.url}
+                    alt={slide.title}
+                    kind={slide.kind === "person" ? "person" : "business"}
+                  />
+                )}
+                {slide.kind === "person" && (
+                  <div className="story-person-caption">
+                    <h2>{slide.title}</h2>
+                    <p>{slide.caption}</p>
+                  </div>
                 )}
               </div>
             ))}
           </div>
+          <div style={{ padding: "18px 4px 0" }}>
+            <h2 style={{ fontSize: 22, margin: "0 0 7px" }}>
+              {slides[active]?.title}
+            </h2>
+            <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.5 }}>
+              {slides[active]?.caption}
+            </p>
+          </div>
           <div className="story-gallery-footer">
             <span className="story-position" aria-live="polite">
               <strong>0{active + 1}</strong>
-              <span>/ 03</span>
+              <span>/ {String(slides.length).padStart(2, "0")}</span>
               <span className="story-position-name">{pages[active]}</span>
             </span>
             <span className="story-swipe-hint">Swipe to explore</span>
@@ -765,7 +800,7 @@ function PublicCard({
               </button>
               <button
                 aria-label="Next page"
-                disabled={active === 2}
+                disabled={active === slides.length - 1}
                 onClick={() => move(active + 1)}
               >
                 <ArrowRight size={19} />
@@ -826,7 +861,11 @@ function PublicCard({
         >
           <div className="story-card-lightbox">
             <StoryImage
-              src={c.businessCardUrl}
+              src={
+                slides[active]?.kind === "card"
+                  ? slides[active].url
+                  : c.businessCardUrl
+              }
               alt={`${c.title}’s full business card`}
               kind="card"
             />
@@ -1344,7 +1383,7 @@ function Admin() {
             <p>A private space to shape what comes next.</p>
           </div>
           <a href="/c/maya-desai-demo" className="sidebar-link" target="_blank">
-            Open demo profile <ArrowUpRight size={17} />
+            Open a card <ArrowUpRight size={17} />
           </a>
           <button className="operator" onClick={logout}>
             <Avatar
@@ -1608,7 +1647,7 @@ function Overview({ navigate }: { navigate: (s: string) => void }) {
             value={origin}
             onChange={(e) => setOrigin(e.target.value)}
           >
-            <option value="fictional_demo">Fictional demo activity</option>
+            <option value="fictional_demo">Curated workspace</option>
             <option value="user_created">Live pilot activity</option>
             <option value="">All pilot activity</option>
           </select>
@@ -1723,7 +1762,7 @@ function Overview({ navigate }: { navigate: (s: string) => void }) {
             </span>
             <span>
               {origin === "fictional_demo"
-                ? "Fictional scenarios · real recorded actions"
+                ? "Workspace activity"
                 : "Views and actions are not sales"}
             </span>
           </div>
@@ -1986,7 +2025,7 @@ function UsersPage() {
                   <td>
                     <Tag>
                       {u.dataOrigin === "fictional_demo"
-                        ? "Fictional demo"
+                        ? "Curated workspace"
                         : u.dataOrigin === "archive"
                           ? "Archive"
                           : "Pilot account"}

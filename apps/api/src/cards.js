@@ -11,6 +11,8 @@ export const cardSchema = z.object({
   imageUrl: httpUrl.nullable().optional(),
   coverUrl: httpUrl.nullable().optional(),
   businessCardUrl: httpUrl.nullable().optional(),
+  businessCardBackUrl: httpUrl.nullable().optional(),
+  businessMedia: z.array(z.object({url: httpUrl, type: z.enum(['image', 'video']), title: text(100).default(''), caption: text(240).default('')})).max(4).default([]),
   company: text(120).default(''),
   role: text(120).default(''),
   bio: text(3000).default(''),
@@ -38,6 +40,8 @@ const mapping = {
   imageUrl: 'image_url',
   coverUrl: 'cover_url',
   businessCardUrl: 'business_card_url',
+  businessCardBackUrl: 'business_card_back_url',
+  businessMedia: 'business_media',
   company: 'company',
   role: 'role',
   bio: 'bio',
@@ -58,6 +62,8 @@ export function cardDto(row, panels) {
     imageUrl: row.image_url,
     coverUrl: row.cover_url,
     businessCardUrl: row.business_card_url,
+    businessCardBackUrl: row.business_card_back_url,
+    businessMedia: row.business_media || [],
     company: row.company,
     role: row.role,
     bio: row.bio,
@@ -140,7 +146,7 @@ export function cardsRouter() {
   })));
   router.patch('/cards/:id', auth, wrap(async (req, res) => {
     const input = patchInput(cardSchema.partial(), req.body);
-    for (const key of ['theme', 'contact', 'links']) if (input[key] !== undefined) input[key] = JSON.stringify(input[key]);
+    for (const key of ['theme', 'contact', 'links', 'businessMedia']) if (input[key] !== undefined) input[key] = JSON.stringify(input[key]);
     const row = await updateRow('cards', req.params.id, req.userId, input, mapping);
     await query('UPDATE cards SET updated_at=now() WHERE id=$1', [row.id]);
     res.json({
@@ -182,16 +188,19 @@ export function cardsRouter() {
       const row = await owned('cards', req.params.id, req.userId, db);
       const snapshot = await fullCard(row, db);
       if (snapshot.panels.length !== 6 || snapshot.panels.some(p => !p.approved)) fail(422, 'Review and approve all six panels before publishing', 'REVIEW_REQUIRED');
-      for (const url of [snapshot.imageUrl, snapshot.coverUrl, snapshot.businessCardUrl]) {
+      const assets = [snapshot.imageUrl, snapshot.coverUrl, snapshot.businessCardUrl, snapshot.businessCardBackUrl].filter(Boolean).map(url => ({url, type:'image'})).concat(snapshot.businessMedia || []);
+      for (const {url, type} of assets) {
         const match = url?.match(/\/api\/v1\/(?:public\/)?media\/([a-f0-9-]{36})$/i);
         if (match) {
           const media = await owned('media_assets', match[1], req.userId, db);
-          if (!media.mime_type.startsWith('image/')) fail(422, 'Card artwork must use an image. Voice notes stay private.', 'IMAGE_REQUIRED');
+          if (!media.mime_type.startsWith(type + '/')) fail(422, 'The slide format does not match its media. Voice notes stay private.', 'IMAGE_REQUIRED');
         }
       }
       snapshot.imageUrl = publicMediaUrl(snapshot.imageUrl);
       snapshot.coverUrl = publicMediaUrl(snapshot.coverUrl);
       snapshot.businessCardUrl = publicMediaUrl(snapshot.businessCardUrl);
+      snapshot.businessCardBackUrl = publicMediaUrl(snapshot.businessCardBackUrl);
+      snapshot.businessMedia = (snapshot.businessMedia || []).map(item => ({...item, url:publicMediaUrl(item.url)}));
       snapshot.isPublished = true;
       snapshot.publishedAt = new Date().toISOString();
       const version = (await db.query('INSERT INTO card_versions(card_id,snapshot) VALUES($1,$2) RETURNING id', [row.id, snapshot])).rows[0];

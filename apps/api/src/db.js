@@ -165,5 +165,9 @@ export async function migrate() {
       await db.query('ALTER TABLE cards ADD COLUMN IF NOT EXISTS business_card_url TEXT');
       await db.query("INSERT INTO schema_migrations(version) VALUES('2026-card-first-v3')");
     }
+    if (!(await db.query("SELECT 1 FROM schema_migrations WHERE version='2026-card-gallery-v4'")).rowCount) {
+      await db.query("ALTER TABLE cards ADD COLUMN IF NOT EXISTS business_card_back_url TEXT, ADD COLUMN IF NOT EXISTS business_media JSONB NOT NULL DEFAULT '[]'");
+      await db.query("INSERT INTO schema_migrations(version) VALUES('2026-card-gallery-v4')");
+    }
   });
 }

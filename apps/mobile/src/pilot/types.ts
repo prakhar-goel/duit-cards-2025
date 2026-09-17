@@ -15,6 +15,12 @@ export type Panel = {
   provenance?: "owner" | "ai_suggested" | "approved_ai";
   approved: boolean;
 };
+export type BusinessMedia = {
+  url: string;
+  type: "image" | "video";
+  title: string;
+  caption: string;
+};
 export type Card = {
   id: string;
   slug: string;
@@ -22,6 +28,8 @@ export type Card = {
   subtitle: string;
   imageUrl?: string | null;
   coverUrl?: string | null;
+  businessCardBackUrl?: string | null;
+  businessMedia?: BusinessMedia[];
   businessCardUrl?: string | null;
   company?: string;
   role?: string;
@@ -69,6 +77,8 @@ export type Encounter = {
   personId: string;
   occurredAt: string;
   location?: string;
+  city?: string;
+  countryCode?: string;
   eventName?: string;
   meetingType: string;
   exchangeType: string;
@@ -79,6 +89,9 @@ export type Encounter = {
   name?: string;
   company?: string;
   photoUrl?: string;
+  latitude?: number;
+  longitude?: number;
+  eventId?: string;
   coordinates?: { latitude: number; longitude: number };
 };
 export type Commitment = {
@@ -119,6 +132,8 @@ export type FeedItem = {
   commitment?: Commitment;
   lead?: Lead;
   score?: number;
+  intent?: "grow" | "improve";
+  focus?: string;
 };
 export type Capabilities = {
   ai?: {
@@ -155,6 +170,8 @@ export type CaptureDraft = {
   recap?: string;
   proposedFollowUp?: string;
   location: string;
+  city?: string;
+  countryCode?: string;
   eventName: string;
   occurredAt: string;
   meetingType: string;
@@ -162,6 +179,9 @@ export type CaptureDraft = {
   commitment: string;
   dueAt?: string;
   personId?: string;
+  latitude?: number;
+  longitude?: number;
+  eventId?: string;
   coordinates?: { latitude: number; longitude: number };
 };
 export type QueuedCapture = {

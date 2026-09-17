@@ -48,7 +48,7 @@ export function ServerSettings({
     <Sheet
       visible={visible}
       title="Your DUIT server"
-      subtitle="Connect this phone to your private pilot."
+      subtitle="Connect to your DUIT server."
       onClose={onClose}
       footer={
         <Button busy={busy} onPress={() => void save()}>
@@ -201,10 +201,10 @@ export function AuthScreen() {
           </Title>
           <Body muted style={{ marginTop: 8, marginBottom: 24 }}>
             {create
-              ? "Create your private pilot account."
+              ? "Create your DUIT account."
               : demoReady
-                ? "Demo account ready. Tap Step inside."
-                : "Sign in to your private DUIT workspace."}
+                ? "Welcome back. Step inside."
+                : "Sign in to DUIT."}
           </Body>
           {create && (
             <Field
@@ -218,8 +218,8 @@ export function AuthScreen() {
           {!create && (
             <View style={{ flexDirection: "row", gap: 8, marginBottom: 18 }}>
               {[
-                ["Maya · Northstar", "maya@demo.duit.test"],
-                ["Noah · Fieldwork", "noah@demo.duit.test"],
+                ["Maya · Northstar", "maya@northstar.example"],
+                ["Noah · Fieldwork", "noah@fieldwork.example"],
               ].map(([label, value]) => (
                 <Pressable
                   key={value}

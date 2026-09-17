@@ -99,7 +99,7 @@ export function requestApiOrigin(req) {
 }
 export function presentPublicCard(snapshot, req) {
   const value = structuredClone(snapshot);
-  for (const key of ['imageUrl', 'coverUrl', 'businessCardUrl']) {
+  for (const key of ['imageUrl', 'coverUrl', 'businessCardUrl', 'businessCardBackUrl']) {
     if (!value[key]) continue;
     try {
       const url = new URL(value[key], apiOrigin());
@@ -107,5 +107,6 @@ export function presentPublicCard(snapshot, req) {
       if (media) value[key] = `${requestApiOrigin(req)}/api/v1/public/media/${media[1]}`;else if (url.pathname.startsWith('/demo/') && ['localhost', '127.0.0.1', '0.0.0.0'].includes(url.hostname)) value[key] = `${requestApiOrigin(req)}${url.pathname}`;
     } catch {}
   }
+  if (snapshot.businessMedia) value.businessMedia = snapshot.businessMedia.map(item => ({...item, url: presentPublicCard({imageUrl:item.url}, req).imageUrl}));
   return value;
 }

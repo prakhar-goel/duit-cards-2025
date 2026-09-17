@@ -20,16 +20,16 @@ The launcher prints the current local and internet address status. This verified
 
 The Wi-Fi IP may change. Use the launcher's new printed address after changing networks. For an explicitly requested internet session, `npm run phone:internet` starts a quick tunnel; `npm run phone:internet:stop` closes it. Keep the Mac awake. The managed background process survives this task and a closed terminal tab.
 
-Use the generated operator or fictional account credentials in `.local/credentials.json`. The private demo APK now prefills Maya’s credentials at the user’s request; operator credentials are not embedded and passwords are not committed to source. `maya@demo.duit.test` and `noah@demo.duit.test` provide separate, populated workspaces.
+Use the generated operator or fictional account credentials in `.local/credentials.json`. The private demo APK now prefills Maya’s credentials at the user’s request; operator credentials are not embedded and passwords are not committed to source. `maya@northstar.example` and `noah@fieldwork.example` provide separate, populated workspaces.
 
 ## Android artifact
 
 - File: `artifacts/DUIT-2026-Pilot.apk`
 - Package: `io.duit.ecards.pilot`
-- Version: 4.1.1 / 2026091804
+- Version: 4.2.0 / 2026091805
 - Architecture: ARM64, suitable for Samsung S25 Ultra
-- Size: 47,425,237 bytes
-- SHA-256: `783adffa3ab93c16de5c63766609d3805516af893d46f543521d67b704cfa1c7`
+- Size: 47,562,351 bytes
+- SHA-256: `bf28167e1dd36cde0e125968b5c6efd492ef5e58a2eff1065274b0f22f6a201b`
 
 The signed standalone APK includes all final source changes. Its server setting can be changed without rebuilding. Preserve `.local/signing` for future updates. The app installs separately from the restored legacy DUIT package.
 
@@ -73,3 +73,15 @@ At the user’s request, stop after this visual iteration and its walkthrough. T
 ## Demo login update · 4.1.1
 
 Email and masked password are prefilled for Maya in the private APK. Both stay editable. Switching to signup clears them; returning to login restores the demo. Build injection reads only the fictional Maya account from the private credentials file. Use `DUIT_DEMO_PREFILL=false npm run build:apk` for a build without it. This update does not resume the paused broader goal.
+
+
+## Card stories, business feed and meeting context · 4.2.0
+
+- Today now shows a visual feed grounded in the account's needs, offers and saved meeting context, with Grow, Improve and Network filters. It refreshes from the server with the rest of the workspace. It is not a public posting network or an autonomous sales agent.
+- Cards support seven slides: portrait, front/back visiting card, and up to four captioned business images/videos. MP4 uploads are limited to 12 MB, play on request and follow the same reviewed-publication access rules as images. Both the Android app and shared web cards render the gallery.
+- Added Leena Kapoor (clinic operations, Bengaluru), Kenji Mori (hospitality, Kyoto), Amara Okafor (solar, Lagos), Mateo Silva (coffee, São Paulo), Inês Costa (architecture, Lisbon), and Omar Haddad (logistics, Dubai), with distinct portraits, card artwork, business photography, short motion portfolios and six new meeting records in each of Maya's and Noah's workspaces. Internal fixture provenance is retained; presentation labels were removed. Existing passwords and account IDs are preserved; the six original fixture email addresses now use their business names at reserved example domains.
+- Meeting capture starts with the current time, uses current GPS automatically when permission is already granted, and fills venue/street, city and country through the device reverse geocoder. First use offers an explicit location permission action. Event suggestions use date/distance; selecting one stores event identity and venue coordinates, labelled separately from live GPS. Manual entry remains available if location services fail.
+- Back from record-meeting, meeting memory and person editing returns to the originating card. Event-group context remains underneath an opened card. My Card has one dedicated bottom-navigation destination.
+- Validation: 28 mobile unit tests and 34 API/provider checks pass. Public cards verified at 390 and 1440 pixels, including video playback and six-slide navigation. Android emulator checks cover Back navigation, swipe, video controls and event-context fields. Actual S25 GPS reception and hardware playback are not verified on the physical phone.
+
+Current tunnel after loading the update: `https://wishing-compression-valued-ana.trycloudflare.com`. The URL changes after restarting the quick tunnel. Local phone address remains `http://192.168.1.56:48152`. The user can run `npm run phone:internet` to print the current addresses. This bounded update does not resume the broader paused goal.

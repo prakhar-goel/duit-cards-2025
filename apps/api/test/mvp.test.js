@@ -23,6 +23,8 @@ await fs.writeFile(process.env.PILOT_APK_PATH, 'APK test fixture');
 process.env.DATABASE_URL = testUrl;
 process.env.JWT_SECRET = crypto.randomBytes(48).toString('hex');
 process.env.LOCAL_OUTBOX = 'true';
+// Invitation behaviour is tested explicitly below, independent of the operator's local settings.
+delete process.env.PILOT_INVITE_CODE;
 process.env.DUIT_AI_ENABLED = 'false';
 process.env.DUIT_AI_BUDGET_APPROVED_USD = '0';
 const {
@@ -544,7 +546,7 @@ test('private pilot end-to-end: two accounts, public card, verified claim and re
       token: owner.accessToken
     })).status, 200);
     assert.equal((await request(`/public/media/${media.id}`)).status, 200);
-    for (const field of ['imageUrl', 'coverUrl', 'businessCardUrl']) {
+    for (const field of ['imageUrl', 'coverUrl', 'businessCardUrl', 'businessCardBackUrl']) {
       await request(`/cards/${card.id}`, {
         method: 'PATCH',
         token: owner.accessToken,
@@ -578,6 +580,29 @@ test('private pilot end-to-end: two accounts, public card, verified claim and re
     assert.equal((await request(`/admin/media/${media.id}`, {
       token: operator.accessToken
     })).status, 200, 'Admin may see an approved public image');
+    const videoBytes=await fs.readFile(new URL('../../web/public/demo/clips/noah.mp4',import.meta.url));
+    const videoUpload=await request('/media',{method:'POST',token:owner.accessToken,body:{filename:'portfolio.mp4',mimeType:'video/mp4',data:videoBytes.toString('base64'),purpose:'cover'}});
+    assert.equal(videoUpload.status,201);
+    const video=videoUpload.body.media;
+    assert.equal((await request(`/public/media/${video.id}`)).status,404,'Unpublished video stays private');
+    await request(`/cards/${card.id}`,{method:'PATCH',token:owner.accessToken,body:{businessMedia:[{url:video.url,type:'video',title:'Our work',caption:'A short introduction'}]}});
+    assert.equal((await request(`/cards/${card.id}/publish`,{method:'POST',token:owner.accessToken})).status,200);
+    assert.equal((await request(`/public/media/${video.id}`)).status,200,'Approved video is playable publicly');
+    const slide = {url:media.url,type:'image',title:'Our work',caption:'A recent project'};
+    assert.equal((await request(`/cards/${card.id}`, {method:'PATCH',token:owner.accessToken,body:{businessMedia:Array(5).fill(slide)}})).status,400);
+    await request(`/cards/${card.id}`, {method:'PATCH',token:owner.accessToken,body:{businessMedia:[{...slide,url:audio.body.media.url}]}});
+    assert.equal((await request(`/cards/${card.id}/publish`, {method:'POST',token:owner.accessToken})).status,422);
+    assert.equal((await request(`/public/media/${audio.body.media.id}`)).status,404);
+    const foreign = (await request('/media', {method:'POST',token:other.accessToken,body:{filename:'other.png',mimeType:'image/png',data,purpose:'cover'}})).body.media;
+    await request(`/cards/${card.id}`, {method:'PATCH',token:owner.accessToken,body:{businessMedia:[{...slide,url:foreign.url}]}});
+    assert.equal((await request(`/cards/${card.id}/publish`, {method:'POST',token:owner.accessToken})).status,404,'A gallery must not expose another owner’s upload');
+    await request(`/cards/${card.id}`, {method:'PATCH',token:owner.accessToken,body:{imageUrl:null,businessCardUrl:null,businessCardBackUrl:null,businessMedia:[slide]}});
+    assert.equal((await request(`/cards/${card.id}/publish`, {method:'POST',token:owner.accessToken})).status,200);
+    const gallery = (await request(`/public/cards/${card.slug}`)).body.card.businessMedia;
+    assert.equal(gallery.length,1);
+    assert.equal((await request(`/public/media/${video.id}`)).status,404,'Removing a video from the published version makes it private again');
+    assert.ok(gallery[0].url.endsWith(`/public/media/${media.id}`));
+    assert.equal((await request(`/public/media/${media.id}`)).status,200,'Reviewed gallery media is public');
     await request(`/cards/${card.id}/unpublish`, {
       method: 'POST',
       token: owner.accessToken

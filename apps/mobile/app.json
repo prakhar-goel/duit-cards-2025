@@ -3,7 +3,7 @@
     "name": "DUIT 2026",
     "slug": "duit-cards-2025",
     "scheme": "duitpilot",
-    "version": "4.1.1",
+    "version": "4.2.0",
     "orientation": "portrait",
     "icon": "./assets/pilot-icon.png",
     "userInterfaceStyle": "light",
@@ -25,7 +25,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "io.duit.ecards.pilot",
-      "versionCode": 2026091804,
+      "versionCode": 2026091805,
       "allowBackup": false
     },
     "web": {
@@ -69,7 +69,8 @@
         {
           "locationWhenInUsePermission": "Attach your current place to a meeting when you choose. Location is optional and private."
         }
-      ]
+      ],
+      "expo-video"
     ],
     "extra": {
       "eas": {

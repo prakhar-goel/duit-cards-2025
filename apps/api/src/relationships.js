@@ -191,7 +191,9 @@ export async function feedFor(ownerId) {
         id: `match-${need.id}-${result.id}`,
         type: 'relevant_person',
         title: result.title,
-        reason: `Their saved details relate to your ${need.kind}: ${need.text}`,
+        reason: need.kind === "offer" ? "A conversation that could grow your business" : "A service worth exploring",
+        intent: need.kind === "offer" ? "grow" : "improve",
+        focus: need.text,
         evidence: result.evidence,
         person: result.person,
         score: result.score

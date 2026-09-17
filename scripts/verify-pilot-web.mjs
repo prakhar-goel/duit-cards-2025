@@ -52,7 +52,7 @@ async function shot(page, name) {
 }
 try {
   const operator = await login("admin@pilot.duit.test"),
-    maya = await login("maya@demo.duit.test");
+    maya = await login("maya@northstar.example");
   const adminContext = await browser.newContext({
     viewport: { width: 1440, height: 1020 },
   });
@@ -77,11 +77,11 @@ try {
   await admin.getByRole("button", { name: "People & accounts" }).click();
   await admin.getByPlaceholder("Search name or email…").fill("Maya");
   await expect(
-    admin.getByRole("row").filter({ hasText: "maya@demo.duit.test" }),
+    admin.getByRole("row").filter({ hasText: "maya@northstar.example" }),
   ).toBeVisible();
   await admin
     .getByRole("row")
-    .filter({ hasText: "maya@demo.duit.test" })
+    .filter({ hasText: "maya@northstar.example" })
     .click();
   await expect(admin.getByRole("dialog")).toBeVisible();
   await expect(

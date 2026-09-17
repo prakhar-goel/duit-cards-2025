@@ -21,16 +21,15 @@ import {
   Empty,
   Divider,
 } from "./ui";
+import { NetworkFeed } from "./NetworkFeed";
 import { CardArtwork, WalletTile } from "./CardStory";
 export function TodayScreen({
   onPerson,
   onPeople,
-  onMyCard,
   onCapture,
 }: {
   onPerson: (id: string) => void;
   onPeople: () => void;
-  onMyCard: () => void;
   onCapture: () => void;
 }) {
   const { data, loading, refresh, notify, offline, queue, sync, error } =
@@ -110,13 +109,6 @@ export function TodayScreen({
             duit<Text style={{ color: C.teal }}>.</Text>
           </Text>
         </View>
-        <Pressable
-          onPress={onMyCard}
-          accessibilityRole="button"
-          accessibilityLabel="Open my card"
-        >
-          <Avatar name={name} url={profile.photoUrl} size={42} />
-        </Pressable>
       </View>
       {offline && (
         <Notice action="Retry" onPress={() => void sync()}>
@@ -135,154 +127,32 @@ export function TodayScreen({
       )}
       <View style={{ marginTop: 28, marginBottom: 18 }}>
         <Label>GOOD TO SEE YOU, {firstName(name).toUpperCase()}</Label>
-        <Title size={34} style={{ marginTop: 8 }}>
-          Your next hello.
-        </Title>
+
       </View>
-      <Pressable
-        onPress={onMyCard}
-        accessibilityRole="button"
-        accessibilityLabel="View my business card"
-        style={({ pressed }) => [
-          {
-            borderRadius: 25,
-            padding: 18,
-            paddingBottom: 13,
-            backgroundColor: "#EBE8E0",
-          },
-          pressed && { opacity: 0.88 },
-        ]}
-      >
-        <View style={{ marginHorizontal: 8, marginTop: 9, marginBottom: 19 }}>
-          <View
-            style={{
-              position: "absolute",
-              top: 7,
-              left: 3,
-              right: 3,
-              bottom: -5,
-              backgroundColor: "#D2CEC2",
-              borderRadius: 10,
-              transform: [{ rotate: "-3deg" }],
-            }}
-          />
-          <CardArtwork
-            uri={data.cards[0]?.businessCardUrl}
-            name={data.cards[0]?.title || name || "Your card"}
-            company={data.cards[0]?.company || profile.company}
-            role={data.cards[0]?.role || profile.role}
-            style={{ borderRadius: 8 }}
-          />
-        </View>
-        <View style={s.row}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Icon name="id-card-outline" size={17} />
-            <Text style={{ color: C.ink, fontSize: 13, fontWeight: "600" }}>
-              Your card, ready to go
-            </Text>
-          </View>
-          <Icon name="arrow-forward-outline" size={19} />
-        </View>
-      </Pressable>
-      <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
-        <Button
-          onPress={onCapture}
-          tone="secondary"
-          icon="scan-outline"
-          style={{ flex: 1 }}
-        >
-          Scan a card
-        </Button>
-        <Button onPress={onMyCard} icon="share-outline" style={{ flex: 1 }}>
-          Share mine
-        </Button>
-      </View>
-      <Section title="Your card wallet" action="See all" onPress={onPeople}>
-        {data.people.length ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 15, paddingBottom: 8 }}
-          >
-            {[...data.people]
-              .sort(
-                (a, b) =>
-                  Number(Boolean(b.businessCardUrl)) -
-                  Number(Boolean(a.businessCardUrl)),
-              )
-              .slice(0, 8)
-              .map((p) => (
-                <WalletTile
-                  key={p.id}
-                  person={p}
-                  width={255}
-                  onPress={() => onPerson(p.id)}
-                />
-              ))}
-          </ScrollView>
-        ) : (
-          <Empty
-            title="A wallet worth opening"
-            body="Scan a card after your next good conversation."
-            action="Add a card"
-            onPress={onCapture}
-          />
-        )}
-      </Section>
-      <View style={{ flexDirection: "row", gap: 10, marginTop: 22 }}>
+      {leads.length > 0 && (
         <Pressable
-          onPress={onPeople}
-          accessibilityRole="button"
-          style={{
-            flex: 1,
-            backgroundColor: C.soft,
-            borderRadius: 17,
-            padding: 16,
-          }}
-        >
-          <Icon name="people-outline" size={21} />
-          <Text
-            style={{
-              fontSize: 23,
-              color: C.ink,
-              fontWeight: "500",
-              marginTop: 9,
-            }}
-          >
-            {data.people.length}
-            <Text style={{ fontSize: 12 }}> cards</Text>
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => setLeadInbox(true)}
           accessibilityRole="button"
           accessibilityLabel="Open enquiries"
+          onPress={() => setLeadInbox(true)}
           style={{
-            flex: 1,
-            backgroundColor: "#EFE8DF",
-            borderRadius: 17,
-            padding: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+            padding: 14,
+            borderRadius: 15,
+            backgroundColor: C.soft,
+            marginTop: 4,
           }}
         >
-          <Icon name="chatbubble-ellipses-outline" size={21} />
-          <Text
-            style={{
-              fontSize: 23,
-              color: C.ink,
-              fontWeight: "500",
-              marginTop: 9,
-            }}
-          >
-            {leads.length}
-            <Text style={{ fontSize: 12 }}> new enquiries</Text>
+          <Icon name="chatbubble-ellipses-outline" size={20} />
+          <Text style={{ flex: 1, fontSize: 13, color: C.ink }}>
+            {leads.length} new enquiries
           </Text>
+          <Icon name="arrow-forward-outline" size={18} />
         </Pressable>
-      </View>
-      <Section
-        title="Pick up the conversation"
-        action="All people"
-        onPress={onPeople}
-      >
+      )}
+      <NetworkFeed onPerson={onPerson} onFocus={() => setIntent(true)} />
+      <Section title="Pick up the conversation">
         {open.length ? (
           open.slice(0, 2).map((c) => {
             const p = data.people.find((p) => p.id === c.personId);
@@ -447,8 +317,8 @@ export function TodayScreen({
         title="A little interest. A new beginning."
         subtitle={`${data.leads.length} enquiries from your shared cards.`}
         onClose={() => {
-          setLeadInbox(false);
-          setLeadId(null);
+          if (leadId) setLeadId(null);
+          else setLeadInbox(false);
         }}
       >
         {selectedLead ? (

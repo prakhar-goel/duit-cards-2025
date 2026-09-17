@@ -8,10 +8,11 @@ import {
   Switch,
   ScrollView,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import QRCode from "react-native-qrcode-svg";
 import * as Clipboard from "expo-clipboard";
 import { usePilot } from "./store";
-import { get, post, patch, mediaUrl, shareUrl } from "./api";
+import { get, post, patch, upload, mediaUrl, shareUrl } from "./api";
 import type { Card, Panel } from "./types";
 import {
   C,
@@ -103,8 +104,6 @@ export function MyCardScreen() {
   const profile = data.user?.profile ?? {};
   const name =
     profile.fullName || (data.user as any)?.displayName || "Your name";
-  const isDemo =
-    (data.user as any)?.dataOrigin === "fictional_demo" || profile.isDemo;
   async function viewStats(card: Card) {
     try {
       const stats = await get(`/cards/${card.id}/analytics`);
@@ -130,11 +129,7 @@ export function MyCardScreen() {
         </Pressable>
       </View>
       <View style={{ height: 14 }} />
-      {isDemo && (
-        <View style={{ marginBottom: 16 }}>
-          <Pill icon="flask-outline">Fictional demo account</Pill>
-        </View>
-      )}
+
       {data.cards.map((card) => (
         <View key={card.id} style={{ marginBottom: 27 }}>
           <OwnCardStory card={card} />
@@ -485,14 +480,65 @@ export function CardEditor({
       setBusy(false);
     }
   }
-  async function cover() {
+  const gallery = form.businessMedia?.length
+    ? form.businessMedia
+    : form.coverUrl
+      ? [
+          {
+            url: form.coverUrl,
+            type: "image",
+            title: form.company || "",
+            caption: form.subtitle || "",
+          },
+        ]
+      : [];
+  async function addBusinessMedia(video = false) {
     setBusy(true);
     setError("");
     try {
-      const uploaded = await chooseImage(false, "cover");
-      if (uploaded) change("coverUrl", uploaded.url);
+      if (gallery.length >= 4)
+        throw new Error("You can add four business slides.");
+      let url: string | undefined;
+      if (video) {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ["videos"],
+        });
+        if (result.canceled) return;
+        const asset = result.assets[0];
+        if (asset.fileSize && asset.fileSize > 12 * 1024 * 1024)
+          throw new Error("Choose an MP4 smaller than 12 MB.");
+        if (asset.mimeType && asset.mimeType !== "video/mp4")
+          throw new Error("Choose an MP4 video.");
+        url = (
+          await upload(
+            asset.uri,
+            "video/mp4",
+            asset.fileName || "business.mp4",
+            "cover",
+          )
+        ).media.url;
+      } else url = (await chooseImage(false, "cover"))?.url;
+      if (url)
+        change("businessMedia", [
+          ...gallery,
+          { url, type: video ? "video" : "image", title: "", caption: "" },
+        ]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not upload this cover.");
+      setError(e instanceof Error ? e.message : "Could not add media.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function cardBack() {
+    setBusy(true);
+    setError("");
+    try {
+      const media = await chooseImage(false, "business_card");
+      if (media) change("businessCardBackUrl", media.url);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Could not add the back of your card.",
+      );
     } finally {
       setBusy(false);
     }
@@ -519,8 +565,13 @@ export function CardEditor({
         title={
           card ? "Make your introduction better" : "Your work. In a good light."
         }
-        subtitle="Six clear panels. One useful next step."
-        onClose={onClose}
+        onClose={() =>
+          page === "action"
+            ? setPage("pitch")
+            : page === "pitch"
+              ? setPage("identity")
+              : onClose()
+        }
         footer={
           <View style={{ flexDirection: "row", gap: 10 }}>
             <Button
@@ -604,6 +655,31 @@ export function CardEditor({
                 ? "Replace visiting card"
                 : "Upload your visiting card"}
             </Button>
+            {form.businessCardBackUrl && (
+              <CardArtwork
+                uri={form.businessCardBackUrl}
+                name={form.title}
+                height={160}
+              />
+            )}
+            <Button
+              tone="quiet"
+              small
+              icon="id-card-outline"
+              busy={busy}
+              onPress={() => void cardBack()}
+            >
+              {form.businessCardBackUrl ? "Replace card back" : "Add card back"}
+            </Button>
+            {form.businessCardBackUrl && (
+              <Button
+                tone="quiet"
+                small
+                onPress={() => change("businessCardBackUrl", null)}
+              >
+                Remove card back
+              </Button>
+            )}
             <Field
               label="Your name"
               value={form.title}
@@ -648,30 +724,109 @@ export function CardEditor({
         ) : page === "pitch" ? (
           <>
             <View style={{ marginBottom: 24 }}>
-              {form.coverUrl && (
-                <RemoteImage
-                  uri={form.coverUrl}
-                  contain
-                  style={{
-                    width: "100%",
-                    height: 210,
-                    borderRadius: 18,
-                    backgroundColor: C.white,
-                    marginBottom: 12,
-                  }}
-                />
+              <Label>BUSINESS SLIDES · {gallery.length} / 4</Label>
+              {gallery.map((item: any, index: number) => (
+                <View key={index} style={[s.card, { marginTop: 14 }]}>
+                  {item.type === "image" ? (
+                    <RemoteImage
+                      uri={item.url}
+                      contain
+                      style={{ height: 160, width: "100%", borderRadius: 12 }}
+                    />
+                  ) : (
+                    <View
+                      style={{
+                        height: 80,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: C.soft,
+                        borderRadius: 12,
+                      }}
+                    >
+                      <Icon name="play-circle-outline" size={36} />
+                      <Text>Video</Text>
+                    </View>
+                  )}
+                  <Field
+                    label="Title"
+                    value={item.title}
+                    onChangeText={(v) =>
+                      change(
+                        "businessMedia",
+                        gallery.map((x: any, i: number) =>
+                          i === index ? { ...x, title: v } : x,
+                        ),
+                      )
+                    }
+                  />
+                  <Field
+                    label="Caption"
+                    value={item.caption}
+                    onChangeText={(v) =>
+                      change(
+                        "businessMedia",
+                        gallery.map((x: any, i: number) =>
+                          i === index ? { ...x, caption: v } : x,
+                        ),
+                      )
+                    }
+                  />
+                  <View style={{ flexDirection: "row", gap: 12 }}>
+                    <Button
+                      tone="quiet"
+                      small
+                      disabled={index === 0}
+                      onPress={() => {
+                        const next = [...gallery];
+                        [next[index - 1], next[index]] = [
+                          next[index],
+                          next[index - 1],
+                        ];
+                        change("businessMedia", next);
+                      }}
+                    >
+                      Move earlier
+                    </Button>
+                    <Button
+                      tone="quiet"
+                      small
+                      onPress={() => {
+                        change(
+                          "businessMedia",
+                          gallery.filter((_: any, i: number) => i !== index),
+                        );
+                        change("coverUrl", null);
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </View>
+                </View>
+              ))}
+              {gallery.length < 4 && (
+                <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+                  <Button
+                    tone="secondary"
+                    small
+                    icon="image-outline"
+                    busy={busy}
+                    onPress={() => void addBusinessMedia()}
+                  >
+                    Add photo
+                  </Button>
+                  <Button
+                    tone="secondary"
+                    small
+                    icon="videocam-outline"
+                    busy={busy}
+                    onPress={() => void addBusinessMedia(true)}
+                  >
+                    Add video
+                  </Button>
+                </View>
               )}
-              <Button
-                tone="secondary"
-                icon="images-outline"
-                busy={busy}
-                onPress={() => void cover()}
-              >
-                {form.coverUrl ? "Change business cover" : "Add business cover"}
-              </Button>
               <Text style={s.hint}>
-                Show your work, product or business. This stays separate from
-                your portrait and visiting card.
+                Photos, projects and a short introduction. MP4 up to 12 MB.
               </Text>
             </View>
             <View
@@ -1043,7 +1198,7 @@ export function ShareCard({
                 backgroundColor={C.white}
               />
             ) : (
-              <Body muted>Creating your private-pilot link…</Body>
+              <Body muted>Creating your link…</Body>
             )}
             <Text
               style={{

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
+import { useVideoPlayer, VideoView } from "expo-video";
+import { useEvent } from "expo";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   C,
@@ -25,7 +27,7 @@ import {
   RemoteImage,
   Title,
 } from "./ui";
-import { getServer, mediaUrl, shareUrl } from "./api";
+import { getServer, mediaUrl, mediaHeaders, shareUrl } from "./api";
 import { safeUrl } from "./domain";
 import type { Card, Person } from "./types";
 
@@ -97,9 +99,6 @@ export function CardArtwork({
           </Text>
         ) : null}
       </View>
-      <Text style={{ fontSize: 9, letterSpacing: 1, color: "#B9CFC5" }}>
-        GENERATED LAYOUT · NO CARD IMAGE UPLOADED
-      </Text>
     </View>
   );
   const frame = {
@@ -148,10 +147,7 @@ export function WalletTile({
         height={width ? width * 0.65 : undefined}
         onPress={onPress}
       />
-      <Pressable
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel={`Meet ${person.name}`}
+      <View
         style={{
           flexDirection: "row",
           alignItems: "center",
@@ -176,7 +172,7 @@ export function WalletTile({
           </Text>
         </View>
         <Icon name="arrow-forward-outline" size={16} color={C.muted} />
-      </Pressable>
+      </View>
     </View>
   );
 }
@@ -258,65 +254,136 @@ function OriginalCard({
   );
 }
 
-const pages = ["Person", "Card", "Business"] as const;
-type StoryPage = (typeof pages)[number];
+type StoryPage = "Person" | "Card" | "Business";
+
+function StoryVideo({ uri }: { uri: string }) {
+  const url = mediaUrl(uri) || uri;
+  const player = useVideoPlayer(
+    { uri: url, headers: mediaHeaders(url) },
+    (p) => {
+      p.loop = false;
+    },
+  );
+  const { error } = useEvent(player, "statusChange", { status: player.status });
+  return (
+    <View style={{ flex: 1, backgroundColor: "#12201d" }}>
+      <VideoView
+        player={player}
+        contentFit="contain"
+        nativeControls
+        allowsFullscreen
+        style={{ width: "100%", height: "100%" }}
+      />
+      {error && (
+        <Text
+          style={{
+            position: "absolute",
+            bottom: 20,
+            left: 20,
+            right: 20,
+            color: C.white,
+          }}
+        >
+          Video unavailable. Try again when connected.
+        </Text>
+      )}
+    </View>
+  );
+}
 export function CardStory({
   card,
   person,
   initialPage = "Person",
   onCTA,
   ctaLabel,
+  visible = true,
 }: {
   card?: Card | null;
   person?: Person | null;
   initialPage?: StoryPage;
   onCTA?: () => void;
   ctaLabel?: string;
+  visible?: boolean;
 }) {
-  const [page, setPage] = useState<StoryPage>(initialPage);
-  const [original, setOriginal] = useState(false);
-  const [more, setMore] = useState(false);
+  const [page, setPage] = useState(0);
+  const [width, setWidth] = useState(340);
+  const [original, setOriginal] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const storyId = person?.id ?? card?.id;
-  useEffect(() => {
-    setPage(initialPage);
-    setMore(false);
-    setError("");
-  }, [storyId, initialPage]);
+  const scroll = useRef<ScrollView>(null);
   const name = person?.name || card?.title || "Your name";
   const company = person?.company || card?.company || "";
   const role = person?.role || card?.role || "";
   const portrait = person?.photoUrl || card?.imageUrl;
-  const originalUri = person?.businessCardUrl || card?.businessCardUrl;
+  const originalUri = card?.businessCardUrl || person?.businessCardUrl;
+  const back = card?.businessCardBackUrl || person?.businessCardBackUrl;
   const hook =
-    card?.subtitle ||
-    card?.panels?.find((p) => p.panelType === "hook")?.body ||
-    person?.bio ||
-    "A good introduction starts with a conversation.";
-  const cta =
-    ctaLabel ||
-    card?.ctaLabel ||
-    (person?.email ? "Start a conversation" : "View business website");
+    card?.subtitle || person?.bio || "Let’s find a way to work together.";
+  const gallery = card?.businessMedia?.length
+    ? card.businessMedia
+    : [
+        {
+          url: card?.coverUrl || "",
+          type: "image" as const,
+          title: company,
+          caption: hook,
+        },
+      ];
+  const slides = [
+    {
+      kind: "person",
+      url: portrait,
+      title: name,
+      caption: [role, company].filter(Boolean).join(" · "),
+    },
+    {
+      kind: "card",
+      url: originalUri,
+      title: company || name,
+      caption: "Business card",
+    },
+    ...(back
+      ? [
+          {
+            kind: "card",
+            url: back,
+            title: company || name,
+            caption: "Business card · back",
+          },
+        ]
+      : []),
+    ...gallery
+      .slice(0, 4)
+      .map((m) => ({
+        kind: m.type,
+        url: m.url,
+        title: m.title || company,
+        caption: m.caption || hook,
+      })),
+  ];
+  const storyId = person?.id || card?.id;
+  useEffect(() => {
+    const next =
+      initialPage === "Person" ? 0 : initialPage === "Card" ? 1 : back ? 3 : 2;
+    setPage(next);
+    scroll.current?.scrollTo({ x: next * width, animated: false });
+    setError("");
+  }, [storyId, initialPage]);
+  useEffect(() => {
+    scroll.current?.scrollTo({ x: page * width, animated: false });
+  }, [width]);
+  const move = (index: number) => {
+    const next = Math.max(0, Math.min(slides.length - 1, index));
+    setPage(next);
+    scroll.current?.scrollTo({ x: next * width, animated: true });
+  };
+  const cta = ctaLabel || card?.ctaLabel || "Start a conversation";
   const canAct = Boolean(
     onCTA ||
-      card?.isPublished ||
-      card?.publicUrl ||
-      person?.email ||
-      person?.phone ||
-      person?.website,
-  );
-  const move = (delta: number) =>
-    setPage((p) => pages[Math.max(0, Math.min(2, pages.indexOf(p) + delta))]);
-  const swipe = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_, g) =>
-          Math.abs(g.dx) > 18 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
-        onPanResponderRelease: (_, g) => {
-          if (Math.abs(g.dx) > 45) move(g.dx < 0 ? 1 : -1);
-        },
-      }),
-    [],
+    card?.isPublished ||
+    card?.publicUrl ||
+    person?.email ||
+    person?.phone ||
+    person?.website,
   );
   async function act() {
     setError("");
@@ -361,218 +428,93 @@ export function CardStory({
     }
   }
   return (
-    <View>
-      <View style={{ flexDirection: "row", gap: 7, marginBottom: 15 }}>
-        {pages.map((p, i) => (
-          <Pressable
-            key={p}
-            accessibilityRole="tab"
-            accessibilityLabel={p + " page"}
-            accessibilityState={{ selected: page === p }}
-            onPress={() => {
-              setPage(p);
-              setMore(false);
+    <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      <ScrollView
+        ref={scroll}
+        horizontal
+        pagingEnabled
+        directionalLockEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={(e) =>
+          setPage(Math.round(e.nativeEvent.contentOffset.x / width))
+        }
+        style={{ height: 350, borderRadius: 20, backgroundColor: C.soft }}
+      >
+        {slides.map((slide, index) => (
+          <View
+            key={index}
+            style={{
+              width,
+              height: 350,
+              overflow: "hidden",
+              justifyContent: "center",
             }}
+          >
+            {slide.kind === "video" ? (
+              index === page && visible ? (
+                <StoryVideo key={slide.url} uri={slide.url!} />
+              ) : (
+                <View />
+              )
+            ) : slide.kind === "card" ? (
+              <CardArtwork
+                uri={slide.url}
+                name={name}
+                company={company}
+                role={role}
+                height={350}
+                onPress={slide.url ? () => setOriginal(slide.url!) : undefined}
+                style={{ borderWidth: 0, borderRadius: 0 }}
+              />
+            ) : slide.url ? (
+              <RemoteImage
+                uri={slide.url}
+                contain={slide.kind !== "person"}
+                style={{ width: "100%", height: "100%" }}
+              />
+            ) : (
+              <View style={{ alignItems: "center", padding: 28 }}>
+                <Avatar name={name} size={120} />
+                <Title size={28} style={{ marginTop: 24 }}>
+                  {company || name}
+                </Title>
+              </View>
+            )}
+          </View>
+        ))}
+      </ScrollView>
+      <View style={{ flexDirection: "row", gap: 5, marginTop: 12 }}>
+        {slides.map((slide, index) => (
+          <Pressable
+            key={index}
+            accessibilityRole="tab"
+            accessibilityLabel={`Slide ${index + 1}: ${slide.title}`}
+            accessibilityState={{ selected: page === index }}
+            onPress={() => move(index)}
             style={{ flex: 1, paddingVertical: 8 }}
           >
             <View
               style={{
                 height: 3,
                 borderRadius: 4,
-                backgroundColor: page === p ? C.teal : C.line,
-                marginBottom: 10,
+                backgroundColor: page === index ? C.teal : C.line,
               }}
             />
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: page === p ? "700" : "400",
-                color: page === p ? C.ink : C.muted,
-              }}
-            >
-              {String(i + 1).padStart(2, "0")} {p}
-            </Text>
           </Pressable>
         ))}
       </View>
-      <View {...swipe.panHandlers}>
-        {page === "Person" ? (
-          <View
-            style={{
-              height: 365,
-              borderRadius: 22,
-              overflow: "hidden",
-              backgroundColor: C.soft,
-            }}
-          >
-            {portrait ? (
-              <RemoteImage
-                uri={portrait}
-                style={{ width: "100%", height: "100%" }}
-              />
-            ) : (
-              <View
-                style={{
-                  flex: 1,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingBottom: 85,
-                }}
-              >
-                <Avatar name={name} size={150} />
-              </View>
-            )}
-            <View
-              style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                padding: 20,
-                backgroundColor: "rgba(20,46,43,0.92)",
-              }}
-            >
-              <Text
-                style={{
-                  color: C.white,
-                  fontSize: 27,
-                  fontWeight: "600",
-                  letterSpacing: -0.8,
-                }}
-              >
-                {name}
-              </Text>
-              <Text style={{ color: "#D2DFD7", fontSize: 12, marginTop: 6 }}>
-                {[role, company].filter(Boolean).join(" · ")}
-              </Text>
-              {person?.city && (
-                <Text style={{ color: "#D2DFD7", fontSize: 10, marginTop: 7 }}>
-                  {person.city}
-                </Text>
-              )}
-            </View>
-          </View>
-        ) : page === "Card" ? (
-          <View>
-            <CardArtwork
-              uri={originalUri}
-              name={name}
-              company={company}
-              role={role}
-              onPress={originalUri ? () => setOriginal(true) : undefined}
-            />
-            <View style={[s.row, { marginTop: 11 }]}>
-              <Text style={{ fontSize: 11, color: C.muted }}>
-                {originalUri
-                  ? "Original visiting card"
-                  : "A digital card for this connection"}
-              </Text>
-              {originalUri && (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="View original visiting card"
-                  onPress={() => setOriginal(true)}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
-                >
-                  <Text
-                    style={{ fontSize: 11, color: C.teal, fontWeight: "600" }}
-                  >
-                    Enlarge
-                  </Text>
-                  <Icon name="expand-outline" size={14} />
-                </Pressable>
-              )}
-            </View>
-          </View>
-        ) : (
-          <View>
-            {card?.coverUrl ? (
-              <View
-                style={{
-                  height: 340,
-                  borderRadius: 20,
-                  overflow: "hidden",
-                  backgroundColor: C.white,
-                  borderWidth: 1,
-                  borderColor: C.line,
-                }}
-              >
-                <RemoteImage
-                  uri={card.coverUrl}
-                  contain
-                  style={{ width: "100%", height: "100%" }}
-                />
-              </View>
-            ) : (
-              <View
-                style={{
-                  height: 180,
-                  backgroundColor: C.soft,
-                  borderRadius: 20,
-                  padding: 24,
-                  justifyContent: "space-between",
-                }}
-              >
-                <Icon name="briefcase-outline" size={33} />
-                <Title size={30}>{company || "Their business"}</Title>
-              </View>
-            )}
-            <Text
-              style={{
-                fontSize: 11,
-                color: C.muted,
-                marginTop: 16,
-                marginBottom: 7,
-              }}
-            >
-              {company || name}
-            </Text>
-            <Text
-              style={{
-                fontSize: 22,
-                lineHeight: 28,
-                letterSpacing: -0.6,
-                color: C.ink,
-                fontWeight: "500",
-              }}
-            >
-              {hook}
-            </Text>
-            {(card?.panels?.length ?? 0) > 1 && (
-              <Button
-                tone="quiet"
-                small
-                onPress={() => setMore(!more)}
-                style={{ alignSelf: "flex-start", marginTop: 8 }}
-              >
-                {more ? "Less detail" : "Explore the business"}
-              </Button>
-            )}
-            {more &&
-              card?.panels
-                ?.filter((p) => !["hook", "cta"].includes(p.panelType))
-                .map((p) => (
-                  <View
-                    key={p.panelType}
-                    style={{
-                      marginTop: 18,
-                      paddingTop: 17,
-                      borderTopWidth: 1,
-                      borderColor: C.line,
-                    }}
-                  >
-                    <Label>{p.panelType}</Label>
-                    <Body style={{ marginTop: 7, fontSize: 14 }}>{p.body}</Body>
-                  </View>
-                ))}
-          </View>
-        )}
-      </View>
-      {error && (
-        <View style={{ marginTop: 12 }}>
-          <Notice error>{error}</Notice>
+      <View style={[s.row, { marginTop: 4, alignItems: "flex-start" }]}>
+        <View style={{ flex: 1 }}>
+          <Title size={23}>{slides[page]?.title}</Title>
+          <Body muted style={{ fontSize: 13, lineHeight: 20, marginTop: 6 }}>
+            {slides[page]?.caption}
+          </Body>
         </View>
-      )}
+        <Text style={{ fontSize: 11, color: C.muted, marginTop: 7 }}>
+          {page + 1} / {slides.length}
+        </Text>
+      </View>
+      {error && <Notice error>{error}</Notice>}
       {canAct && (
         <Button
           onPress={() => void act()}
@@ -582,11 +524,11 @@ export function CardStory({
           {cta}
         </Button>
       )}
-      {original && originalUri && (
+      {original && (
         <OriginalCard
-          uri={originalUri}
+          uri={original}
           name={name}
-          onClose={() => setOriginal(false)}
+          onClose={() => setOriginal(null)}
         />
       )}
     </View>

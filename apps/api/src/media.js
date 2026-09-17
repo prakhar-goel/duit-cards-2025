@@ -24,6 +24,7 @@ const types = {
     ext: 'webp',
     test: b => b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'WEBP'
   },
+  'video/mp4': { ext: 'mp4', test: b => b.toString('ascii', 4, 8) === 'ftyp' },
   'audio/mpeg': {
     ext: 'mp3',
     test: b => b.toString('ascii', 0, 3) === 'ID3' || b[0] === 255 && (b[1] & 224) === 224
@@ -57,8 +58,9 @@ export async function storeMedia(ownerId, {
   if (!spec) fail(400, 'Unsupported media format', 'UNSUPPORTED_MEDIA');
   if (typeof data !== 'string' || !data.length || !/^[A-Za-z0-9+/]*={0,2}$/.test(data) || data.length % 4 !== 0) fail(400, 'Invalid base64 media', 'INVALID_MEDIA');
   const bytes = Buffer.from(data, 'base64');
-  const max = mimeType.startsWith('audio/') ? 12 * 1024 * 1024 : 8 * 1024 * 1024;
+  const max = (mimeType.startsWith('audio/') || mimeType.startsWith('video/')) ? 12 * 1024 * 1024 : 8 * 1024 * 1024;
   if (bytes.length < 12 || bytes.length > max || !spec.test(bytes)) fail(400, 'Media content does not match its format or size limit', 'INVALID_MEDIA');
+  if (mimeType.startsWith('video/') && purpose !== 'cover') fail(400, 'Video must use cover purpose');
   if (mimeType.startsWith('audio/') && purpose !== 'voice_note') fail(400, 'Audio must use voice_note purpose');
   const id = crypto.randomUUID();
   await fs.mkdir(mediaDir, {
@@ -126,7 +128,7 @@ export function mediaRouter() {
   }));
   router.get('/admin/media/:id', auth, admin, wrap(async (req, res) => {
     uuid.parse(req.params.id);
-    const row = (await query("SELECT m.* FROM media_assets m WHERE m.id=$1 AND m.mime_type LIKE 'image/%' AND (m.owner_id=$2 OR EXISTS(SELECT 1 FROM archive_profiles a WHERE a.profile::text LIKE '%'||m.id::text||'%') OR EXISTS(SELECT 1 FROM cards c JOIN card_versions v ON v.id=c.published_version_id WHERE c.is_published=true AND (v.snapshot->>'imageUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'coverUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'businessCardUrl' LIKE '%/public/media/'||m.id::text)))", [req.params.id, req.userId])).rows[0];
+    const row = (await query("SELECT m.* FROM media_assets m WHERE m.id=$1 AND m.mime_type LIKE 'image/%' AND (m.owner_id=$2 OR EXISTS(SELECT 1 FROM archive_profiles a WHERE a.profile::text LIKE '%'||m.id::text||'%') OR EXISTS(SELECT 1 FROM cards c JOIN card_versions v ON v.id=c.published_version_id WHERE c.is_published=true AND (v.snapshot->>'imageUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'coverUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'businessCardUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'businessCardBackUrl' LIKE '%/public/media/'||m.id::text OR EXISTS(SELECT 1 FROM jsonb_array_elements(COALESCE(v.snapshot->'businessMedia','[]'::jsonb)) slide WHERE slide->>'url' LIKE '%/public/media/'||m.id::text))))", [req.params.id, req.userId])).rows[0];
     if (!row) fail(404, 'Image not found');
     res.setHeader('Content-Type', row.mime_type);
     res.setHeader('Cache-Control', 'private, no-store');
@@ -146,7 +148,7 @@ export function mediaRouter() {
   }));
   router.get('/public/media/:id', wrap(async (req, res) => {
     uuid.parse(req.params.id);
-    const row = (await query("SELECT m.* FROM media_assets m WHERE m.id=$1 AND EXISTS(SELECT 1 FROM cards c JOIN card_versions v ON v.id=c.published_version_id WHERE c.is_published=true AND (v.snapshot->>'imageUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'coverUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'businessCardUrl' LIKE '%/public/media/'||m.id::text))", [req.params.id])).rows[0];
+    const row = (await query("SELECT m.* FROM media_assets m WHERE m.id=$1 AND EXISTS(SELECT 1 FROM cards c JOIN card_versions v ON v.id=c.published_version_id WHERE c.is_published=true AND (v.snapshot->>'imageUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'coverUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'businessCardUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'businessCardBackUrl' LIKE '%/public/media/'||m.id::text OR EXISTS(SELECT 1 FROM jsonb_array_elements(COALESCE(v.snapshot->'businessMedia','[]'::jsonb)) slide WHERE slide->>'url' LIKE '%/public/media/'||m.id::text)))", [req.params.id])).rows[0];
     if (!row) fail(404, 'Image not found');
     res.setHeader('Content-Type', row.mime_type);
     res.setHeader('Cache-Control', 'public, max-age=300');

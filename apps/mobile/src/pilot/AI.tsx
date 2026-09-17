@@ -125,7 +125,7 @@ export function AIReview({
       {!capabilities.enabled ? (
         <Notice>
           {capabilities.reason ??
-            "AI is not connected for this pilot yet. You can continue manually."}
+            "AI is not connected yet. You can continue manually."}
         </Notice>
       ) : (
         <Button onPress={() => void run()} busy={busy} icon="sparkles-outline">

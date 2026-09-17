@@ -2,7 +2,7 @@
 export const visualVideo = {
   title: "DUIT · The card comes first",
   privacy:
-    "Private review · fictional demo · actual app web and browser captures",
+    "DUIT · Cards worth keeping",
   scenes: [
     {
       id: "visual-01",
@@ -11,7 +11,7 @@ export const visualVideo = {
       captureKey: "wallet",
       frame: "phone",
       narration:
-        "DUIT starts with the card. Open your wallet and browse faces, businesses and cards you can recognise. A little less scrolling through job titles; a little more, “Ah, that’s the person I met.” These are fictional demo profiles.",
+        "DUIT starts with the card. Open your wallet and browse faces, businesses and cards you can recognise. A little less scrolling through job titles; a little more, “Ah, that’s the person I met.”",
     },
     {
       id: "visual-02",
@@ -79,7 +79,7 @@ export const visualVideo = {
       ],
       captureLabel: "Proposed next ideas · AI is not enabled",
       narration:
-        "What could come next? Perhaps a short owner-recorded introduction, played only when the visitor chooses. AI could help tidy images and drafts behind the scenes, with review and the original kept safe. Those are ideas to test. AI is not enabled in this demo.",
+        "What could come next? Perhaps a short owner-recorded introduction, played only when the visitor chooses. AI could help tidy images and drafts behind the scenes, with review and the original kept safe. Those are ideas to test. AI is not connected yet.",
     },
   ],
 };
