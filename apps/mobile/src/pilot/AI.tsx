@@ -13,6 +13,7 @@ import {
   Title,
 } from "./ui";
 import { usePilot } from "./store";
+import { AiJobPendingError } from "./aiJobs";
 export function AIReview({
   visible,
   onClose,
@@ -40,11 +41,13 @@ export function AIReview({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [applying, setApplying] = useState(false);
+  const [pendingJobId, setPendingJobId] = useState<string>();
   async function run() {
     setBusy(true);
     setError("");
     try {
-      const output = await ai(task, input, mediaIds);
+      const output = await ai(task, input, mediaIds, pendingJobId);
+      setPendingJobId(undefined);
       setResult(output);
       setText(
         typeof output === "string"
@@ -57,6 +60,7 @@ export function AIReview({
               ""),
       );
     } catch (e) {
+      setPendingJobId(e instanceof AiJobPendingError ? e.jobId : undefined);
       setError(e instanceof Error ? e.message : "This task could not finish.");
     } finally {
       setBusy(false);
@@ -125,7 +129,11 @@ export function AIReview({
         </Notice>
       ) : (
         <Button onPress={() => void run()} busy={busy} icon="sparkles-outline">
-          {result ? "Try another draft" : "Create a suggestion"}
+          {pendingJobId
+            ? "Check this request"
+            : result
+              ? "Try another draft"
+              : "Create a suggestion"}
         </Button>
       )}
       {busy && (

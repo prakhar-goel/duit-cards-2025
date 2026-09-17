@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as api from "./api";
+import { waitForAiJob } from "./aiJobs";
 import {
   camel,
   person,
@@ -52,7 +53,12 @@ type Store = {
   removeQueued: (id: string) => Promise<void>;
   notify: (message: string) => void;
   toast: string | null;
-  ai: (task: string, input: any, mediaIds?: string[]) => Promise<any>;
+  ai: (
+    task: string,
+    input: any,
+    mediaIds?: string[],
+    existingJobId?: string,
+  ) => Promise<any>;
 };
 const Context = createContext<Store | null>(null);
 const cacheKey = (s: Session, origin = api.getServer()) =>
@@ -413,7 +419,12 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
     }, 30000);
     return () => clearInterval(interval);
   }, [session?.user.id, queue.length]);
-  async function ai(task: string, input: any, mediaIds?: string[]) {
+  async function ai(
+    task: string,
+    input: any,
+    mediaIds?: string[],
+    existingJobId?: string,
+  ) {
     if (!capabilities.enabled)
       throw new Error(
         capabilities.reason ??
@@ -421,23 +432,17 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
       );
     const owner = api.getSession()?.user.id;
     const origin = api.getServer();
-    let res = await api.post("/ai/jobs", { task, input, mediaIds });
-    for (let tries = 0; tries < 60; tries++) {
-      if (res.job.status === "completed" || res.job.status === "succeeded")
-        return res.job.result;
-      if (["failed", "cancelled", "needs_review"].includes(res.job.status))
-        throw new Error(
-          typeof res.job.error === "string"
-            ? res.job.error
-            : "The AI task did not finish. Your original is unchanged.",
-        );
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      api.assertWorkspace(owner, origin);
-      res = await api.get(`/ai/jobs/${res.job.id}`);
-    }
-    throw new Error(
-      "This task is taking longer than expected. Check again shortly.",
-    );
+    const res = existingJobId
+      ? await api.get(`/ai/jobs/${encodeURIComponent(existingJobId)}`)
+      : await api.post("/ai/jobs", { task, input, mediaIds });
+    const job = await waitForAiJob(res.job, {
+      load: async (id) =>
+        (await api.get(`/ai/jobs/${encodeURIComponent(id)}`)).job,
+      assertWorkspace: () => api.assertWorkspace(owner, origin),
+      // Image requests have a 180s server timeout; allow media persistence too.
+      timeoutMs: task.endsWith("_cleanup") ? 240000 : 120000,
+    });
+    return job.result;
   }
   return (
     <Context.Provider
