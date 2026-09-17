@@ -186,3 +186,8 @@ The homepage can also have a linkedin like feed system for me. This would give m
 The location is captured at 3 levels - building/street/location etc where someone met, at city level and lastly country level. These informations are coming via maps api
 
 You may use stock images etc from the internet apart from creating your own. You will find plenty on websites like pexels. You may use any other website as well. You may show videos too in the duit cards carousel that we discussed.
+
+
+## 2026-09-18T03:05:24+05:30
+
+whether you use cloudflare or ngrok try to keep the server url constant, with minimal changes. Since some testers are testing it over the internet. Changing server url repeatedly is irritating them. 

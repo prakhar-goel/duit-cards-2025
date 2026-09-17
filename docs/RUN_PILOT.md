@@ -163,3 +163,10 @@ Tests refuse any database except `duit_2026_pilot_test`. API/provider tests make
 ### Expanded visual network
 
 After the base setup, `node --env-file=.env.local scripts/expand-network.mjs` previews the six-profile expansion. Add `--apply` to apply it once. It takes a private recovery snapshot under `.local` and records its completion there; it changes only authored fixture workspaces. The supplied legacy archive is excluded. The generated visual assets are in `apps/web/public/demo`; artwork can be reproduced with `scripts/create-network-artwork.mjs` and motion portfolios with `scripts/create-business-clips.mjs`. Production image/video uploads use authenticated media storage and become accessible through shared cards only after publication.
+
+
+### Preserve the tester server address
+
+Testers depend on a stable internet server address. Reuse the running tunnel during routine development; do not stop and recreate it as part of an app build or website update. `npm run phone:internet` reuses the existing managed tunnel, and `npm run phone:status` prints its address without restarting it. Avoid `phone:stop` or `phone:internet:stop` unless shutdown is intended.
+
+The current Cloudflare quick tunnel has a temporary hostname. If that process ends, its hostname cannot be guaranteed on restart. A permanent address requires a configured named Cloudflare tunnel with a user-controlled domain, or a fixed ngrok domain. Arrange one planned migration once the account/domain is available, retaining existing app sign-in and invitation checks. Do not claim the temporary hostname is permanent.
