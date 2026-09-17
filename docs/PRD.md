@@ -2,10 +2,10 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Draft for product review |
-| Version | 0.2 |
-| Last updated | 2026-08-06 |
-| Stage | Pre-MVP prototype |
+| Status | Private pilot implementation |
+| Version | 0.3 |
+| Last updated | 2026-09-18 |
+| Stage | DUIT 2026 private pilot |
 | Product owner | Prakhar Goel |
 | Source of truth | This document for product intent; `PRODUCT_INPUT_LOG.md` for verbatim user input |
 
@@ -414,3 +414,12 @@ The MVP succeeds when target users repeatedly:
 2. capture real encounter context quickly;
 3. trust why the private feed surfaced a person or action; and
 4. return because Duit helps create or recover an opportunity they would otherwise have missed.
+
+
+## 2026 private pilot decision — September 18
+
+The user authorized a complete modern implementation in this newer repository, with the old app and archive preserved. This extends the earlier MVP into a functioning private mobile + API + shared-card web + admin pilot. The detailed delivery scope, architecture, milestones and acceptance checks are in [DUIT_2026_PLAN.md](DUIT_2026_PLAN.md). [DUIT_2026_MARKET_RESEARCH.md](DUIT_2026_MARKET_RESEARCH.md) records current primary-source evidence and validation hypotheses.
+
+The core product remains a business pitch plus private encounter memory. New explicit requirements include editable AI improvements to uploaded portraits/cards, recipient profiles bootstrapped from sender-supplied private drafts with verified ownership, useful event/place views, grounded needs/offers suggestions, a protected admin workspace, a standalone Samsung APK, and a narrated walkthrough of the implemented product. High-quality fictional scenarios and private archival examples must be distinguished from live usage. Real AI requires configured credentials and an agreed cost limit; simulated results must never be presented as working AI.
+
+For this pilot, Wallet distribution is conditional on real platform issuer credentials; QR/link/vCard and native sharing are the required working paths. The admin workspace manages the pilot, not an enterprise CRM. Publishing a web card, accessing private historical records, and sending a follow-up are distinct authorization actions.

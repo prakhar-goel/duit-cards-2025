@@ -121,3 +121,27 @@ Go through the product prd and existing code. And help me create the MVP. Curren
 
 Create an MVP, based on the PRD and let me know. You may stop whenever you need my input, call it out
 ```
+
+## Entry 010
+
+**Timestamp:** 2026-09-18T00:24:04+05:30 (Asia/Kolkata; captured from the restoration conversation)
+
+```text
+create a full blown version of the modern looking app. You have the idea of the old app, the market, the competitors, etc. So based on that create a detailed, powerful, modern, AI centric version of Duit app for 2026. You may use high quality old data, plus high quality mock data for the new demo. The quality and finesse of the app should be very high, like a billion dollar company. You may due strong market research, competitor research and other researches before starting.
+
+Apart from the app, also create an admin dashboard, for us to manage the users, view stats etc. The people may share their cards over whatsapp, to those who may not have the app. So ensure that people are able to open the card in a web view that works instantly, along with an option to download the app to view, save, engage with the cards in more details along with creating recipients own card, bootstrapped using the details that sender used for recipient. AI should be able to improve the quality of uploaded profile image, the uploaded business card and even create the business profile with CTA based on the brief description or the visiting card of people.&#x20;
+
+Fill in rest of the details according to your knowledge, entrepreneurship skills.
+
+Once you have created the app, admin dashboard, webview and any other thing required, created a detailed walkthrough video along with voice over (simplicity+quality over jargons/bombastic words). The video should also be high quality using good aesthetics, animations etc, however elegant. Like apple, google etc.
+
+Ask me any questions. Also, before you begin, tell me the settings I should choose for codex. I am about to give this prompt as GPT-6 Astra Extra High. Should I make it a goal instead?
+```
+
+## Entry 011
+
+**Timestamp:** 2026-09-18T00:24:04+05:30 (Asia/Kolkata; captured from the restoration conversation)
+
+```text
+Agree with your choice of answers to the questions. Will you give me goal's prompt or shall I give my earlier prompt as goal?
+```
