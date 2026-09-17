@@ -65,4 +65,4 @@ The APK is `artifacts/DUIT-2026-Pilot.apk`, package `io.duit.ecards.pilot`. Pres
 - Android emulator validation is recorded; physical Samsung camera/QR/audio testing and iOS distribution remain separate checks. There is no claimed App Store release, Wallet pass, automatic CRM sync, or automatic outbound messaging.
 - The current build is a private pilot. See [dependency review](docs/DEPENDENCY_REVIEW.md) and [execution evidence](docs/DUIT_2026_PROGRESS.md) for known limits rather than treating a successful demo as a production certification.
 
-[Product requirements](docs/PRD.md) · [Verbatim user inputs](docs/PRODUCT_INPUT_LOG.md) · [Implementation plan](docs/DUIT_2026_PLAN.md) · [Market research](docs/DUIT_2026_MARKET_RESEARCH.md) · [API contract](docs/API_PILOT.md) · [Walkthrough storyboard](docs/WALKTHROUGH_STORYBOARD.md)
+[Delivery and private videos](docs/DELIVERY.md) · [Product requirements](docs/PRD.md) · [Verbatim user inputs](docs/PRODUCT_INPUT_LOG.md) · [Implementation plan](docs/DUIT_2026_PLAN.md) · [Market research](docs/DUIT_2026_MARKET_RESEARCH.md) · [API contract](docs/API_PILOT.md) · [Walkthrough storyboard](docs/WALKTHROUGH_STORYBOARD.md)
