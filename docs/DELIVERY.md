@@ -20,16 +20,16 @@ The launcher prints the current local and internet address status. This verified
 
 The Wi-Fi IP may change. Use the launcher's new printed address after changing networks. For an explicitly requested internet session, `npm run phone:internet` starts a quick tunnel; `npm run phone:internet:stop` closes it. Keep the Mac awake. The managed background process survives this task and a closed terminal tab.
 
-Use the generated operator or fictional account credentials in `.local/credentials.json`. Passwords are not embedded in the app or source. `maya@demo.duit.test` and `noah@demo.duit.test` provide separate, populated workspaces.
+Use the generated operator or fictional account credentials in `.local/credentials.json`. The private demo APK now prefills Maya’s credentials at the user’s request; operator credentials are not embedded and passwords are not committed to source. `maya@demo.duit.test` and `noah@demo.duit.test` provide separate, populated workspaces.
 
 ## Android artifact
 
 - File: `artifacts/DUIT-2026-Pilot.apk`
 - Package: `io.duit.ecards.pilot`
-- Version: 4.1.0 / 2026091803
+- Version: 4.1.1 / 2026091804
 - Architecture: ARM64, suitable for Samsung S25 Ultra
-- Size: 47,425,049 bytes
-- SHA-256: `01567d45c0f8a0191ad8de452fd252e274ad434fa52a996148b62983bc5dabb0`
+- Size: 47,425,237 bytes
+- SHA-256: `783adffa3ab93c16de5c63766609d3805516af893d46f543521d67b704cfa1c7`
 
 The signed standalone APK includes all final source changes. Its server setting can be changed without rebuilding. Preserve `.local/signing` for future updates. The app installs separately from the restored legacy DUIT package.
 
@@ -68,3 +68,8 @@ The private data library has 300 selected historical profiles and 630 unique ima
 4. Real verification email delivery is not configured. The current private pilot uses an explicitly labelled operator outbox; it sends no email. A delivery provider is required before self-service external onboarding.
 
 At the user’s request, stop after this visual iteration and its walkthrough. The broad goal remains paused, not completed. The future setup items above do not extend this design-review milestone. This is not a production launch approval.
+
+
+## Demo login update · 4.1.1
+
+Email and masked password are prefilled for Maya in the private APK. Both stay editable. Switching to signup clears them; returning to login restores the demo. Build injection reads only the fictional Maya account from the private credentials file. Use `DUIT_DEMO_PREFILL=false npm run build:apk` for a build without it. This update does not resume the paused broader goal.

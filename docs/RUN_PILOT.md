@@ -123,6 +123,12 @@ The build script creates a private signing key only if one is missing. Preserve 
 
 The packaged API serves the build at `/downloads/DUIT-2026-Pilot.apk`; `/download` checks whether it exists before presenting a download button. The default artifact is `artifacts/DUIT-2026-Pilot.apk`. Installing this pilot does not replace the separately restored legacy DUIT app.
 
+## Quick demo login
+
+Private APK builds now prefill Maya’s demo email and password from `.local/credentials.json`. Tap **Step inside**. Fields remain editable, signup starts blank, and returning to sign-in restores the demo values. This shares access to the fictional Maya workspace with APK recipients; it does not grant operator access. The password is intentionally present in this private demo bundle but is not committed to source.
+
+To create an APK without demo credentials, run `DUIT_DEMO_PREFILL=false npm run build:apk`. Builds without the private credentials file also leave login blank. Existing signed-in sessions remain signed in after updating.
+
 ## Real AI and recipient verification
 
 Ordinary card editing, sharing, contacts and meeting tools work without AI. AI begins disabled; the app says so instead of presenting template text as a real model result. To enable it, configure the server API key and explicitly agreed spending limit in the private environment:

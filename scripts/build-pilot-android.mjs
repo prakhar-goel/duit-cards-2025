@@ -78,11 +78,23 @@ const lan = Object.entries(os.networkInterfaces())
   .find((n) => n.family === "IPv4" && !n.internal)?.address;
 const apiUrl =
   process.env.EXPO_PUBLIC_API_URL || `http://${lan || "10.0.2.2"}:48152/api/v1`;
+// The user requested one-tap entry in this private demo APK. Never embed an
+// operator account or commit its password. Other builds can opt out explicitly.
+const credentialsFile = path.join(root, ".local/credentials.json");
+const demoAccount =
+  process.env.DUIT_DEMO_PREFILL !== "false" && fs.existsSync(credentialsFile)
+    ? JSON.parse(fs.readFileSync(credentialsFile, "utf8")).accounts?.find(
+        (account) => account.email === "maya@demo.duit.test",
+      )
+    : undefined;
 const env = {
   ...process.env,
   JAVA_HOME: javaHome,
   ANDROID_HOME: sdk,
   EXPO_PUBLIC_API_URL: apiUrl,
+  EXPO_PUBLIC_DEMO_EMAIL: demoAccount?.email || "",
+  EXPO_PUBLIC_DEMO_PASSWORD: demoAccount?.password || "",
+  EXPO_NO_DOTENV: "1",
   NODE_ENV: "production",
 };
 const artifacts = path.join(root, "artifacts");

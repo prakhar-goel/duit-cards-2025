@@ -74,11 +74,16 @@ export function ServerSettings({
     </Sheet>
   );
 }
+// Injected only for the private demo build; no credential is stored in source.
+const demoEmail = process.env.EXPO_PUBLIC_DEMO_EMAIL ?? "";
+const demoPassword = process.env.EXPO_PUBLIC_DEMO_PASSWORD ?? "";
+const demoReady = Boolean(demoEmail && demoPassword);
+
 export function AuthScreen() {
   const { signIn } = usePilot();
   const [create, setCreate] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(demoReady ? demoEmail : "");
+  const [password, setPassword] = useState(demoReady ? demoPassword : "");
   const [name, setName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -197,7 +202,9 @@ export function AuthScreen() {
           <Body muted style={{ marginTop: 8, marginBottom: 24 }}>
             {create
               ? "Create your private pilot account."
-              : "Sign in to your private DUIT workspace."}
+              : demoReady
+                ? "Demo account ready. Tap Step inside."
+                : "Sign in to your private DUIT workspace."}
           </Body>
           {create && (
             <Field
@@ -279,6 +286,9 @@ export function AuthScreen() {
           <Pressable
             onPress={() => {
               setCreate(!create);
+              // Signup starts blank; returning to login restores the demo.
+              setEmail(create && demoReady ? demoEmail : "");
+              setPassword(create && demoReady ? demoPassword : "");
               setError("");
             }}
             accessibilityRole="button"
