@@ -1,6 +1,6 @@
 # DUIT 2026 private pilot delivery
 
-Prepared 18 September 2026. The modern implementation lives in this repository. The restored legacy application and archive remain separate.
+Updated 18 September 2026 for the user-requested **visual card-first iteration**. The modern implementation lives in this repository. The restored legacy application and archive remain separate. The broader pilot goal is paused; see `VISUAL_ITERATION.md`.
 
 ## Open the pilot
 
@@ -26,41 +26,45 @@ Use the generated operator or fictional account credentials in `.local/credentia
 
 - File: `artifacts/DUIT-2026-Pilot.apk`
 - Package: `io.duit.ecards.pilot`
-- Version: 4.0.0 / 2026091801
+- Version: 4.1.0 / 2026091803
 - Architecture: ARM64, suitable for Samsung S25 Ultra
-- Size: 47,440,945 bytes
-- SHA-256: `ebbbbbf56a97a4e20bdefe3a649d777a32675ec04a12065ef9943242e67549aa`
+- Size: 47,425,049 bytes
+- SHA-256: `01567d45c0f8a0191ad8de452fd252e274ad434fa52a996148b62983bc5dabb0`
 
 The signed standalone APK includes all final source changes. Its server setting can be changed without rebuilding. Preserve `.local/signing` for future updates. The app installs separately from the restored legacy DUIT package.
 
-The first release passed native emulator checks. The final source passed typechecks, unit tests and actual app-browser journeys; final native reinstall/retest is pending Mac unlock. This is not a claim of completed physical S25 camera, QR, microphone, location or WhatsApp validation.
+The incompatible Expo Asset version that caused the earlier 4.0.0 startup crash is fixed. Version 4.0.1 was confirmed running; 4.1.0 contains the visual redesign. Its signed download hash is verified in `artifacts/qa/visual-delivery.json`; current native evidence is listed in `VISUAL_ITERATION.md`. This is not a claim of physical Samsung S25 camera, QR, microphone, location or WhatsApp validation.
 
 ## Private narrated videos
+
+The latest, separate film is `artifacts/videos/visual-iteration/DUIT-2026-visual.mp4`, with its own viewing page, transcript and captions. It demonstrates the card-first design through actual app-web and recipient-browser captures; see `VISUAL_WALKTHROUGH.md`.
+
+Earlier cuts remain available for comparison:
 
 - `artifacts/videos/DUIT-2026-quick.mp4` — 1 minute 32 seconds.
 - `artifacts/videos/DUIT-2026-main.mp4` — 7 minutes 48 seconds.
 - `artifacts/videos/index.html` — local viewing page with both cuts.
 
-The 1080p videos include generated narration, captions, chapters and separate SRT/transcript files. They show actual app-web/browser interactions, accurately labelled, while the locked Mac prevents final native recording. The longer cut covers the card, meetings, follow-up, recipient review, admin, private archive and first business experiments. The archive includes the requested founder profiles.
+The 1080p videos include generated narration, captions, chapters and separate SRT/transcript files. They show actual app-web/browser interactions, accurately labelled, recorded while the Mac was locked during the earlier delivery. The longer cut covers the card, meetings, follow-up, recipient review, admin, private archive and first business experiments. The archive includes the requested founder profiles.
 
 Full-stream decode, chapter/caption bounds and voice-source consistency checks passed; chapter contact sheets and representative full-size frames were inspected. No full end-to-end listening review was performed. Caption timing is proportional to speech segments. Results are in `artifacts/videos/verification.json`; narrative and reproduction instructions are in `docs/WALKTHROUGH_STORYBOARD.md` and `scripts/video/README.md`. These private files are not published or committed.
 
 ## Verification
 
-- 21 mobile tests and 34 API/provider tests pass: `artifacts/qa/final-unit-integration-tests.txt`.
+- 26 mobile tests and 34 API/provider tests pass: `artifacts/qa/visual-mobile-tests.txt` and `artifacts/qa/visual-api-tests.txt`.
 - Eight public/admin browser checks pass: `artifacts/qa/web/verification.json`.
 - Eight two-account/offline mobile-browser journeys pass: `artifacts/qa/mobile-browser-verification.json`.
-- Native screenshots and exact limitations: `artifacts/qa/native/verification.json`.
-- Background-server identity, setup, private/public boundaries and served APK hash pass: `artifacts/qa/delivery-verification.json`.
+- Current native screenshots and exact limitations: `artifacts/qa/native/visual-4.1.0-verification.json` (older verification remains historical).
+- Current APK download and published imagery checks: `artifacts/qa/visual-delivery.json`. Prior background-server/setup checks: `artifacts/qa/delivery-verification.json`.
 - API production dependency audit has zero reported advisories. Remaining Expo/native tooling findings are in `docs/DEPENDENCY_REVIEW.md`.
 
 The private data library has 300 selected historical profiles and 630 unique images. Six fictional modern accounts have six published profiles, 38 saved people, 53 meetings, 38 commitments and nine seeded enquiries. Recording fixtures were removed with exact ownership/ID guards. Historical records and fictional activity are labelled and kept out of current-user growth claims.
 
-## Outstanding external steps
+## Future setup if the broader pilot is resumed
 
 1. Approve the AI provider budget and configure the server key locally before real AI sample evaluation. No paid application-provider call has been made; disabled AI is shown honestly. See `docs/AI_PROVIDER_PLAN.md`.
-2. Unlock the Mac for the remaining final-APK emulator checks. The private videos use actual app-web recordings while native recording is unavailable.
+2. Review the card-first design before reopening broader feature work. The latest film uses actual app-web captures; version-specific Android checks are tracked separately.
 3. Refresh the existing GitHub CLI's workflow permission with `gh auth refresh -h github.com -s workflow` before pushing the implementation commit and executing its pull-request checks. GitHub rejected the push because the commit updates `.github/workflows/ci.yml`; it has not been merged. The existing repository is public, while local user media, databases, credentials, signing keys, APKs and videos are Git-ignored.
 4. Real verification email delivery is not configured. The current private pilot uses an explicitly labelled operator outbox; it sends no email. A delivery provider is required before self-service external onboarding.
 
-The overall goal remains active while required live-AI and final delivery checks are outstanding. Do not treat this document as a production launch approval.
+At the user’s request, stop after this visual iteration and its walkthrough. The broad goal remains paused, not completed. The future setup items above do not extend this design-review milestone. This is not a production launch approval.

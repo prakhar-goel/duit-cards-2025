@@ -99,7 +99,7 @@ export function requestApiOrigin(req) {
 }
 export function presentPublicCard(snapshot, req) {
   const value = structuredClone(snapshot);
-  for (const key of ['imageUrl', 'coverUrl']) {
+  for (const key of ['imageUrl', 'coverUrl', 'businessCardUrl']) {
     if (!value[key]) continue;
     try {
       const url = new URL(value[key], apiOrigin());

@@ -1,3 +1,5 @@
+> **Latest user direction — visual iteration, then stop:** The product is now card-first (Person → Card → Business), with a visual wallet and a separate concise walkthrough. See `VISUAL_ITERATION.md`. The broad goal is paused at the user’s request; earlier pending AI/GitHub work below is historical tracking, not an instruction to continue automatically.
+
 # DUIT 2026 execution record
 
 Editorial date: 18 September 2026. This is evidence for a private pilot, not a production certification.

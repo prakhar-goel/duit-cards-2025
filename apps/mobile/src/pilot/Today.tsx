@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, Linking } from "react-native";
+import { View, Text, Pressable, Linking, ScrollView } from "react-native";
 import { usePilot } from "./store";
 import { post, patch } from "./api";
 import { dateLabel, firstName } from "./domain";
@@ -14,7 +14,6 @@ import {
   Icon,
   Pill,
   Section,
-  Stat,
   Button,
   Notice,
   Sheet,
@@ -22,7 +21,7 @@ import {
   Empty,
   Divider,
 } from "./ui";
-import { PersonRow } from "./People";
+import { CardArtwork, WalletTile } from "./CardStory";
 export function TodayScreen({
   onPerson,
   onPeople,
@@ -49,9 +48,6 @@ export function TodayScreen({
     data.user?.email.split("@")[0];
   const open = data.commitments.filter((c) => c.status === "open");
   const leads = data.leads.filter((l) => !l.status || l.status === "new");
-  const matches = data.feed
-    .filter((f) => f.type === "relevant_person")
-    .slice(0, 4);
   const selectedLead = data.leads.find((l) => l.id === leadId);
   async function addIntent() {
     setBusy(true);
@@ -79,23 +75,39 @@ export function TodayScreen({
   return (
     <Page refreshing={loading} onRefresh={() => void refresh()}>
       <View style={s.row}>
-        <View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 3,
+              transform: [{ rotate: "-8deg" }],
+            }}
+          >
+            {[0, 1].map((i) => (
+              <View key={i} style={{ gap: 3, marginTop: i ? 4 : 0 }}>
+                {[0, 1].map((j) => (
+                  <View
+                    key={j}
+                    style={{
+                      width: 9,
+                      height: 9,
+                      borderRadius: 2,
+                      backgroundColor: C.ink,
+                    }}
+                  />
+                ))}
+              </View>
+            ))}
+          </View>
           <Text
             style={{
-              fontSize: 20,
-              fontWeight: "700",
-              letterSpacing: 4,
+              fontSize: 31,
+              fontWeight: "800",
+              letterSpacing: -1.6,
               color: C.ink,
             }}
           >
-            DUIT<Text style={{ color: C.teal }}>·</Text>
-          </Text>
-          <Text style={{ fontSize: 11, color: C.muted, marginTop: 7 }}>
-            {new Date().toLocaleDateString("en-GB", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-            })}
+            duit<Text style={{ color: C.teal }}>.</Text>
           </Text>
         </View>
         <Pressable
@@ -103,24 +115,17 @@ export function TodayScreen({
           accessibilityRole="button"
           accessibilityLabel="Open my card"
         >
-          <Avatar name={name} url={profile.photoUrl} size={45} />
+          <Avatar name={name} url={profile.photoUrl} size={42} />
         </Pressable>
-      </View>
-      <View style={{ marginTop: 33, marginBottom: 23 }}>
-        <Title size={35}>Hello, {firstName(name)}.</Title>
-        <Body muted style={{ marginTop: 10 }}>
-          A good day to move a conversation forward.
-        </Body>
       </View>
       {offline && (
         <Notice action="Retry" onPress={() => void sync()}>
-          You’re offline. Your saved people and meeting notes are here.
+          Offline · your saved cards and notes are here.
         </Notice>
       )}
       {queue.length > 0 && (
         <Notice action="Sync" onPress={() => void sync()}>
           {queue.length} capture{queue.length === 1 ? "" : "s"} waiting to sync.
-          {queue.some((q) => q.error) ? " A capture needs review." : ""}
         </Notice>
       )}
       {error && !offline && (
@@ -128,45 +133,57 @@ export function TodayScreen({
           {error}
         </Notice>
       )}
-      <View style={{ backgroundColor: C.teal, borderRadius: 27, padding: 25 }}>
-        <View style={s.row}>
-          <Label color={C.lime}>SMALL ACTIONS. REAL POSSIBILITIES.</Label>
-          <Icon name="arrow-up-right-box-outline" size={24} color={C.lime} />
-        </View>
-        <Text
-          style={{
-            color: C.white,
-            fontSize: 29,
-            fontWeight: "500",
-            lineHeight: 35,
-            letterSpacing: -1,
-            marginTop: 20,
-            maxWidth: 310,
-          }}
-        >
-          {open.length
-            ? "A hello worth following up."
-            : "Your next opportunity starts with a hello."}
-        </Text>
-        <Text
-          style={{
-            color: "#B7CEC1",
-            fontSize: 13,
-            lineHeight: 21,
-            marginTop: 12,
-            maxWidth: 300,
-          }}
-        >
-          {open.length
-            ? `${open.length} open promise${open.length === 1 ? "" : "s"}. Pick one. A thoughtful message beats a forgotten business card.`
-            : "Save the person, the place and the thing you promised. Future you will be grateful."}
-        </Text>
-        <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
-          <Stat value={data.people.length} label="people" dark />
-          <Stat value={data.encounters.length} label="meetings" dark />
-          <Stat value={leads.length} label="new leads" dark />
-        </View>
+      <View style={{ marginTop: 28, marginBottom: 18 }}>
+        <Label>GOOD TO SEE YOU, {firstName(name).toUpperCase()}</Label>
+        <Title size={34} style={{ marginTop: 8 }}>
+          Your next hello.
+        </Title>
       </View>
+      <Pressable
+        onPress={onMyCard}
+        accessibilityRole="button"
+        accessibilityLabel="View my business card"
+        style={({ pressed }) => [
+          {
+            borderRadius: 25,
+            padding: 18,
+            paddingBottom: 13,
+            backgroundColor: "#EBE8E0",
+          },
+          pressed && { opacity: 0.88 },
+        ]}
+      >
+        <View style={{ marginHorizontal: 8, marginTop: 9, marginBottom: 19 }}>
+          <View
+            style={{
+              position: "absolute",
+              top: 7,
+              left: 3,
+              right: 3,
+              bottom: -5,
+              backgroundColor: "#D2CEC2",
+              borderRadius: 10,
+              transform: [{ rotate: "-3deg" }],
+            }}
+          />
+          <CardArtwork
+            uri={data.cards[0]?.businessCardUrl}
+            name={data.cards[0]?.title || name || "Your card"}
+            company={data.cards[0]?.company || profile.company}
+            role={data.cards[0]?.role || profile.role}
+            style={{ borderRadius: 8 }}
+          />
+        </View>
+        <View style={s.row}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Icon name="id-card-outline" size={17} />
+            <Text style={{ color: C.ink, fontSize: 13, fontWeight: "600" }}>
+              Your card, ready to go
+            </Text>
+          </View>
+          <Icon name="arrow-forward-outline" size={19} />
+        </View>
+      </Pressable>
       <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
         <Button
           onPress={onCapture}
@@ -174,216 +191,218 @@ export function TodayScreen({
           icon="scan-outline"
           style={{ flex: 1 }}
         >
-          Capture a hello
+          Scan a card
         </Button>
-        <Button
-          onPress={() => setLeadInbox(true)}
-          tone="secondary"
-          icon="file-tray-outline"
-          style={{ flex: 1 }}
-        >
-          Leads{leads.length ? " · " + leads.length : ""}
+        <Button onPress={onMyCard} icon="share-outline" style={{ flex: 1 }}>
+          Share mine
         </Button>
       </View>
+      <Section title="Your card wallet" action="See all" onPress={onPeople}>
+        {data.people.length ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 15, paddingBottom: 8 }}
+          >
+            {[...data.people]
+              .sort(
+                (a, b) =>
+                  Number(Boolean(b.businessCardUrl)) -
+                  Number(Boolean(a.businessCardUrl)),
+              )
+              .slice(0, 8)
+              .map((p) => (
+                <WalletTile
+                  key={p.id}
+                  person={p}
+                  width={255}
+                  onPress={() => onPerson(p.id)}
+                />
+              ))}
+          </ScrollView>
+        ) : (
+          <Empty
+            title="A wallet worth opening"
+            body="Scan a card after your next good conversation."
+            action="Add a card"
+            onPress={onCapture}
+          />
+        )}
+      </Section>
+      <View style={{ flexDirection: "row", gap: 10, marginTop: 22 }}>
+        <Pressable
+          onPress={onPeople}
+          accessibilityRole="button"
+          style={{
+            flex: 1,
+            backgroundColor: C.soft,
+            borderRadius: 17,
+            padding: 16,
+          }}
+        >
+          <Icon name="people-outline" size={21} />
+          <Text
+            style={{
+              fontSize: 23,
+              color: C.ink,
+              fontWeight: "500",
+              marginTop: 9,
+            }}
+          >
+            {data.people.length}
+            <Text style={{ fontSize: 12 }}> cards</Text>
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setLeadInbox(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Open enquiries"
+          style={{
+            flex: 1,
+            backgroundColor: "#EFE8DF",
+            borderRadius: 17,
+            padding: 16,
+          }}
+        >
+          <Icon name="chatbubble-ellipses-outline" size={21} />
+          <Text
+            style={{
+              fontSize: 23,
+              color: C.ink,
+              fontWeight: "500",
+              marginTop: 9,
+            }}
+          >
+            {leads.length}
+            <Text style={{ fontSize: 12 }}> new enquiries</Text>
+          </Text>
+        </Pressable>
+      </View>
       <Section
-        title="Keep the conversation going"
-        action={open.length ? "See people" : undefined}
+        title="Pick up the conversation"
+        action="All people"
         onPress={onPeople}
       >
         {open.length ? (
-          open.slice(0, 3).map((c, index) => {
+          open.slice(0, 2).map((c) => {
             const p = data.people.find((p) => p.id === c.personId);
             return (
               <View
                 key={c.id}
-                style={[s.card, { marginBottom: 11, padding: 18 }]}
+                style={{
+                  paddingVertical: 14,
+                  borderBottomWidth: 1,
+                  borderBottomColor: C.line,
+                  flexDirection: "row",
+                  gap: 11,
+                  alignItems: "center",
+                }}
               >
                 <Pressable
                   onPress={() => onPerson(c.personId)}
+                  accessibilityRole="button"
                   style={{
+                    flex: 1,
                     flexDirection: "row",
-                    gap: 12,
+                    gap: 11,
                     alignItems: "center",
                   }}
                 >
                   <Avatar
                     name={(c as any).personName ?? p?.name ?? "Connection"}
                     url={p?.photoUrl}
-                    size={43}
+                    size={42}
                   />
                   <View style={{ flex: 1 }}>
                     <Text
-                      style={{ fontWeight: "600", color: C.ink, fontSize: 14 }}
+                      style={{ fontSize: 13, fontWeight: "600", color: C.ink }}
                     >
                       {(c as any).personName ?? p?.name ?? "Connection"}
                     </Text>
                     <Text
-                      style={{ fontSize: 11, color: C.muted, marginTop: 4 }}
+                      numberOfLines={2}
+                      style={{
+                        fontSize: 12,
+                        lineHeight: 18,
+                        color: C.muted,
+                        marginTop: 4,
+                      }}
                     >
-                      {c.dueAt
-                        ? "Due " + dateLabel(c.dueAt)
-                        : "A promise worth keeping"}
+                      {c.text}
                     </Text>
+                    {c.dueAt && (
+                      <Text
+                        style={{ fontSize: 10, color: C.teal, marginTop: 4 }}
+                      >
+                        {dateLabel(c.dueAt)}
+                      </Text>
+                    )}
                   </View>
-                  <Pressable
-                    onPress={() => void complete(c.id)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Mark promise complete"
-                    hitSlop={10}
-                  >
-                    <Icon name="ellipse-outline" size={24} color={C.teal} />
-                  </Pressable>
                 </Pressable>
-                <Body style={{ fontSize: 14, marginTop: 13, lineHeight: 21 }}>
-                  {c.text}
-                </Body>
+                <Pressable
+                  onPress={() => void complete(c.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Mark promise complete"
+                  hitSlop={10}
+                >
+                  <Icon name="ellipse-outline" size={24} />
+                </Pressable>
               </View>
             );
           })
         ) : (
-          <View style={s.card}>
-            <Body>No loose ends today.</Body>
-            <Body muted style={{ fontSize: 13, marginTop: 7 }}>
-              After your next meeting, jot down what you promised. We’ll keep it
-              close.
-            </Body>
-          </View>
+          <Body muted>All caught up.</Body>
         )}
       </Section>
-      <Section
-        title="What are you working on?"
-        action="Add a focus"
+      <Button
+        tone="quiet"
+        icon="compass-outline"
         onPress={() => setIntent(true)}
+        style={{ marginTop: 20 }}
       >
-        {data.needs
-          .filter((n) => n.active)
-          .slice(0, 3)
-          .map((n) => (
-            <View
-              key={n.id}
-              style={{
-                borderLeftWidth: 3,
-                borderLeftColor: n.kind === "need" ? C.lime : C.teal,
-                paddingLeft: 15,
-                marginBottom: 17,
-              }}
-            >
-              <Label>
-                {n.kind === "need" ? "I’M LOOKING FOR" : "I CAN HELP WITH"}
-              </Label>
-              <Body style={{ marginTop: 7, fontSize: 14 }}>{n.text}</Body>
-              <Pressable
-                onPress={() =>
-                  void patch(`/need-offers/${n.id}`, { active: false })
-                    .then(refresh)
-                    .catch((e) => notify(e.message))
-                }
-                accessibilityRole="button"
-                style={{ marginTop: 7, alignSelf: "flex-start" }}
-              >
-                <Text style={{ fontSize: 11, color: C.muted }}>
-                  Mark as no longer active
-                </Text>
-              </Pressable>
-            </View>
-          ))}
-        {!data.needs.some((n) => n.active) && (
-          <Pressable
-            onPress={() => setIntent(true)}
+        What are you looking for?
+      </Button>
+      {data.needs
+        .filter((n) => n.active)
+        .slice(0, 2)
+        .map((n) => (
+          <View
+            key={n.id}
             style={{
-              borderStyle: "dashed",
-              borderWidth: 1,
-              borderColor: "#BECBBE",
-              borderRadius: 20,
-              padding: 22,
+              borderLeftWidth: 2,
+              borderLeftColor: C.line,
+              paddingLeft: 12,
+              marginTop: 12,
             }}
           >
-            <Icon name="compass-outline" size={25} />
-            <Body style={{ marginTop: 12 }}>
-              A designer? A distributor? Your next customer?
-            </Body>
-            <Body muted style={{ fontSize: 13, marginTop: 7 }}>
-              Tell DUIT what you need or offer. Your network is a good place to
-              start.
-            </Body>
-          </Pressable>
-        )}
-      </Section>
-      {matches.length > 0 && (
-        <Section title="Someone comes to mind">
-          {matches.map((f, i) => (
-            <Pressable
-              key={f.id ?? i}
-              onPress={() => f.person && onPerson(f.person.id)}
-              style={[s.card, { marginBottom: 12, backgroundColor: "#EEF3E6" }]}
+            <Text style={{ fontSize: 10, color: C.muted }}>
+              {n.kind === "need" ? "LOOKING FOR" : "CAN HELP WITH"}
+            </Text>
+            <Text
+              numberOfLines={2}
+              style={{
+                fontSize: 12,
+                lineHeight: 18,
+                color: C.ink,
+                marginTop: 5,
+              }}
             >
-              <View
-                style={{ flexDirection: "row", gap: 12, alignItems: "center" }}
-              >
-                <Avatar
-                  name={f.person?.name ?? ""}
-                  url={f.person?.photoUrl}
-                  size={48}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{ fontSize: 16, fontWeight: "600", color: C.ink }}
-                  >
-                    {f.person?.name}
-                  </Text>
-                  <Text style={s.hint}>{f.person?.company}</Text>
-                </View>
-                <Icon name="arrow-forward-outline" size={19} />
-              </View>
-              <Body style={{ fontSize: 13, marginTop: 15 }}>{f.reason}</Body>
-              <Text
-                numberOfLines={3}
-                style={{
-                  fontSize: 11,
-                  lineHeight: 17,
-                  color: C.muted,
-                  marginTop: 8,
-                }}
-              >
-                {Array.isArray(f.evidence)
-                  ? (f.evidence as any[]).map((e) => e.text).join(" · ")
-                  : f.evidence}
+              {n.text}
+            </Text>
+            <Pressable
+              onPress={() =>
+                void patch(`/need-offers/${n.id}`, { active: false })
+                  .then(refresh)
+                  .catch((e) => notify(e.message))
+              }
+              accessibilityRole="button"
+            >
+              <Text style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>
+                Done with this focus
               </Text>
             </Pressable>
-          ))}
-        </Section>
-      )}
-      <Section
-        title="Recently in your world"
-        action="All people"
-        onPress={onPeople}
-      >
-        {data.people.slice(0, 3).map((p) => (
-          <PersonRow key={p.id} person={p} onPress={() => onPerson(p.id)} />
+          </View>
         ))}
-        {!data.people.length && (
-          <Empty
-            title="Your people belong here"
-            body="Scan a card or add someone from your last good conversation."
-            action="Add your first person"
-            onPress={onCapture}
-          />
-        )}
-      </Section>
-      <Text
-        style={{
-          color: C.muted,
-          fontSize: 10,
-          lineHeight: 17,
-          textAlign: "center",
-          marginTop: 30,
-        }}
-      >
-        Less collecting. More connecting.
-        {data.updatedAt
-          ? "\nLast synced " + dateLabel(data.updatedAt, true)
-          : ""}
-      </Text>
       <Sheet
         visible={intent}
         title="Give your network a direction"

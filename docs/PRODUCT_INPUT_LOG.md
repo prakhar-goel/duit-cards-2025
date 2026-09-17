@@ -145,3 +145,10 @@ Ask me any questions. Also, before you begin, tell me the settings I should choo
 ```text
 Agree with your choice of answers to the questions. Will you give me goal's prompt or shall I give my earlier prompt as goal?
 ```
+
+
+## 2026-09-18T01:45:38+05:30
+
+I saw the app walkthrough video. The overall idea is good. However, there are some important things which are missing. You have built a very text heavy app. Whereas, we want a very visual app, less wordy. Also, the "business cards" are central to the theme. A user profile, that looks like a linkedin is not very unique. There are plenty of profile based apps and each one has a similar design. However "business cards" have been there for centuries. They have a unique design, typography and the credit card shaped or portrait shaped design that has an identity of its own. We want to have that. That was the reason that the previous app had a carousel like design -> profile photo, then the user's business card image, then business profile that worked like an elevator pitch with quick CTAs for instant business actions. So can you change the app design based on this?
+
+Make this iteration and its walkthrough video and then stop the goal. There is no point in finishing the goal, while we are still ideating. Make the walkthrough video crisp for me to understand and you may include your ideas and suggestions too. However remember -> visual is the key. It could be photos, videos, animations, or interactive.

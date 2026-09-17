@@ -132,9 +132,14 @@ async function seedOwner(owner){
  await query("UPDATE users SET data_origin='fictional_demo',profile=profile || $2::jsonb WHERE id=$1",[session.user.id,JSON.stringify({isDemo:true})]);
  const slug=`${owner.portrait}-demo`;
  let card=(await api('/cards?limit=200',{token})).cards.find(card=>card.slug===slug);
- if(!card)card=(await api('/cards',{token,method:'POST',body:{slug,title:owner.name,subtitle:owner.headline,company:owner.company,role:owner.role,imageUrl:image(owner.portrait),bio:`Fictional demo business. ${owner.offer}`,theme:{color:owner.color,style:'editorial'},contact:{email:session.email},ctaType:'enquire',ctaLabel:owner.cta}})).card;
+ if(!card)card=(await api('/cards',{token,method:'POST',body:{slug,title:owner.name,subtitle:owner.headline,company:owner.company,role:owner.role,imageUrl:image(owner.portrait),businessCardUrl:`${origin}/demo/cards/${owner.key}-card.png`,coverUrl:`${origin}/demo/covers/${owner.key}-cover.png`,bio:`Fictional demo business. ${owner.offer}`,theme:{color:owner.color,style:'editorial'},contact:{email:session.email},ctaType:'enquire',ctaLabel:owner.cta}})).card;
  await query("UPDATE cards SET data_origin='fictional_demo' WHERE id=$1",[card.id]);
  if(!card.isPublished){await api(`/cards/${card.id}/panels`,{token,method:'POST',body:{panels:['hook','relevance','offer','outcome','proof','cta'].map((panelType,position)=>({panelType,position,body:owner.panels[position],provenance:'owner',approved:true}))}});card=(await api(`/cards/${card.id}/publish`,{token,method:'POST',body:{}})).card;}
+ // A separate original card visual and portfolio image; update only fictional fixtures lacking this iteration.
+ if(!card.businessCardUrl){
+  card=(await api(`/cards/${card.id}`,{token,method:'PATCH',body:{businessCardUrl:`${origin}/demo/cards/${owner.key}-card.png`,coverUrl:`${origin}/demo/covers/${owner.key}-cover.png`}})).card;
+  if(card.isPublished)card=(await api(`/cards/${card.id}/publish`,{token,method:'POST',body:{}})).card;
+ }
  cards.set(owner.key,card);
  const existing=(await api('/need-offers',{token})).needOffers;
  for(const [kind,text] of [['offer',owner.offer],['need',owner.need]])if(!existing.some(item=>item.kind===kind&&item.text===text))await api('/need-offers',{token,method:'POST',body:{kind,text}});
@@ -147,6 +152,10 @@ async function seedNetwork(ownerKey,people,full=false){
  for(const contact of people){
   const owner=owners.find(owner=>owner.key===contact.key);
   const person=(await api('/people',{token,method:'POST',body:{name:contact.name,company:contact.company,role:contact.role,email:`${contact.key}@demo.duit.test`,city:contact.city,countryCode:contact.country,photoUrl:owner?image(owner.portrait):null,tags:['Fictional demo',contact.tag],category:['partner','active'].includes(contact.stage)?'partner':'connection',stage:contact.stage,bio:`Fictional demo contact. Offers: ${contact.offer}. Looking for: ${contact.need}.`,clientId:`${version}:${ownerKey}:person:${contact.key}`}})).person;
+  if(owner){
+   const sourceCard=cards.get(owner.key);
+   await query("UPDATE people SET business_card_url=COALESCE(business_card_url,$2),source_card_id=COALESCE(source_card_id,$3) WHERE id=$1",[person.id,`${origin}/demo/cards/${owner.key}-card.png`,sourceCard.id]);
+  }
   peopleMap.set(contact.key,person);
   await query("UPDATE people SET data_origin='fictional_demo' WHERE id=$1",[person.id]);
  }

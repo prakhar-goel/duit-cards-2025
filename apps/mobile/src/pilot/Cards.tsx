@@ -37,6 +37,7 @@ import { chooseImage } from "./Capture";
 import { AIReview } from "./AI";
 import { ServerSettings } from "./Auth";
 import { ProfileEditor } from "./Profile";
+import { CardStory, CardArtwork } from "./CardStory";
 const panelLabels = {
   hook: "Your opening line",
   relevance: "Who you help",
@@ -62,6 +63,22 @@ const emptyPanels = () =>
     approved: false,
     provenance: "owner" as const,
   }));
+function OwnCardStory({ card }: { card: Card }) {
+  const [full, setFull] = useState<Card>(card);
+  useEffect(() => {
+    let active = true;
+    setFull(card);
+    void get(`/cards/${card.id}`)
+      .then((r) => {
+        if (active) setFull(r.card);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [card]);
+  return <CardStory card={full} initialPage="Card" />;
+}
 export function MyCardScreen() {
   const {
     data,
@@ -100,7 +117,7 @@ export function MyCardScreen() {
     <Page refreshing={loading} onRefresh={() => void refresh()}>
       <View style={s.row}>
         <View>
-          <Label>YOUR BUSINESS, BEAUTIFULLY INTRODUCED</Label>
+          <Label>YOUR INTRODUCTION</Label>
           <Title style={{ marginTop: 12 }}>My card.</Title>
         </View>
         <Pressable
@@ -112,9 +129,7 @@ export function MyCardScreen() {
           <Icon name="settings-outline" />
         </Pressable>
       </View>
-      <Body muted style={{ marginTop: 12, marginBottom: 24 }}>
-        A little more useful than “let’s connect”.
-      </Body>
+      <View style={{ height: 14 }} />
       {isDemo && (
         <View style={{ marginBottom: 16 }}>
           <Pill icon="flask-outline">Fictional demo account</Pill>
@@ -122,102 +137,7 @@ export function MyCardScreen() {
       )}
       {data.cards.map((card) => (
         <View key={card.id} style={{ marginBottom: 27 }}>
-          <Pressable
-            onPress={() => setEditing(card)}
-            style={{
-              backgroundColor: C.teal,
-              borderRadius: 28,
-              overflow: "hidden",
-            }}
-          >
-            {card.coverUrl && (
-              <RemoteImage
-                uri={card.coverUrl}
-                style={{ width: "100%", height: 125 }}
-              />
-            )}
-            <View style={{ padding: 25 }}>
-              <View style={s.row}>
-                <Label color={C.lime}>
-                  {card.isPublished
-                    ? "READY FOR AN INTRODUCTION"
-                    : "YOUR CARD · DRAFT"}
-                </Label>
-                <Text
-                  style={{ color: "#AFCCBA", fontSize: 11, letterSpacing: 2 }}
-                >
-                  DUIT
-                </Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: 17,
-                  alignItems: "center",
-                  marginTop: 28,
-                }}
-              >
-                <Avatar
-                  name={card.title}
-                  url={card.imageUrl}
-                  size={82}
-                  square
-                />
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      color: C.white,
-                      fontSize: 27,
-                      fontWeight: "500",
-                      lineHeight: 32,
-                      letterSpacing: -0.8,
-                    }}
-                  >
-                    {card.title}
-                  </Text>
-                  <Text
-                    style={{
-                      color: "#BDD1C1",
-                      fontSize: 13,
-                      lineHeight: 20,
-                      marginTop: 7,
-                    }}
-                  >
-                    {(card as any).company ||
-                      card.contact?.website?.replace(/^https?:\/\//, "")}
-                  </Text>
-                </View>
-              </View>
-              <Text
-                style={{
-                  color: C.white,
-                  fontSize: 19,
-                  fontWeight: "400",
-                  lineHeight: 27,
-                  marginTop: 25,
-                  letterSpacing: -0.3,
-                }}
-              >
-                {card.subtitle || "Your work deserves a clear introduction."}
-              </Text>
-              <View
-                style={{
-                  height: 1,
-                  backgroundColor: "#34594B",
-                  marginTop: 24,
-                  marginBottom: 17,
-                }}
-              />
-              <View style={s.row}>
-                <Text
-                  style={{ color: C.lime, fontSize: 13, fontWeight: "500" }}
-                >
-                  {card.ctaLabel}
-                </Text>
-                <Icon name="arrow-forward-outline" color={C.lime} />
-              </View>
-            </View>
-          </Pressable>
+          <OwnCardStory card={card} />
           <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
             <Button
               style={{ flex: 1 }}
@@ -273,38 +193,6 @@ export function MyCardScreen() {
       >
         Create another card
       </Button>
-      <Section title="A card with a little more purpose">
-        <View style={s.card}>
-          <View style={{ flexDirection: "row", gap: 13 }}>
-            <View
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 14,
-                backgroundColor: C.lime,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Icon name="sparkles-outline" size={21} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: "600", color: C.ink }}>
-                Clear words. Better conversations.
-              </Text>
-              <Body muted style={{ fontSize: 13, marginTop: 7 }}>
-                Scan a visiting card or describe your work. DUIT Assist can help
-                with your pitch, photo and next step. You approve every change.
-              </Body>
-            </View>
-          </View>
-          {!capabilities.enabled && (
-            <Text style={[s.hint, { marginTop: 17 }]}>
-              AI is not connected yet. The complete card editor works manually.
-            </Text>
-          )}
-        </View>
-      </Section>
       {editing !== undefined && (
         <CardEditor card={editing} onClose={() => setEditing(undefined)} />
       )}
@@ -506,6 +394,8 @@ export function CardEditor({
       ctaType: "enquire",
       ctaLabel: "Let’s talk",
       imageUrl: profile.photoUrl ?? null,
+      businessCardUrl: null,
+      coverUrl: null,
       links: [],
     },
   );
@@ -585,10 +475,24 @@ export function CardEditor({
       const uploaded = await chooseImage(false, "business_card");
       if (uploaded) {
         setMedia(uploaded);
-        setAiTask("card_extract");
+        change("businessCardUrl", uploaded.url);
+        if (capabilities.enabled) setAiTask("card_extract");
+        else notify("Original card added. You can edit the details below.");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not read this card.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function cover() {
+    setBusy(true);
+    setError("");
+    try {
+      const uploaded = await chooseImage(false, "cover");
+      if (uploaded) change("coverUrl", uploaded.url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not upload this cover.");
     } finally {
       setBusy(false);
     }
@@ -677,6 +581,18 @@ export function CardEditor({
                 </Button>
               )}
             </View>
+            {form.businessCardUrl && (
+              <View style={{ marginBottom: 14 }}>
+                <CardArtwork
+                  uri={form.businessCardUrl}
+                  name={form.title}
+                  company={form.company}
+                  role={form.role}
+                  height={190}
+                />
+                <Text style={s.hint}>Your original visiting card</Text>
+              </View>
+            )}
             <Button
               tone="secondary"
               icon="scan-outline"
@@ -684,7 +600,9 @@ export function CardEditor({
               busy={busy}
               style={{ marginBottom: 23 }}
             >
-              Start from a visiting card
+              {form.businessCardUrl
+                ? "Replace visiting card"
+                : "Upload your visiting card"}
             </Button>
             <Field
               label="Your name"
@@ -729,6 +647,33 @@ export function CardEditor({
           </>
         ) : page === "pitch" ? (
           <>
+            <View style={{ marginBottom: 24 }}>
+              {form.coverUrl && (
+                <RemoteImage
+                  uri={form.coverUrl}
+                  contain
+                  style={{
+                    width: "100%",
+                    height: 210,
+                    borderRadius: 18,
+                    backgroundColor: C.white,
+                    marginBottom: 12,
+                  }}
+                />
+              )}
+              <Button
+                tone="secondary"
+                icon="images-outline"
+                busy={busy}
+                onPress={() => void cover()}
+              >
+                {form.coverUrl ? "Change business cover" : "Add business cover"}
+              </Button>
+              <Text style={s.hint}>
+                Show your work, product or business. This stays separate from
+                your portrait and visiting card.
+              </Text>
+            </View>
             <View
               style={[s.card, { marginBottom: 25, backgroundColor: C.soft }]}
             >

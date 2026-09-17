@@ -161,5 +161,9 @@ export async function migrate() {
       await db.query('ALTER TABLE people ADD COLUMN IF NOT EXISTS business_card_url TEXT, ADD COLUMN IF NOT EXISTS business_card_back_url TEXT');
       await db.query("INSERT INTO schema_migrations(version) VALUES('2026-private-pilot-v2')");
     }
+    if (!(await db.query("SELECT 1 FROM schema_migrations WHERE version='2026-card-first-v3'")).rowCount) {
+      await db.query('ALTER TABLE cards ADD COLUMN IF NOT EXISTS business_card_url TEXT');
+      await db.query("INSERT INTO schema_migrations(version) VALUES('2026-card-first-v3')");
+    }
   });
 }

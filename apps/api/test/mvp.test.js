@@ -544,7 +544,7 @@ test('private pilot end-to-end: two accounts, public card, verified claim and re
       token: owner.accessToken
     })).status, 200);
     assert.equal((await request(`/public/media/${media.id}`)).status, 200);
-    for (const field of ['imageUrl', 'coverUrl']) {
+    for (const field of ['imageUrl', 'coverUrl', 'businessCardUrl']) {
       await request(`/cards/${card.id}`, {
         method: 'PATCH',
         token: owner.accessToken,
@@ -565,6 +565,16 @@ test('private pilot end-to-end: two accounts, public card, verified claim and re
         body: { [field]: field === 'imageUrl' ? media.url : null }
       });
     }
+    // The original visiting card is a separate approved visual asset, not a portrait.
+    await request(`/cards/${card.id}`, { method: 'PATCH', token: owner.accessToken, body: { imageUrl: null, businessCardUrl: media.url } });
+    assert.equal((await request(`/cards/${card.id}/publish`, { method: 'POST', token: owner.accessToken })).status, 200);
+    const visualCard = (await request(`/public/cards/${card.slug}`)).body.card;
+    assert.equal(visualCard.imageUrl, null);
+    assert.ok(visualCard.businessCardUrl.endsWith(`/public/media/${media.id}`));
+    assert.equal((await request(`/public/media/${media.id}`)).status, 200, 'The approved visiting card alone grants public image access');
+    const savedVisual = await request(`/cards/${card.id}/save`, { method: 'POST', token: operator.accessToken });
+    assert.equal(savedVisual.status, 201);
+    assert.equal(new URL(savedVisual.body.person.businessCardUrl).pathname, new URL(visualCard.businessCardUrl).pathname, 'Saving a card retains the original artwork across configured and request-local origins');
     assert.equal((await request(`/admin/media/${media.id}`, {
       token: operator.accessToken
     })).status, 200, 'Admin may see an approved public image');

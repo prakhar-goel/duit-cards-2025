@@ -215,10 +215,12 @@ export function RemoteImage({
   uri,
   style,
   contain = false,
+  onSize,
 }: {
   uri?: string | null;
   style: StyleProp<ViewStyle>;
   contain?: boolean;
+  onSize?: (width: number, height: number) => void;
 }) {
   const url = useImageSource(uri);
   return url ? (
@@ -226,6 +228,18 @@ export function RemoteImage({
       source={{ uri: url, headers: mediaHeaders(url) }}
       style={style as any}
       resizeMode={contain ? "contain" : "cover"}
+      onLoad={
+        onSize
+          ? (event) => {
+              const native = event.nativeEvent as any;
+              const width =
+                native?.source?.width ?? native?.target?.naturalWidth;
+              const height =
+                native?.source?.height ?? native?.target?.naturalHeight;
+              if (width && height) onSize(width, height);
+            }
+          : undefined
+      }
     />
   ) : (
     <View

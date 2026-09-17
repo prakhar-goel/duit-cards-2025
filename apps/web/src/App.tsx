@@ -392,6 +392,48 @@ function DownloadPage() {
   );
 }
 
+function StoryImage({
+  src,
+  alt,
+  kind,
+}: {
+  src?: string;
+  alt: string;
+  kind: string;
+}) {
+  const [broken, setBroken] = useState(false);
+  useEffect(() => setBroken(false), [src]);
+  let url = safeUrl(src);
+  try {
+    const parsed = new URL(src || "", location.origin);
+    if (
+      src &&
+      (parsed.pathname.startsWith("/demo/") ||
+        parsed.pathname.startsWith("/api/v1/public/media/"))
+    )
+      url = parsed.pathname;
+  } catch {}
+  return url && !broken ? (
+    <img
+      src={url}
+      alt={alt}
+      draggable={false}
+      onError={() => setBroken(true)}
+    />
+  ) : (
+    <div className="story-image-empty">
+      {kind === "card" ? <FileText size={38} /> : <Layers3 size={38} />}
+      <span>
+        {kind === "person"
+          ? "Portrait not added yet"
+          : kind === "card"
+            ? "Business card not added yet"
+            : "Business image not added yet"}
+      </span>
+    </div>
+  );
+}
+
 function PublicCard({
   slug,
   shareToken,
@@ -405,29 +447,48 @@ function PublicCard({
     [toast, setToast] = useState(""),
     [claimAvailable, setClaimAvailable] = useState(false),
     [active, setActive] = useState(0);
+  const gesture = React.useRef<{ x: number; y: number } | null>(null);
+  const suppressCardClick = React.useRef(false);
+  const pages = ["Person", "Card", "Business"];
   useEffect(() => {
+    let cancelled = false;
+    setActive(0);
     api(
       shareToken
         ? `/public/shares/${encodeURIComponent(shareToken)}`
         : `/public/cards/${encodeURIComponent(slug || "")}`,
     )
       .then((d) => {
+        if (cancelled) return;
         setCard(d.card);
         setClaimAvailable(!!d.claimAvailable);
-        const eventKey = `view:${d.card.slug}:${sessionStorage.getItem("duit.visit") || crypto.randomUUID()}`;
-        sessionStorage.setItem("duit.visit", eventKey.split(":").at(-1)!);
+        const visit =
+          sessionStorage.getItem("duit.visit") || crypto.randomUUID();
+        sessionStorage.setItem("duit.visit", visit);
         post(`/public/cards/${d.card.slug}/events`, {
           type: "viewed",
           source: shareToken ? "shared_link" : "direct",
-          eventKey,
+          eventKey: `view:${d.card.slug}:${visit}`,
         }).catch(() => {});
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => !cancelled && setError(e.message));
+    return () => {
+      cancelled = true;
+    };
   }, [slug, shareToken]);
   useEffect(() => {
+    if (!card) return;
+    const openContact = () => {
+      if (location.hash === "#contact") setDialog("interest");
+    };
+    openContact();
+    window.addEventListener("hashchange", openContact);
+    return () => window.removeEventListener("hashchange", openContact);
+  }, [card]);
+  useEffect(() => {
     if (toast) {
-      const t = setTimeout(() => setToast(""), 3500);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => setToast(""), 3500);
+      return () => clearTimeout(timer);
     }
   }, [toast]);
   if (error)
@@ -445,19 +506,50 @@ function PublicCard({
       </div>
     );
   if (!card) return <Loading />;
-  const c = card,
-    panels = (c.panels || []).sort((a: Row, b: Row) => a.position - b.position),
-    publicPath = `/public/cards/${c.slug}`;
+  const c = card;
+  const panels = [...(c.panels || [])].sort(
+    (a: Row, b: Row) => a.position - b.position,
+  );
+  const publicPath = `/public/cards/${c.slug}`;
+  const firstName = c.title.split(" ")[0];
+  const hook =
+    c.subtitle ||
+    panels.find((p: Row) => p.panelType === "hook")?.body ||
+    c.company ||
+    "Let’s make something happen.";
   const track = (type: string) =>
     post(`${publicPath}/events`, {
       type,
       source: "web",
       eventKey: crypto.randomUUID(),
     }).catch(() => {});
+  const move = (next: number, focus = false) => {
+    const index = Math.max(0, Math.min(2, next));
+    setActive(index);
+    if (focus) document.getElementById(`story-tab-${index}`)?.focus();
+  };
+  const keys = (e: React.KeyboardEvent, focus = false) => {
+    const next =
+      e.key === "ArrowRight"
+        ? active + 1
+        : e.key === "ArrowLeft"
+          ? active - 1
+          : e.key === "Home"
+            ? 0
+            : e.key === "End"
+              ? 2
+              : null;
+    if (next !== null) {
+      e.preventDefault();
+      move(next, focus);
+    }
+  };
   async function copy() {
     try {
-      await navigator.clipboard.writeText(location.href);
-      setToast("Profile link copied. Ready for a good introduction.");
+      await navigator.clipboard.writeText(
+        `${location.origin}${location.pathname}`,
+      );
+      setToast("Link copied. A good introduction travels.");
     } catch {
       setDialog("share");
     }
@@ -473,304 +565,366 @@ function PublicCard({
           : c.ctaType === "email" && c.contact?.email
             ? `mailto:${c.contact.email}`
             : safeUrl(c.ctaUrl);
-    if (target) {
-      location.href = target;
-    } else setDialog("interest");
+    if (target) location.href = target;
+    else setDialog("interest");
   }
   return (
-    <div className="public-profile">
-      <nav className="public-nav">
+    <div className="public-story">
+      <nav className="story-nav" aria-label="DUIT">
         <Logo />
-        <span>Good business starts with a hello.</span>
-        <button
-          className="button outline small"
-          onClick={() => setDialog("share")}
-        >
-          <Share2 size={16} /> Share profile
-        </button>
-      </nav>
-      <main>
-        <div className="profile-hero">
-          <div
-            className="profile-cover"
-            style={
-              safeUrl(c.coverUrl)
-                ? {
-                    backgroundImage: `linear-gradient(180deg,transparent,rgba(0,0,0,.35)),url(${safeUrl(c.coverUrl)})`,
-                  }
-                : undefined
-            }
+        <span className="story-nav-caption">A proper introduction.</span>
+        <div className="story-nav-actions">
+          <a href="/download" className="story-get-app">
+            Get DUIT <ArrowUpRight size={13} />
+          </a>
+          <button
+            className="story-share-button"
+            aria-label="Share profile"
+            onClick={() => setDialog("share")}
           >
-            <div className="cover-lines" />
-            <span className="cover-word">
-              A conversation
-              <br />
-              worth <em>starting.</em>
-            </span>
-            <span className="cover-label">
-              {c.company || "An independent business profile"}
-            </span>
-          </div>
-          <div className="profile-intro">
-            <Avatar name={c.title} src={c.imageUrl} size={104} />
-            <div className="intro-top">
-              <Tag tone="green">
-                <span className="status-dot" /> Open to conversations
-              </Tag>
-              <button
-                className="icon-button"
-                aria-label="Show QR code"
-                onClick={() => setDialog("share")}
-              >
-                <QrCode size={22} />
-              </button>
-            </div>
+            <Share2 size={17} />
+            <span>Share profile</span>
+          </button>
+        </div>
+      </nav>
+      {claimAvailable && (
+        <div className="story-invitation">
+          <span>An introduction, just for you.</span>
+          <button onClick={() => setDialog("claim")}>
+            Your profile is waiting <ArrowRight size={16} />
+          </button>
+        </div>
+      )}
+      <main className="story-layout">
+        <aside className="story-context">
+          <div className="story-context-top">
+            <span className="story-kicker">MEET YOUR NEXT INTRODUCTION</span>
             <h1>{c.title}</h1>
-            <p className="role">
-              {c.role ? `${c.role}${c.company ? " · " : ""}` : ""}
-              {c.company || c.subtitle}
+            <p className="story-role">
+              {[c.role, c.company].filter(Boolean).join(" · ")}
             </p>
-            <p className="intro-subtitle">
-              {c.role || c.company ? c.subtitle : c.bio}
-            </p>
-            <div className="profile-contact-line">
-              {c.contact?.website && (
-                <a
-                  href={safeUrl(c.contact.website)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Globe2 size={15} />
-                  {c.contact.website
-                    .replace(/^https?:\/\//, "")
-                    .replace(/\/$/, "")}
-                  <ArrowUpRight size={14} />
-                </a>
-              )}
-              {c.dataOrigin === "fictional_demo" && (
-                <Tag>Fictional demo profile</Tag>
-              )}
-            </div>
-            <div className="button-row">
-              <button className="button primary" onClick={action}>
-                {c.ctaLabel || "Start a conversation"}
-                <ArrowUpRight size={17} />
-              </button>
-              <a
-                className="button outline"
-                href={`/api/v1${publicPath}/vcard`}
-                onClick={() => track("contact_saved")}
+          </div>
+          <div className="story-context-bottom">
+            <span className="story-tiny-line" />
+            <button
+              className="story-details-link"
+              onClick={() => setDialog("details")}
+            >
+              A little more about {firstName} <ArrowUpRight size={16} />
+            </button>
+          </div>
+          <div className="story-provenance">
+            {c.dataOrigin === "fictional_demo" ? (
+              <>
+                <span className="status-dot" /> Fictional demo profile
+              </>
+            ) : (
+              <>
+                <Shield size={13} /> Shared by the profile owner
+              </>
+            )}
+          </div>
+        </aside>
+        <section
+          className="story-gallery"
+          aria-label={`${c.title}’s visual introduction`}
+        >
+          <div
+            className="story-tabs"
+            role="tablist"
+            aria-label="Profile pages"
+            onKeyDown={(e) => keys(e, true)}
+          >
+            {pages.map((label, index) => (
+              <button
+                key={label}
+                id={`story-tab-${index}`}
+                role="tab"
+                aria-label={label}
+                aria-selected={active === index}
+                aria-controls={`story-page-${index}`}
+                tabIndex={active === index ? 0 : -1}
+                onClick={() => move(index)}
               >
-                <Download size={17} /> Save contact
-              </a>
+                <span className="story-tab-number">0{index + 1}</span>
+                {label}
+                <span className="story-tab-line" />
+              </button>
+            ))}
+          </div>
+          <div
+            className={`story-stage story-stage-${active}`}
+            onKeyDown={(e) => keys(e)}
+            onPointerDown={(e) => {
+              suppressCardClick.current = false;
+              if (e.isPrimary) gesture.current = { x: e.clientX, y: e.clientY };
+            }}
+            onPointerUp={(e) => {
+              const start = gesture.current;
+              gesture.current = null;
+              if (!start) return;
+              const dx = e.clientX - start.x,
+                dy = e.clientY - start.y;
+              if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+                suppressCardClick.current = true;
+                move(active + (dx < 0 ? 1 : -1));
+              }
+            }}
+            onPointerCancel={() => {
+              gesture.current = null;
+            }}
+          >
+            {[0, 1, 2].map((index) => (
+              <div
+                key={index}
+                id={`story-page-${index}`}
+                className={`story-page story-page-${pages[index].toLowerCase()}`}
+                role="tabpanel"
+                aria-labelledby={`story-tab-${index}`}
+                hidden={index !== active}
+                tabIndex={0}
+              >
+                {index === 0 ? (
+                  <>
+                    <StoryImage
+                      src={c.imageUrl}
+                      alt={`Portrait of ${c.title}`}
+                      kind="person"
+                    />
+                    <div className="story-person-caption">
+                      <span className="story-photo-label">
+                        NICE TO MEET YOU
+                      </span>
+                      <h2>{c.title}</h2>
+                      <p>{[c.role, c.company].filter(Boolean).join(" · ")}</p>
+                    </div>
+                    <span className="story-image-corner">
+                      <span className="status-dot" /> THE PERSON
+                    </span>
+                  </>
+                ) : index === 1 ? (
+                  <>
+                    <button
+                      className="story-card-art"
+                      aria-label="View original business card"
+                      disabled={!c.businessCardUrl}
+                      onClick={(e) => {
+                        if (!suppressCardClick.current || e.detail === 0)
+                          setDialog("card");
+                      }}
+                    >
+                      <StoryImage
+                        src={c.businessCardUrl}
+                        alt={`${c.title}’s business card`}
+                        kind="card"
+                      />
+                    </button>
+                    <div className="story-card-caption">
+                      <span>THE CARD</span>
+                      <p>{c.company || c.title}</p>
+                      <span>
+                        <ExternalLink size={14} /> Tap to view the full card
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <StoryImage
+                      src={c.coverUrl}
+                      alt={`${c.company || c.title} — business and work`}
+                      kind="business"
+                    />
+                    <div className="story-business-caption">
+                      <span className="story-photo-label">
+                        {c.company || "THE BUSINESS"}
+                      </span>
+                      <h2>{hook}</h2>
+                      <button onClick={() => setDialog("details")}>
+                        Explore the business <ArrowUpRight size={17} />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="story-gallery-footer">
+            <span className="story-position" aria-live="polite">
+              <strong>0{active + 1}</strong>
+              <span>/ 03</span>
+              <span className="story-position-name">{pages[active]}</span>
+            </span>
+            <span className="story-swipe-hint">Swipe to explore</span>
+            <div className="story-arrows">
+              <button
+                aria-label="Previous page"
+                disabled={active === 0}
+                onClick={() => move(active - 1)}
+              >
+                <ArrowLeft size={19} />
+              </button>
+              <button
+                aria-label="Next page"
+                disabled={active === 2}
+                onClick={() => move(active + 1)}
+              >
+                <ArrowRight size={19} />
+              </button>
             </div>
           </div>
-        </div>
-        <div className="profile-body">
-          <section className="pitch-area">
-            <div className="section-title">
-              <div>
-                <div className="eyebrow">THE SHORT VERSION</div>
-                <h2>Here’s where I can help.</h2>
-              </div>
-              <span className="muted">
-                {String(active + 1).padStart(2, "0")} /{" "}
-                {String(panels.length).padStart(2, "0")}
-              </span>
-            </div>
-            {panels.length > 0 && (
-              <div className="pitch-feature">
-                <div className="pitch-number">
-                  {String(active + 1).padStart(2, "0")}
-                </div>
-                <Tag tone="lime">
-                  {(
-                    {
-                      hook: "The idea",
-                      relevance: "Who it helps",
-                      offer: "What I do",
-                      outcome: "What changes",
-                      proof: "The proof",
-                      cta: "The next step",
-                    } as Row
-                  )[panels[active].panelType] || "About the business"}
-                </Tag>
-                <h3>{panels[active].body}</h3>
-                <div className="pitch-bottom">
-                  <div className="pitch-progress">
-                    {panels.map((p: Row, i: number) => (
-                      <button
-                        key={p.panelType}
-                        className={i === active ? "active" : ""}
-                        aria-label={`Show ${p.panelType}`}
-                        onClick={() => setActive(i)}
-                      />
-                    ))}
-                  </div>
-                  <div className="button-row">
-                    <button
-                      className="icon-button"
-                      disabled={active === 0}
-                      onClick={() => setActive(active - 1)}
-                      aria-label="Previous panel"
-                    >
-                      <ArrowLeft size={18} />
-                    </button>
-                    <button
-                      className="icon-button"
-                      disabled={active === panels.length - 1}
-                      onClick={() => setActive(active + 1)}
-                      aria-label="Next panel"
-                    >
-                      <ArrowRight size={18} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div className="profile-about">
-              <div className="eyebrow">A LITTLE MORE CONTEXT</div>
-              <h2>Good work. Clear purpose.</h2>
-              <p>
-                {c.bio ||
-                  c.subtitle ||
-                  "Start a conversation to learn more about this business."}
-              </p>
-              {panels
-                .filter((p: Row) =>
-                  ["offer", "outcome", "proof"].includes(p.panelType),
-                )
-                .map((p: Row) => (
-                  <div className="detail-line" key={p.panelType}>
-                    <span>
-                      <Check size={16} />
-                    </span>
-                    <div>
-                      <h4>
-                        {p.panelType === "offer"
-                          ? "What I bring"
-                          : p.panelType === "outcome"
-                            ? "What we can do together"
-                            : "Experience & evidence"}
-                      </h4>
-                      <p>{p.body}</p>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </section>
-          <aside className="profile-aside">
-            <div className="contact-box">
-              <span className="eyebrow">LET’S TALK</span>
-              <h3>
-                A small hello.
-                <br />A useful next step.
-              </h3>
-              <p>
-                Tell me what you’re working on.
-                <br />
-                We’ll take it from there.
-              </p>
-              <button className="button primary full" onClick={action}>
-                {c.ctaLabel || "Get in touch"}
-                <ArrowUpRight size={17} />
-              </button>
-              <div className="contact-list">
-                {c.contact?.email && (
-                  <a href={`mailto:${c.contact.email}`}>
-                    <Mail size={17} />
-                    <span>{c.contact.email}</span>
-                    <ArrowUpRight size={15} />
-                  </a>
-                )}
-                {c.contact?.phone && (
-                  <a href={`tel:${c.contact.phone.replace(/[^+\d]/g, "")}`}>
-                    <Phone size={17} />
-                    <span>{c.contact.phone}</span>
-                    <ArrowUpRight size={15} />
-                  </a>
-                )}
-                {(c.links || []).map((l: Row) => (
-                  <a
-                    key={l.url}
-                    href={safeUrl(l.url)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Globe2 size={17} />
-                    <span>{l.label}</span>
-                    <ArrowUpRight size={15} />
-                  </a>
-                ))}
-              </div>
-            </div>
-            <div className="memory-box">
-              <div className="mini-brand">
-                <Sparkles size={20} /> More than a business card
-              </div>
-              <h3>
-                Remember the person.
-                <br />
-                And the conversation.
-              </h3>
-              <p>
-                Save this profile in DUIT, add a private meeting note, and keep
-                the next step in sight.
-              </p>
-              <a href="/download" className="text-link">
-                Get DUIT <ArrowUpRight size={17} />
-              </a>
-              {claimAvailable && (
-                <button
-                  className="text-link"
-                  onClick={() => setDialog("claim")}
-                >
-                  Your profile is waiting <ArrowRight size={16} />
-                </button>
-              )}
-            </div>
-          </aside>
-        </div>
+        </section>
       </main>
-      <footer className="public-footer">
-        <Logo />
+      <div className="story-dock">
+        <div className="story-dock-identity">
+          <Avatar name={c.title} src={c.imageUrl} size={42} />
+          <div>
+            <strong>{c.title}</strong>
+            <span>{c.company || c.role}</span>
+          </div>
+        </div>
+        <div className="story-dock-actions">
+          <button className="story-primary-action" onClick={action}>
+            {c.ctaLabel || "Start a conversation"}
+            <ArrowUpRight size={19} />
+          </button>
+          <a
+            className="story-secondary-action"
+            aria-label="Save contact"
+            href={`/api/v1${publicPath}/vcard`}
+            onClick={() => track("contact_saved")}
+          >
+            <Download size={19} />
+            <span>Save contact</span>
+          </a>
+          <button
+            className="story-secondary-action"
+            aria-label="Show QR code"
+            onClick={() => setDialog("share")}
+          >
+            <QrCode size={19} />
+            <span>QR code</span>
+          </button>
+        </div>
+      </div>
+      <footer className="story-footer">
         <span>Make the next meeting count.</span>
         <a href="/download">
-          Create your own business profile <ArrowUpRight size={14} />
+          Make your own DUIT card <ArrowUpRight size={14} />
         </a>
       </footer>
-      <div className="mobile-action">
-        <button className="button primary" onClick={action}>
-          {c.ctaLabel || "Get in touch"}
-          <ArrowUpRight size={17} />
-        </button>
-        <a
-          aria-label="Save contact"
-          className="icon-button"
-          href={`/api/v1${publicPath}/vcard`}
-          onClick={() => track("contact_saved")}
-        >
-          <Download size={20} />
-        </a>
-      </div>
       {toast && (
         <div className="toast">
           <Check size={17} />
           {toast}
         </div>
       )}
+      {dialog === "card" && (
+        <Modal
+          title={`${c.title}’s business card`}
+          onClose={() => setDialog("")}
+          wide
+        >
+          <div className="story-card-lightbox">
+            <StoryImage
+              src={c.businessCardUrl}
+              alt={`${c.title}’s full business card`}
+              kind="card"
+            />
+            <a
+              href={safeUrl(c.businessCardUrl)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open original image <ExternalLink size={15} />
+            </a>
+          </div>
+        </Modal>
+      )}
       {dialog === "share" && (
         <ShareModal title={c.title} onClose={() => setDialog("")} copy={copy} />
-      )}{" "}
+      )}
       {dialog === "interest" && (
         <InterestModal
           slug={c.slug}
           name={c.title}
           onClose={() => setDialog("")}
         />
-      )}{" "}
+      )}
       {dialog === "claim" && shareToken && (
         <ClaimModal token={shareToken} onClose={() => setDialog("")} />
+      )}
+      {dialog === "details" && (
+        <Modal
+          title={`A little more about ${firstName}`}
+          onClose={() => setDialog("")}
+        >
+          <div className="story-details">
+            <p>{c.bio || c.subtitle}</p>
+            {panels
+              .filter((p: Row) =>
+                ["offer", "outcome", "proof"].includes(p.panelType),
+              )
+              .map((p: Row) => (
+                <section key={p.panelType}>
+                  <span>
+                    {p.panelType === "offer"
+                      ? "What I do"
+                      : p.panelType === "outcome"
+                        ? "What we can do together"
+                        : "Experience & evidence"}
+                  </span>
+                  <p>{p.body}</p>
+                </section>
+              ))}
+            <div className="contact-list">
+              {c.contact?.email && (
+                <a href={`mailto:${c.contact.email}`}>
+                  <Mail size={17} />
+                  <span>{c.contact.email}</span>
+                  <ArrowUpRight size={15} />
+                </a>
+              )}
+              {c.contact?.phone && (
+                <a href={`tel:${c.contact.phone.replace(/[^+\d]/g, "")}`}>
+                  <Phone size={17} />
+                  <span>{c.contact.phone}</span>
+                  <ArrowUpRight size={15} />
+                </a>
+              )}
+              {c.contact?.website && (
+                <a
+                  href={safeUrl(c.contact.website)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Globe2 size={17} />
+                  <span>{c.contact.website.replace(/^https?:\/\//, "")}</span>
+                  <ArrowUpRight size={15} />
+                </a>
+              )}
+              {(c.links || []).map((l: Row) => (
+                <a
+                  key={l.url}
+                  href={safeUrl(l.url)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Globe2 size={17} />
+                  <span>{l.label}</span>
+                  <ArrowUpRight size={15} />
+                </a>
+              ))}
+            </div>
+            <button className="button primary full" onClick={action}>
+              {c.ctaLabel || "Start a conversation"}
+              <ArrowUpRight size={17} />
+            </button>
+            <a className="story-details-download" href="/download">
+              Save the person and the conversation in DUIT{" "}
+              <ArrowUpRight size={15} />
+            </a>
+          </div>
+        </Modal>
       )}
     </div>
   );
@@ -786,8 +940,9 @@ function ShareModal({
   copy: () => void;
 }) {
   const [qr, setQr] = useState("");
+  const shareUrl = `${location.origin}${location.pathname}`;
   useEffect(() => {
-    QRCode.toDataURL(location.href, {
+    QRCode.toDataURL(shareUrl, {
       width: 340,
       margin: 2,
       color: { dark: "#163d35", light: "#ffffff" },
@@ -805,14 +960,14 @@ function ShareModal({
           />
         )}
         <div className="copy-field">
-          <input aria-label="Share link" readOnly value={location.href} />
+          <input aria-label="Share link" readOnly value={shareUrl} />
           <button className="icon-button" aria-label="Copy link" onClick={copy}>
             <Copy size={18} />
           </button>
         </div>
         <a
           className="button primary full"
-          href={`https://wa.me/?text=${encodeURIComponent(`${title} — ${location.href}`)}`}
+          href={`https://wa.me/?text=${encodeURIComponent(`${title} — ${shareUrl}`)}`}
           target="_blank"
           rel="noreferrer"
         >

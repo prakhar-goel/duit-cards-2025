@@ -3,11 +3,24 @@
 | Field | Value |
 | --- | --- |
 | Status | Private pilot implementation |
-| Version | 0.3 |
+| Version | 0.4 |
 | Last updated | 2026-09-18 |
-| Stage | DUIT 2026 private pilot |
+| Stage | Visual card-first iteration; broader pilot goal paused |
 | Product owner | Prakhar Goel |
 | Source of truth | This document for product intent; `PRODUCT_INPUT_LOG.md` for verbatim user input |
+
+## Current design decision · 18 September 2026
+
+The latest user feedback takes precedence over the earlier text-led pilot layout. DUIT should feel like exchanging a memorable **business card**, with an immediately recognisable visual identity, not browsing another career profile.
+
+- The primary viewing sequence is **Person → Card → Business**: a large portrait, the original visiting-card artwork, then a visual elevator pitch with one clear business action.
+- Preserve landscape and portrait card proportions and typography. Uploaded artwork remains a separate original image; OCR or AI must not replace it. Where no card was supplied, explicitly label a generated layout rather than implying a scan exists.
+- Start the app with the card and a visual wallet. Search, filters, meeting date/place, notes and next steps support browsing and remain available through secondary controls.
+- Use photos and illustrated portfolio examples with concise copy. Give each business room for its own identity. No forced autoplay; allow swiping, direct page tabs and accessible controls.
+- Shared browser cards follow the same visual sequence and work without installation. The public view contains only reviewed published material; private meeting memory stays private.
+- Short owner-recorded video is a **future idea**, not a feature delivered by this iteration. AI stays unconfigured; do not hold this design review open for provider setup or full pilot completion.
+
+Deliver this working design iteration and a crisp narrated walkthrough, then stop autonomous goal work. The earlier broad goal is paused, not declared complete.
 
 ## 1. Product thesis
 

@@ -10,6 +10,7 @@ export const cardSchema = z.object({
   subtitle: text(280).default(''),
   imageUrl: httpUrl.nullable().optional(),
   coverUrl: httpUrl.nullable().optional(),
+  businessCardUrl: httpUrl.nullable().optional(),
   company: text(120).default(''),
   role: text(120).default(''),
   bio: text(3000).default(''),
@@ -36,6 +37,7 @@ const mapping = {
   subtitle: 'subtitle',
   imageUrl: 'image_url',
   coverUrl: 'cover_url',
+  businessCardUrl: 'business_card_url',
   company: 'company',
   role: 'role',
   bio: 'bio',
@@ -55,6 +57,7 @@ export function cardDto(row, panels) {
     subtitle: row.subtitle,
     imageUrl: row.image_url,
     coverUrl: row.cover_url,
+    businessCardUrl: row.business_card_url,
     company: row.company,
     role: row.role,
     bio: row.bio,
@@ -100,7 +103,7 @@ export async function saveCard(ownerId, cardId, db = {
   const c = published.snapshot;
   const existing = (await db.query('SELECT * FROM people WHERE owner_id=$1 AND source_card_id=$2', [ownerId, cardId])).rows[0];
   if (existing) return camel(existing);
-  const row = (await db.query('INSERT INTO people(owner_id,name,company,role,email,phone,photo_url,bio,website,source_card_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(owner_id,source_card_id) DO UPDATE SET source_card_id=EXCLUDED.source_card_id RETURNING *', [ownerId, c.title, c.company || '', c.role || '', c.contact?.email, c.contact?.phone, c.imageUrl, c.bio || '', c.contact?.website, cardId])).rows[0];
+  const row = (await db.query('INSERT INTO people(owner_id,name,company,role,email,phone,photo_url,bio,website,source_card_id,business_card_url) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(owner_id,source_card_id) DO UPDATE SET source_card_id=EXCLUDED.source_card_id RETURNING *', [ownerId, c.title, c.company || '', c.role || '', c.contact?.email, c.contact?.phone, c.imageUrl, c.bio || '', c.contact?.website, cardId, c.businessCardUrl || null])).rows[0];
   return camel(row);
 }
 function publicMediaUrl(url) {
@@ -179,15 +182,16 @@ export function cardsRouter() {
       const row = await owned('cards', req.params.id, req.userId, db);
       const snapshot = await fullCard(row, db);
       if (snapshot.panels.length !== 6 || snapshot.panels.some(p => !p.approved)) fail(422, 'Review and approve all six panels before publishing', 'REVIEW_REQUIRED');
-      for (const url of [snapshot.imageUrl, snapshot.coverUrl]) {
+      for (const url of [snapshot.imageUrl, snapshot.coverUrl, snapshot.businessCardUrl]) {
         const match = url?.match(/\/api\/v1\/(?:public\/)?media\/([a-f0-9-]{36})$/i);
         if (match) {
           const media = await owned('media_assets', match[1], req.userId, db);
-          if (!media.mime_type.startsWith('image/')) fail(422, 'Card portraits and covers must use an image. Voice notes stay private.', 'IMAGE_REQUIRED');
+          if (!media.mime_type.startsWith('image/')) fail(422, 'Card artwork must use an image. Voice notes stay private.', 'IMAGE_REQUIRED');
         }
       }
       snapshot.imageUrl = publicMediaUrl(snapshot.imageUrl);
       snapshot.coverUrl = publicMediaUrl(snapshot.coverUrl);
+      snapshot.businessCardUrl = publicMediaUrl(snapshot.businessCardUrl);
       snapshot.isPublished = true;
       snapshot.publishedAt = new Date().toISOString();
       const version = (await db.query('INSERT INTO card_versions(card_id,snapshot) VALUES($1,$2) RETURNING id', [row.id, snapshot])).rows[0];

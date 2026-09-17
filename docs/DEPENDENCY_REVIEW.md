@@ -80,4 +80,9 @@ Remaining limitations of this review and pilot:
 
 ## Final reconciliation record
 
-Final inspected versions: qs 6.16.0; React Navigation core 7.22.1; Metro 0.83.3; image-size 1.2.1; xcode 3.0.1; uuid 7.0.3. The API-only production audit completed with exit code 0 and zero reported advisories. The whole-workspace production audit completed with exit code 1 and 19 vulnerable-package findings (8 high, 11 moderate), all recorded above by dependency chain. The isolated API/provider command completed with 34 passed and zero failed tests. Its intentional injected PostgreSQL failure appears once in test output; it is the expected fault-injection case, not an unhandled test failure. No active server was restarted, and no provider was contacted.
+Final inspected versions: qs 6.16.0; React Navigation core 7.22.1; Metro 0.83.3; image-size 1.2.1; xcode 3.0.1; uuid 7.0.3. The API-only production audit completed with exit code 0 and zero reported advisories. The whole-workspace production audit completed with exit code 1 and 20 vulnerable-package findings (8 high, 12 moderate), all recorded above by dependency chain. The isolated API/provider command completed with 34 passed and zero failed tests. Its intentional injected PostgreSQL failure appears once in test output; it is the expected fault-injection case, not an unhandled test failure. No active server was restarted, and no provider was contacted.
+
+
+## Native compatibility correction
+
+A release launch exposed `NoClassDefFoundError: expo.modules.kotlin.types.AnyTypeCache`: the unbounded Expo Audio asset peer had resolved Expo Asset 57 inside this Expo 54 app. The project now directly pins and overrides `expo-asset` to `~12.0.13`, matching the installed Expo 54 bundled-module table. Expo Asset 12.0.13 and Constants 18.0.14 resolve once alongside Expo Modules Core 3.0.30. A clean native rebuild is required; JavaScript tests alone cannot establish compatibility. Native launch evidence belongs to the actual delivered APK in the visual iteration report.

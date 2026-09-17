@@ -119,7 +119,7 @@ function listResponse(key, rows, limit, offset) {
     offset
   };
 }
-const peopleSelect = `SELECT p.*, (SELECT count(*)::int FROM encounters e WHERE e.person_id=p.id) AS encounter_count, (SELECT max(occurred_at) FROM encounters e WHERE e.person_id=p.id) AS last_met_at`;
+const peopleSelect = `SELECT p.*, (SELECT slug FROM cards c WHERE c.id=p.source_card_id AND c.is_published=true) AS card_slug, (SELECT count(*)::int FROM encounters e WHERE e.person_id=p.id) AS encounter_count, (SELECT max(occurred_at) FROM encounters e WHERE e.person_id=p.id) AS last_met_at`;
 async function getPerson(id, ownerId) {
   const row = (await query(`${peopleSelect} FROM people p WHERE p.id=$1 AND p.owner_id=$2`, [id, ownerId])).rows[0];
   if (!row) fail(404, 'Person not found', 'NOT_FOUND');

@@ -126,7 +126,7 @@ export function mediaRouter() {
   }));
   router.get('/admin/media/:id', auth, admin, wrap(async (req, res) => {
     uuid.parse(req.params.id);
-    const row = (await query("SELECT m.* FROM media_assets m WHERE m.id=$1 AND m.mime_type LIKE 'image/%' AND (m.owner_id=$2 OR EXISTS(SELECT 1 FROM archive_profiles a WHERE a.profile::text LIKE '%'||m.id::text||'%') OR EXISTS(SELECT 1 FROM cards c JOIN card_versions v ON v.id=c.published_version_id WHERE c.is_published=true AND (v.snapshot->>'imageUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'coverUrl' LIKE '%/public/media/'||m.id::text)))", [req.params.id, req.userId])).rows[0];
+    const row = (await query("SELECT m.* FROM media_assets m WHERE m.id=$1 AND m.mime_type LIKE 'image/%' AND (m.owner_id=$2 OR EXISTS(SELECT 1 FROM archive_profiles a WHERE a.profile::text LIKE '%'||m.id::text||'%') OR EXISTS(SELECT 1 FROM cards c JOIN card_versions v ON v.id=c.published_version_id WHERE c.is_published=true AND (v.snapshot->>'imageUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'coverUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'businessCardUrl' LIKE '%/public/media/'||m.id::text)))", [req.params.id, req.userId])).rows[0];
     if (!row) fail(404, 'Image not found');
     res.setHeader('Content-Type', row.mime_type);
     res.setHeader('Cache-Control', 'private, no-store');
@@ -146,7 +146,7 @@ export function mediaRouter() {
   }));
   router.get('/public/media/:id', wrap(async (req, res) => {
     uuid.parse(req.params.id);
-    const row = (await query("SELECT m.* FROM media_assets m WHERE m.id=$1 AND EXISTS(SELECT 1 FROM cards c JOIN card_versions v ON v.id=c.published_version_id WHERE c.is_published=true AND (v.snapshot->>'imageUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'coverUrl' LIKE '%/public/media/'||m.id::text))", [req.params.id])).rows[0];
+    const row = (await query("SELECT m.* FROM media_assets m WHERE m.id=$1 AND EXISTS(SELECT 1 FROM cards c JOIN card_versions v ON v.id=c.published_version_id WHERE c.is_published=true AND (v.snapshot->>'imageUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'coverUrl' LIKE '%/public/media/'||m.id::text OR v.snapshot->>'businessCardUrl' LIKE '%/public/media/'||m.id::text))", [req.params.id])).rows[0];
     if (!row) fail(404, 'Image not found');
     res.setHeader('Content-Type', row.mime_type);
     res.setHeader('Cache-Control', 'public, max-age=300');

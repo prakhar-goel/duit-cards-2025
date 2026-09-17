@@ -22,6 +22,10 @@ export type Card = {
   subtitle: string;
   imageUrl?: string | null;
   coverUrl?: string | null;
+  businessCardUrl?: string | null;
+  company?: string;
+  role?: string;
+  ctaUrl?: string | null;
   contact: { email?: string; phone?: string; website?: string };
   links?: { label: string; url: string }[];
   ctaType: string;
@@ -49,6 +53,9 @@ export type Person = {
   cardSlug?: string;
   notes?: string;
   city?: string;
+  bio?: string;
+  countryCode?: string;
+  website?: string;
   eventName?: string;
   encounterCount?: number;
   lastEncounterAt?: string;

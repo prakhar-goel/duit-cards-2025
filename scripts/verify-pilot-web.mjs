@@ -94,7 +94,7 @@ try {
     .getByPlaceholder("Find a person, business or profile…")
     .fill("Northstar");
   await expect(
-    admin.getByRole("heading", { name: "Maya Desai", exact: true }),
+    admin.getByRole("heading", { name: "Maya Desai", exact: true, level: 3 }),
   ).toBeVisible();
   await shot(admin, "02-admin-profiles");
   checks.push("Business profile search returns the matching business");
@@ -141,14 +141,17 @@ try {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(origin + "/c/maya-desai-demo");
   await expect(
-    page.getByRole("heading", { name: "Maya Desai", exact: true }),
+    page.getByRole("heading", { name: "Maya Desai", exact: true, level: 2 }),
   ).toBeVisible();
   await expect(
     page.getByText("Fictional demo profile", { exact: true }),
   ).toBeVisible();
   await shot(page, "06-public-phone");
-  await page.getByRole("button", { name: "Next panel", exact: true }).click();
-  await expect(page.getByText("02 / 06", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Next page", exact: true }).click();
+  await expect(
+    page.getByRole("tab", { name: "Card", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByAltText("Maya Desai’s business card")).toBeVisible();
   await page
     .getByRole("button", { name: "Share profile", exact: true })
     .click();
@@ -161,7 +164,7 @@ try {
   expect(vcf.ok).toBe(true);
   expect(await vcf.text()).toContain("BEGIN:VCARD");
   checks.push(
-    "Signed-out phone profile, panel navigation, real QR and vCard work",
+    "Signed-out three-page visual profile, card navigation, real QR and vCard work",
   );
   await page
     .getByRole("button", { name: "Tell me what you are building" })
@@ -241,7 +244,7 @@ try {
   await page.setViewportSize({ width: 1440, height: 1020 });
   await page.goto(origin + "/c/maya-desai-demo");
   await expect(
-    page.getByRole("heading", { name: "Maya Desai", exact: true }),
+    page.getByRole("heading", { name: "Maya Desai", exact: true, level: 2 }),
   ).toBeVisible();
   await shot(page, "10-public-desktop");
   await page.goto(origin + "/");

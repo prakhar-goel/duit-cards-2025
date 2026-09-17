@@ -1,5 +1,7 @@
 # DUIT 2026 private pilot
 
+Latest design review: **Person → Card → Business**, a visual card wallet and original artwork preserved. See [the visual iteration](docs/VISUAL_ITERATION.md) and [its short walkthrough](docs/VISUAL_WALKTHROUGH.md). The broader pilot goal is paused at the user's request.
+
 DUIT helps people share a useful business profile, remember where and why they met, and follow through. This repository contains the new pilot. The restored original app and its supplied archive remain separate in `../misc/duit-cards`.
 
 ## Run it
