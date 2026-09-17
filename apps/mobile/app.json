@@ -1,30 +1,32 @@
 {
   "expo": {
-    "name": "Duit Ecards",
+    "name": "DUIT 2026",
     "slug": "duit-cards-2025",
-    "scheme": "duit",
-    "version": "3.0.3",
+    "scheme": "duitpilot",
+    "version": "4.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/pilot-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/pilot-splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#F7F8F2"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "io.duit.ecards"
+      "bundleIdentifier": "io.duit.ecards.pilot"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/pilot-adaptive.png",
+        "backgroundColor": "#163D35"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "io.duit.ecards"
+      "package": "io.duit.ecards.pilot",
+      "versionCode": 2026091801,
+      "allowBackup": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -39,6 +41,33 @@
             "targetSdkVersion": 35,
             "minSdkVersion": 24
           }
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "DUIT uses your microphone when you choose to record a private meeting note."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose a portrait or business card to use in DUIT.",
+          "cameraPermission": "Use your camera to capture a business card."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Scan a DUIT QR code or capture a business card.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Attach your current place to a meeting when you choose. Location is optional and private."
         }
       ]
     ],

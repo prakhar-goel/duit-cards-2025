@@ -1,12 +1,14 @@
-import { migrate, pool } from "./db.js";
-import { createApp } from "./app.js";
-
-const port = Number(process.env.PORT ?? 4000);
-
+import { migrate, pool } from './db.js';
+import { createApp } from './app.js';
+import { recoverInterruptedJobs } from './ai-jobs.js';
+const port = Number(process.env.PORT || 48152);
 await migrate();
-const app = createApp();
-const server = app.listen(port, () => console.log(`Duit API listening on http://localhost:${port}/api/v1`));
-
-for (const signal of ["SIGINT", "SIGTERM"]) {
-  process.on(signal, () => server.close(() => pool.end(() => process.exit(0))));
-}
+await recoverInterruptedJobs();
+const server = createApp().listen(port, process.env.HOST || '0.0.0.0', () => console.log(`DUIT private-pilot API listening on port ${port}`));
+let closing = false;
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => {
+  if (closing) return;
+  closing = true;
+  server.close(() => pool.end().then(() => process.exit(0)));
+  setTimeout(() => process.exit(0), 15000).unref();
+});

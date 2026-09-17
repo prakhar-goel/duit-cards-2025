@@ -76,4 +76,3 @@ Competitors offer substantial free card functionality, so charging purely for a 
 ## What this research does not establish
 
 This desk research does not establish market size, customer willingness to switch, retention, paid demand, legal compliance or a path to a particular company valuation. Vendor customer counts and claimed ROI were deliberately not used to forecast DUIT revenue. The next evidence should come from observed task completion and real pilot behaviour. The private archive is useful for design variety and restoration history; it is not a current active-user base or permission to contact former users.
-
