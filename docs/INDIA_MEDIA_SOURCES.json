@@ -1,0 +1,98 @@
+{
+  "retrievedAt": "2026-09-18T07:00:08.493Z",
+  "sources": [
+    {
+      "file": "india/ananya-menon-portrait.jpg",
+      "url": "https://images.pexels.com/photos/18890945/pexels-photo-18890945.jpeg?auto=compress&cs=tinysrgb&w=1100"
+    },
+    {
+      "file": "india/ishaan-kapoor-portrait.jpg",
+      "url": "https://images.pexels.com/photos/37556617/pexels-photo-37556617.jpeg?auto=compress&cs=tinysrgb&w=1100"
+    },
+    {
+      "file": "india/ishaan-kapoor-1.jpg",
+      "url": "https://images.pexels.com/photos/4483610/pexels-photo-4483610.jpeg?auto=compress&cs=tinysrgb&w=1100"
+    },
+    {
+      "file": "india/meera-joshi-portrait.jpg",
+      "url": "https://images.pexels.com/photos/29201031/pexels-photo-29201031.jpeg?auto=compress&cs=tinysrgb&w=1100"
+    },
+    {
+      "file": "india/meera-joshi-0.jpg",
+      "url": "https://images.pexels.com/photos/36040619/pexels-photo-36040619.jpeg?auto=compress&cs=tinysrgb&w=1100"
+    },
+    {
+      "file": "india/meera-joshi-1.jpg",
+      "url": "https://images.pexels.com/photos/29625842/pexels-photo-29625842.jpeg?auto=compress&cs=tinysrgb&w=1100"
+    },
+    {
+      "file": "india/meera-joshi-2.jpg",
+      "url": "https://images.pexels.com/photos/34559663/pexels-photo-34559663.jpeg?auto=compress&cs=tinysrgb&w=1100"
+    },
+    {
+      "file": "india/kabir-shah-portrait.jpg",
+      "url": "https://images.pexels.com/photos/36485304/pexels-photo-36485304.png?auto=compress&cs=tinysrgb&w=1100"
+    },
+    {
+      "file": "india/kabir-shah-0.jpg",
+      "url": "https://images.pexels.com/photos/29206491/pexels-photo-29206491.jpeg?auto=compress&cs=tinysrgb&w=1100"
+    },
+    {
+      "file": "india/kabir-shah-2.jpg",
+      "url": "https://images.pexels.com/photos/14613939/pexels-photo-14613939.jpeg?auto=compress&cs=tinysrgb&w=1100"
+    },
+    {
+      "file": "india/tulsi-nair-portrait.jpg",
+      "url": "https://images.pexels.com/photos/11238650/pexels-photo-11238650.jpeg?auto=compress&cs=tinysrgb&w=1100"
+    },
+    {
+      "file": "india/tulsi-nair-0.jpg",
+      "url": "https://images.pexels.com/photos/8681007/pexels-photo-8681007.jpeg?auto=compress&cs=tinysrgb&w=1100"
+    },
+    {
+      "file": "india/tulsi-nair-1.jpg",
+      "url": "https://images.pexels.com/photos/29057024/pexels-photo-29057024.jpeg?auto=compress&cs=tinysrgb&w=1100"
+    },
+    {
+      "file": "india/tulsi-nair-2.jpg",
+      "url": "https://images.pexels.com/photos/9322933/pexels-photo-9322933.jpeg?auto=compress&cs=tinysrgb&w=1100"
+    },
+    {
+      "file": "india/vihaan-sethi-portrait.jpg",
+      "url": "https://images.pexels.com/photos/17261590/pexels-photo-17261590.jpeg?auto=compress&cs=tinysrgb&w=1100"
+    },
+    {
+      "file": "india/business-bombay-portrait.jpg",
+      "url": "https://bombaysweetshop.com/cdn/shop/files/bombay-sweet-shop-chef-mithaiwalla-girish-nayak.jpg?v=1613750452&width=1000"
+    },
+    {
+      "file": "india/business-nicobar-portrait.jpg",
+      "url": "https://journal.nicobar.com/wp-content/uploads/2020/03/Simran-Lal-Co-Founder-and-Creative-Director-1-1-1160x773.jpg"
+    },
+    {
+      "file": "india/business-bluetokai-portrait.jpg",
+      "url": "https://www.bluetokaicoffee.jp/cdn/shop/files/Riverdale7-2.jpg?v=1648650799"
+    }
+  ],
+  "businessPeople": [
+    {
+      "key": "bombay",
+      "name": "Girish Nayak",
+      "role": "Chief Mithaiwala",
+      "source": "https://bombaysweetshop.com/pages/about-us"
+    },
+    {
+      "key": "nicobar",
+      "name": "Simran Lal",
+      "role": "Co-founder & Creative Director",
+      "source": "https://journal.nicobar.com/the-creator-of-brands-simran-lal-chief-executive-officer-good-earth-co-founder-nicobar/"
+    },
+    {
+      "key": "bluetokai",
+      "name": "Matt Chitharanjan",
+      "role": "Co-founder",
+      "source": "https://www.bluetokaicoffee.jp/pages/about-us"
+    }
+  ],
+  "note": "Stock models illustrate authored profiles; their real identities are not asserted. Official business representatives use their own published photographs and roles. No meetings or endorsements are invented for public-reference people. New authored profiles use reserved contact details; lead forms stay inside DUIT."
+}

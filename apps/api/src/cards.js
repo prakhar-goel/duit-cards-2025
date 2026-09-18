@@ -18,7 +18,8 @@ export const cardSchema = z.object({
   bio: text(3000).default(''),
   theme: z.object({
     color: text(20).optional(),
-    style: text(40).optional()
+    style: text(40).optional(),
+    logoUrl: httpUrl.optional()
   }).default({}),
   contact: z.object({
     email: email.optional(),

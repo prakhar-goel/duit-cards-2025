@@ -132,8 +132,7 @@ export function PeopleScreen({
           (a, b) =>
             Number(Boolean(b.businessCardUrl && b.photoUrl && b.cardSlug)) -
               Number(Boolean(a.businessCardUrl && a.photoUrl && a.cardSlug)) ||
-            Number(Boolean(b.cardSlug?.startsWith("business-"))) -
-              Number(Boolean(a.cardSlug?.startsWith("business-"))),
+            Number(b.countryCode === "IN") - Number(a.countryCode === "IN"),
         ),
     [data.people, query, filter, country],
   );
@@ -529,7 +528,7 @@ export function PersonDetail({
             ? "Edit person"
             : view === "memory"
               ? "Meeting memory"
-              : p?.company || "Card wallet"
+              : p?.name || "Card wallet"
         }
         subtitle={view === "memory" && !editing ? p?.name : undefined}
         onClose={() =>
@@ -650,7 +649,34 @@ export function PersonDetail({
             <>
               {view === "card" && (
                 <View style={{ marginTop: 24 }}>
-                  <Label>{p.company || "ABOUT"}</Label>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 12,
+                    }}
+                  >
+                    {publishedCard?.theme?.logoUrl && (
+                      <RemoteImage
+                        uri={publishedCard.theme.logoUrl}
+                        contain
+                        style={{
+                          width: 60,
+                          height: 48,
+                          backgroundColor: C.white,
+                          borderRadius: 8,
+                        }}
+                      />
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Label>{p.company || "ABOUT"}</Label>
+                      <Text
+                        style={{ fontSize: 12, color: C.muted, marginTop: 5 }}
+                      >
+                        {p.name} · {p.role}
+                      </Text>
+                    </View>
+                  </View>
                   <Body style={{ fontSize: 17, lineHeight: 26, marginTop: 10 }}>
                     {publishedCard?.bio || p.bio}
                   </Body>

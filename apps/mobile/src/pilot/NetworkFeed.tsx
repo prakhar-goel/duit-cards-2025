@@ -41,7 +41,7 @@ export function NetworkFeed({
       });
     const recent = data.people
       .filter((p) => p.businessCardUrl && !seen.has(p.id))
-      .slice(0, 24)
+      .slice(0, 60)
       .map((p) => ({
         person: p,
         intent: "network",
@@ -63,8 +63,8 @@ export function NetworkFeed({
               a.person.cardSlug,
             ),
           ) ||
-        Number(Boolean(b.person.cardSlug?.startsWith("business-"))) -
-          Number(Boolean(a.person.cardSlug?.startsWith("business-"))),
+        Number(b.person.countryCode === "IN") -
+          Number(a.person.countryCode === "IN"),
     );
   }, [data.people, data.feed]);
   const meetings = useMemo(() => {

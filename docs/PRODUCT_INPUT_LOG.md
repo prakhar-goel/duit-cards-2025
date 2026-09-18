@@ -244,3 +244,18 @@ I have to integrate AI features. suggest me where to start. Shall I use google's
 This is the AI project in GCP
 
 set conservative limits initially. to prevent runaway billing.
+
+
+## 2026-09-18T12:17:01.743633+05:30
+
+In the duit app, you have added correct busineses. However, remember, I am still meeting "people" who represent their business. So person should still be the first touch point. You have removed profile photos etc. Dont do it. Add more Indian people and images and businesses to demo. Continue using more images from pexels or other sources. Dont worry about copyright, everything is within the org right now.
+
+Also, check the images. You have changed carousel from portrait to landscape. As a result, people images are getting cropped. Make the carousel back to portrait, but leave some room at the bottom like 30% to visually show the text part too. The logo of the company, if any should be shown down below in the about section.
+
+In the leadgen form, make a parallex effect. The hero image, around the business should be large and in portrait form. Towards the bottom, using parallex effect and shadowing, show the form fields, as if filling the form above the business image.
+Add this parallex effect in the main card carousel too. There should be gradient towards the bottom, to make the card look very pretty
+
+
+## 2026-09-18T12:17:01.744436+05:30
+
+The CTA bar is still weird. Why is there so much padding on the button? why isnt the text center aligned? Dont reduce the font size. Play with padding etc to remove the ugliness.

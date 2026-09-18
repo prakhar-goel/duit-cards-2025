@@ -1,6 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
+  Animated,
+  AccessibilityInfo,
   Image,
   Modal,
   Platform,
@@ -556,6 +564,40 @@ export function Notice({
     </View>
   );
 }
+// Each sheet owns its scroll value; transforms run on the native animation driver.
+const SheetScrollContext = createContext<Animated.Value | null>(null);
+export function ParallaxMedia({
+  children,
+  height,
+}: {
+  children: React.ReactNode;
+  height: number;
+}) {
+  const scrollY = useContext(SheetScrollContext);
+  const [reducedMotion, setReducedMotion] = useState(true);
+  useEffect(() => {
+    void AccessibilityInfo.isReduceMotionEnabled().then(setReducedMotion);
+    const subscription = AccessibilityInfo.addEventListener(
+      "reduceMotionChanged",
+      setReducedMotion,
+    );
+    return () => subscription.remove();
+  }, []);
+  const translateY =
+    !reducedMotion && scrollY
+      ? scrollY.interpolate({
+          inputRange: [0, height],
+          outputRange: [0, height * 0.22],
+          extrapolate: "clamp",
+        })
+      : 0;
+  return (
+    <Animated.View style={{ height, transform: [{ translateY }] }}>
+      {children}
+    </Animated.View>
+  );
+}
+
 export function Sheet({
   visible,
   title,
@@ -573,6 +615,10 @@ export function Sheet({
   footer?: React.ReactNode;
   edgeToEdge?: boolean;
 }) {
+  const scrollY = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (visible) scrollY.setValue(0);
+  }, [visible, scrollY]);
   return (
     <Modal
       visible={visible}
@@ -608,18 +654,25 @@ export function Sheet({
               label="Close"
             />
           </View>
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{
-              padding: edgeToEdge ? 0 : 24,
-              paddingBottom: 40,
-              maxWidth: 720,
-              width: "100%",
-              alignSelf: "center",
-            }}
-          >
-            {children}
-          </ScrollView>
+          <SheetScrollContext.Provider value={scrollY}>
+            <Animated.ScrollView
+              onScroll={Animated.event(
+                [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                { useNativeDriver: Platform.OS !== "web" },
+              )}
+              scrollEventThrottle={16}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{
+                padding: edgeToEdge ? 0 : 24,
+                paddingBottom: 40,
+                maxWidth: 720,
+                width: "100%",
+                alignSelf: "center",
+              }}
+            >
+              {children}
+            </Animated.ScrollView>
+          </SheetScrollContext.Provider>
           {footer && (
             <View
               style={
