@@ -83,12 +83,11 @@ export function LeadForm({
                   "Try it first",
                   "Work together",
                 ];
-  const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   async function send() {
-    if (busy || !consent) return;
+    if (busy || !name.trim() || !email.includes("@")) return;
     setBusy(true);
     setError("");
     try {
@@ -123,9 +122,7 @@ export function LeadForm({
       footer={
         <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
           <Button
-            disabled={
-              !sent && (!consent || !name.trim() || !email.includes("@"))
-            }
+            disabled={!sent && (!name.trim() || !email.includes("@"))}
             busy={busy}
             onPress={sent ? onClose : () => void send()}
           >
@@ -305,30 +302,7 @@ export function LeadForm({
               multiline
               placeholder={`Tell ${card.slug.startsWith("business-") ? card.company || card.title : card.title.split(" ")[0]} a little about what you need`}
             />
-            <Pressable
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: consent }}
-              onPress={() => setConsent(!consent)}
-              style={{
-                flexDirection: "row",
-                gap: 12,
-                marginTop: 12,
-                paddingVertical: 12,
-              }}
-            >
-              <Icon name={consent ? "checkbox" : "square-outline"} size={24} />
-              <Text
-                style={{
-                  flex: 1,
-                  color: C.muted,
-                  fontSize: 12,
-                  lineHeight: 19,
-                }}
-              >
-                Share these details with {card.company || card.title} so they
-                can respond to this enquiry.
-              </Text>
-            </Pressable>
+
             {!!error && <Notice error>{error}</Notice>}
           </>
         )}
