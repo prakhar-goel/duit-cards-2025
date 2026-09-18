@@ -13,6 +13,7 @@ import { rateLimit } from './common.js';
 export function createApp() {
   const app = express();
   app.disable('x-powered-by');
+  if (process.env.TRUST_PROXY_HOPS === '1') app.set('trust proxy', 1);
   app.use((req, res, next) => {
     req.requestId = crypto.randomUUID();
     res.setHeader('X-Request-ID', req.requestId);

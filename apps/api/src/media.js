@@ -6,7 +6,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { query } from './db.js';
+import { query, transaction } from './db.js';
 import { auth, admin } from './auth.js';
 import { wrap, fail, text, uuid, owned, apiOrigin, requestApiOrigin } from './common.js';
 const exec = promisify(execFile);
@@ -63,6 +63,18 @@ export async function storeMedia(ownerId, {
   if (mimeType.startsWith('video/') && purpose !== 'cover') fail(400, 'Video must use cover purpose');
   if (mimeType.startsWith('audio/') && purpose !== 'voice_note') fail(400, 'Audio must use voice_note purpose');
   const id = crypto.randomUUID();
+  if (process.env.MEDIA_STORAGE === 'database') {
+    return transaction(async db => {
+      // Serialize quota checks so concurrent uploads cannot exceed the staging cap.
+      await db.query('SELECT pg_advisory_xact_lock(26091805)');
+      const used = Number((await db.query('SELECT COALESCE(sum(octet_length(bytes)),0) AS used FROM media_blobs')).rows[0].used);
+      const cap = Number(process.env.MEDIA_STORAGE_LIMIT_MB || 200) * 1024 * 1024;
+      if (used + bytes.length > cap) fail(413, 'Upload storage is full. Contact the workspace owner.', 'STORAGE_LIMIT');
+      const row = (await db.query('INSERT INTO media_assets(id,owner_id,filename,mime_type,size_bytes,storage_path,sha256,purpose) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *', [id,ownerId,path.basename(filename),mimeType,bytes.length,'database:'+id,crypto.createHash('sha256').update(bytes).digest('hex'),purpose])).rows[0];
+      await db.query('INSERT INTO media_blobs(media_id,bytes) VALUES($1,$2)',[id,bytes]);
+      return row;
+    });
+  }
   await fs.mkdir(mediaDir, {
     recursive: true,
     mode: 0o700
@@ -84,7 +96,7 @@ export async function mediaForAi(ownerId, ids) {
   const result = [];
   for (const id of ids) {
     const row = await owned('media_assets', id, ownerId);
-    const bytes = await fs.readFile(row.storage_path);
+    const bytes = await mediaBytes(row);
     const item = {
       id: row.id,
       mimeType: row.mime_type,
@@ -92,16 +104,20 @@ export async function mediaForAi(ownerId, ids) {
     };
     if (row.mime_type.startsWith('audio/')) {
       let duration;
+      const localPath = row.storage_path.startsWith('database:') ? path.join(mediaDir, row.id + '-' + crypto.randomUUID() + '.audio') : row.storage_path;
+      if (row.storage_path.startsWith('database:')) { await fs.mkdir(mediaDir,{recursive:true,mode:0o700}); await fs.writeFile(localPath,bytes,{mode:0o600}); }
       try {
         const {
           stdout
-        } = await exec(process.env.FFPROBE_PATH || 'ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', row.storage_path], {
+        } = await exec(process.env.FFPROBE_PATH || 'ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', localPath], {
           timeout: 10000,
           maxBuffer: 10000
         });
         duration = Number(stdout.trim());
       } catch {
         fail(422, 'This recording cannot be measured safely. Try a shorter MP3 or M4A recording.', 'AUDIO_DURATION_UNAVAILABLE');
+      } finally {
+        if (row.storage_path.startsWith('database:')) await fs.unlink(localPath).catch(() => {});
       }
       if (!Number.isFinite(duration) || duration <= 0 || duration > 600) fail(422, 'Voice notes must be shorter than 10 minutes', 'AUDIO_TOO_LONG');
       Object.assign(item, {
@@ -133,18 +149,14 @@ export function mediaRouter() {
     res.setHeader('Content-Type', row.mime_type);
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.sendFile(row.storage_path, {
-      dotfiles: 'allow'
-    });
+    await sendMedia(req, res, row);
   }));
   router.get('/media/:id', auth, wrap(async (req, res) => {
     const row = await owned('media_assets', req.params.id, req.userId);
     res.setHeader('Content-Type', row.mime_type);
     res.setHeader('Cache-Control', 'private, max-age=300');
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.sendFile(row.storage_path, {
-      dotfiles: 'allow'
-    });
+    await sendMedia(req, res, row);
   }));
   router.get('/public/media/:id', wrap(async (req, res) => {
     uuid.parse(req.params.id);
@@ -153,9 +165,27 @@ export function mediaRouter() {
     res.setHeader('Content-Type', row.mime_type);
     res.setHeader('Cache-Control', 'public, max-age=300');
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.sendFile(row.storage_path, {
-      dotfiles: 'allow'
-    });
+    await sendMedia(req, res, row);
   }));
   return router;
+}
+
+export async function mediaBytes(row) {
+  if (!row.storage_path.startsWith('database:')) return fs.readFile(row.storage_path);
+  const data=(await query('SELECT bytes FROM media_blobs WHERE media_id=$1',[row.id])).rows[0];
+  if (!data) fail(404,'Media not found');
+  return data.bytes;
+}
+async function sendMedia(req,res,row) {
+  if (!row.storage_path.startsWith('database:')) return res.sendFile(row.storage_path,{dotfiles:'allow'});
+  const bytes=await mediaBytes(row);
+  res.setHeader('Accept-Ranges','bytes');
+  if (req.headers.range) {
+    const m=/^bytes=(\d*)-(\d*)$/.exec(req.headers.range);
+    let start=m?.[1] ? Number(m[1]) : Math.max(0,bytes.length-Number(m?.[2]));
+    let end=m?.[1] && m?.[2] ? Number(m[2]) : bytes.length-1;
+    if (!m || (!m[1]&&!m[2]) || !Number.isFinite(start) || start>=bytes.length || start>end) {res.setHeader('Content-Range',`bytes */${bytes.length}`);return res.sendStatus(416);}
+    end=Math.min(end,bytes.length-1);res.status(206);res.setHeader('Content-Range',`bytes ${start}-${end}/${bytes.length}`);return res.send(bytes.subarray(start,end+1));
+  }
+  res.send(bytes);
 }

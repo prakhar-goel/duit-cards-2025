@@ -169,5 +169,9 @@ export async function migrate() {
       await db.query("ALTER TABLE cards ADD COLUMN IF NOT EXISTS business_card_back_url TEXT, ADD COLUMN IF NOT EXISTS business_media JSONB NOT NULL DEFAULT '[]'");
       await db.query("INSERT INTO schema_migrations(version) VALUES('2026-card-gallery-v4')");
     }
+    if (!(await db.query("SELECT 1 FROM schema_migrations WHERE version='2026-durable-staging-media-v5'")).rowCount) {
+      await db.query('CREATE TABLE media_blobs (media_id UUID PRIMARY KEY REFERENCES media_assets(id) ON DELETE CASCADE, bytes BYTEA NOT NULL)');
+      await db.query("INSERT INTO schema_migrations(version) VALUES('2026-durable-staging-media-v5')");
+    }
   });
 }

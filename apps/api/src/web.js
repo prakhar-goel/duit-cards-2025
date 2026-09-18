@@ -57,6 +57,11 @@ export function webRouter() {
   router.use('/demo', express.static(path.join(dist, 'demo'), staticOptions));
   router.get('/robots.txt', (_req, res) => res.type('text/plain').send('User-agent: *\nDisallow: /\n'));
   router.get('/downloads/DUIT-2026-Pilot.apk', wrap(async (req, res) => {
+    if (process.env.PILOT_APK_URL) {
+      const target = new URL(process.env.PILOT_APK_URL);
+      if (target.protocol !== 'https:' || target.hostname !== 'github.com' || !target.pathname.startsWith('/prakhar-goel/duit-cards-2025/releases/download/')) fail(500, 'Invalid APK release URL');
+      return res.redirect(302, target.href);
+    }
     const apk = process.env.PILOT_APK_PATH || defaultApk;
     try {
       await fs.access(apk);

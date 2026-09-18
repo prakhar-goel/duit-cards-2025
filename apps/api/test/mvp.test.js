@@ -588,6 +588,18 @@ test('private pilot end-to-end: two accounts, public card, verified claim and re
     await request(`/cards/${card.id}`,{method:'PATCH',token:owner.accessToken,body:{businessMedia:[{url:video.url,type:'video',title:'Our work',caption:'A short introduction'}]}});
     assert.equal((await request(`/cards/${card.id}/publish`,{method:'POST',token:owner.accessToken})).status,200);
     assert.equal((await request(`/public/media/${video.id}`)).status,200,'Approved video is playable publicly');
+    const range = await fetch(`${base}/public/media/${video.id}`, {headers:{Range:'bytes=0-31'}});
+    assert.equal(range.status,206);
+    assert.equal(range.headers.get('content-range'),`bytes 0-31/${videoBytes.length}`);
+    assert.deepEqual(Buffer.from(await range.arrayBuffer()),videoBytes.subarray(0,32));
+    const invalidRange=await fetch(`${base}/public/media/${video.id}`,{headers:{Range:'bytes=999999999-'}});
+    assert.equal(invalidRange.status,416);
+    if(process.env.MEDIA_STORAGE==='database') {
+      const stored=(await query('SELECT storage_path FROM media_assets WHERE id=$1',[video.id])).rows[0];
+      assert.ok(stored.storage_path.startsWith('database:'));
+      assert.deepEqual((await query('SELECT bytes FROM media_blobs WHERE media_id=$1',[video.id])).rows[0].bytes,videoBytes);
+    }
+
     const slide = {url:media.url,type:'image',title:'Our work',caption:'A recent project'};
     assert.equal((await request(`/cards/${card.id}`, {method:'PATCH',token:owner.accessToken,body:{businessMedia:Array(5).fill(slide)}})).status,400);
     await request(`/cards/${card.id}`, {method:'PATCH',token:owner.accessToken,body:{businessMedia:[{...slide,url:audio.body.media.url}]}});

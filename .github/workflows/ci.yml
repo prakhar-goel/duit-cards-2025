@@ -65,6 +65,8 @@ jobs:
         run: npm run typecheck
       - name: Mobile and isolated API/provider checks
         run: npm test
+      - name: Verify durable staging uploads
+        run: MEDIA_STORAGE=database npm run test:api
       - name: Build public website
         run: npm run build:public
       - name: Build mobile browser bundle
