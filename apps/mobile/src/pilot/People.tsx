@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable, ScrollView, Linking } from "react-native";
 import { usePilot } from "./store";
-import { get, post, patch } from "./api";
+import { get, post, patch, getServer } from "./api";
 import { camel, dateLabel, searchPeople } from "./domain";
 import type { Person, Encounter, Commitment, Card } from "./types";
 import {
@@ -31,6 +31,8 @@ import {
   StoryDock,
   type StoryAction,
 } from "./CardStory";
+const publicCardCache = new Map<string, { card: Card; at: number }>();
+
 export function PersonRow({
   person,
   onPress,
@@ -398,6 +400,10 @@ export function PersonDetail({
   const [view, setView] = useState<"card" | "memory">("card");
   const [dock, setDock] = useState<StoryAction | null>(null);
   const [publishedCard, setPublishedCard] = useState<Card | null>(null);
+  const [galleryAttempt, setGalleryAttempt] = useState(0);
+  const [galleryState, setGalleryState] = useState<
+    "loading" | "ready" | "error"
+  >("loading");
   const [edit, setEdit] = useState<any>({});
   const [busy, setBusy] = useState(false);
   const [aiTask, setAiTask] = useState("");
@@ -433,17 +439,30 @@ export function PersonDetail({
   const p = detail?.person ?? data.people.find((x) => x.id === id);
   useEffect(() => {
     let active = true;
-    setPublishedCard(null);
-    if (p?.cardSlug)
+    const key = `${getServer()}:${p?.cardSlug}`;
+    const cached = publicCardCache.get(key);
+    setPublishedCard(cached?.card || null);
+    setGalleryState(cached || !p?.cardSlug ? "ready" : "loading");
+    if (
+      p?.cardSlug &&
+      (!cached || Date.now() - cached.at > 60000 || galleryAttempt)
+    )
       void get(`/public/cards/${encodeURIComponent(p.cardSlug)}`)
         .then((r) => {
-          if (active) setPublishedCard(r.card);
+          if (!active) return;
+          setPublishedCard(r.card);
+          setGalleryState("ready");
+          if (publicCardCache.size >= 40)
+            publicCardCache.delete(publicCardCache.keys().next().value!);
+          publicCardCache.set(key, { card: r.card, at: Date.now() });
         })
-        .catch(() => {});
+        .catch(() => {
+          if (active && !cached) setGalleryState("error");
+        });
     return () => {
       active = false;
     };
-  }, [p?.cardSlug]);
+  }, [p?.cardSlug, galleryAttempt]);
 
   async function save() {
     if (!p) return;
@@ -548,6 +567,20 @@ export function PersonDetail({
         }
       >
         {!!error && <Notice error>{error}</Notice>}
+        {p?.cardSlug && galleryState === "error" && (
+          <Notice
+            error
+            action="Retry"
+            onPress={() => setGalleryAttempt((n) => n + 1)}
+          >
+            The business gallery could not load. Your saved card is still here.
+          </Notice>
+        )}
+        {p?.cardSlug && galleryState === "loading" && (
+          <Text style={{ padding: 12, color: C.muted, fontSize: 12 }}>
+            Loading the business gallery…
+          </Text>
+        )}
         {p && (
           <View
             style={{ display: !editing && view === "card" ? "flex" : "none" }}
