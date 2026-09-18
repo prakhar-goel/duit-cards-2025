@@ -39,7 +39,12 @@ export type Card = {
   company?: string;
   role?: string;
   ctaUrl?: string | null;
-  contact: { email?: string; phone?: string; website?: string };
+  contact: {
+    email?: string;
+    phone?: string;
+    website?: string;
+    address?: string;
+  };
   links?: { label: string; url: string }[];
   ctaType: string;
   ctaLabel: string;

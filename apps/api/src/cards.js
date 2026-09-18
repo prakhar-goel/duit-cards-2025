@@ -23,6 +23,7 @@ export const cardSchema = z.object({
   contact: z.object({
     email: email.optional(),
     phone: text(40).optional(),
+    address: text(300).optional(),
     website: httpUrl.optional()
   }).default({}),
   links: z.array(z.object({

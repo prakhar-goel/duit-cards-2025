@@ -20,6 +20,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { mediaHeaders, mediaUrl } from "./api";
+import mediaManifest from "./media-manifest.json";
 import { initials } from "./domain";
 export const C = {
   bg: "#F7F8F2",
@@ -127,8 +128,17 @@ export function CircleButton({
     </Pressable>
   );
 }
-function useImageSource(value?: string | null) {
-  const uri = mediaUrl(value);
+function useImageSource(value?: string | null, thumbnail = false) {
+  let assetPath = value || "";
+  try {
+    assetPath = new URL(value || "").pathname;
+  } catch {}
+  const optimized = (
+    mediaManifest as Record<string, { image: string; thumb: string }>
+  )[assetPath];
+  const uri = mediaUrl(
+    optimized ? optimized[thumbnail ? "thumb" : "image"] : value,
+  );
   const headers = mediaHeaders(uri);
   const token = headers?.Authorization;
   const [resolved, setResolved] = useState<string | undefined>(undefined);
@@ -175,7 +185,7 @@ export function Avatar({
   square?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  const uri = useImageSource(url);
+  const uri = useImageSource(url, true);
   useEffect(() => setFailed(false), [uri]);
   return (
     <View
@@ -223,8 +233,42 @@ export function RemoteImage({
   onSize?: (width: number, height: number) => void;
 }) {
   const url = useImageSource(uri);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    setFailed(false);
+    setAttempt(0);
+  }, [uri]);
+  if (failed)
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Retry image"
+        onPress={() => {
+          setFailed(false);
+          setAttempt((n) => n + 1);
+        }}
+        style={[
+          style,
+          {
+            backgroundColor: C.soft,
+            alignItems: "center",
+            justifyContent: "center",
+          },
+        ]}
+      >
+        <Icon name="refresh-outline" size={28} />
+        <Text style={{ color: C.ink, marginTop: 8, fontSize: 12 }}>
+          Tap to reload image
+        </Text>
+      </Pressable>
+    );
   return url ? (
     <Image
+      key={`${url}:${attempt}`}
+      onError={() => setFailed(true)}
+      resizeMethod="resize"
+      fadeDuration={0}
       source={{ uri: url, headers: mediaHeaders(url) }}
       style={style as any}
       resizeMode={contain ? "contain" : "cover"}

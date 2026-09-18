@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, Pressable, ScrollView, FlatList } from "react-native";
 import { usePilot } from "./store";
 import { C, s, Avatar, Pill, Title, Body, Icon } from "./ui";
 import { CardArtwork } from "./CardStory";
@@ -7,9 +7,17 @@ import { dateLabel } from "./domain";
 export function NetworkFeed({
   onPerson,
   onFocus,
+  header,
+  footer,
+  refreshing,
+  onRefresh,
 }: {
   onPerson: (id: string) => void;
   onFocus: () => void;
+  header?: React.ReactNode;
+  footer?: React.ReactNode;
+  refreshing: boolean;
+  onRefresh: () => void;
 }) {
   const { data } = usePilot();
   const [filter, setFilter] = useState("For you");
@@ -48,13 +56,28 @@ export function NetworkFeed({
             b.person.photoUrl && b.person.businessCardUrl && b.person.cardSlug,
           ),
         ) -
-        Number(
-          Boolean(
-            a.person.photoUrl && a.person.businessCardUrl && a.person.cardSlug,
-          ),
-        ),
+          Number(
+            Boolean(
+              a.person.photoUrl &&
+              a.person.businessCardUrl &&
+              a.person.cardSlug,
+            ),
+          ) ||
+        Number(Boolean(b.person.cardSlug?.startsWith("business-"))) -
+          Number(Boolean(a.person.cardSlug?.startsWith("business-"))),
     );
   }, [data.people, data.feed]);
+  const meetings = useMemo(() => {
+    const map = new Map<string, (typeof data.encounters)[number]>();
+    for (const e of data.encounters) {
+      if (
+        !map.has(e.personId) ||
+        e.occurredAt > map.get(e.personId)!.occurredAt
+      )
+        map.set(e.personId, e);
+    }
+    return map;
+  }, [data.encounters]);
   const visible = items.filter(
     (i) =>
       filter === "For you" ||
@@ -65,38 +88,59 @@ export function NetworkFeed({
           : i.intent === "network"),
   );
   return (
-    <View style={{ marginTop: 20 }}>
-      <View style={s.row}>
-        <Title size={26}>Good for business.</Title>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Tune your feed"
-          onPress={onFocus}
-          style={{ padding: 10 }}
-        >
-          <Icon name="options-outline" size={22} />
-        </Pressable>
-      </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 8, paddingVertical: 18 }}
-      >
-        {["For you", "Grow", "Improve", "Network"].map((label) => (
-          <Pill
-            key={label}
-            active={filter === label}
-            onPress={() => setFilter(label)}
-          >
-            {label}
-          </Pill>
-        ))}
-      </ScrollView>
-      {visible.map((item) => {
+    <FlatList
+      data={visible}
+      keyExtractor={(item) => item.person.id}
+      initialNumToRender={3}
+      maxToRenderPerBatch={3}
+      windowSize={5}
+      updateCellsBatchingPeriod={40}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={s.page}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      ListHeaderComponent={
+        <View>
+          {header}
+          <View style={{ marginTop: 20 }}>
+            <View style={s.row}>
+              <Title size={26}>Good for business.</Title>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Tune your feed"
+                onPress={onFocus}
+                style={{ padding: 10 }}
+              >
+                <Icon name="options-outline" size={22} />
+              </Pressable>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8, paddingVertical: 18 }}
+            >
+              {["For you", "Grow", "Improve", "Network"].map((label) => (
+                <Pill
+                  key={label}
+                  active={filter === label}
+                  onPress={() => setFilter(label)}
+                >
+                  {label}
+                </Pill>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      }
+      ListFooterComponent={<>{footer}</>}
+      ListEmptyComponent={
+        <Body muted>
+          No matches yet. Add what you offer or need to tune your feed.
+        </Body>
+      }
+      renderItem={({ item }) => {
         const p = item.person;
-        const meeting = data.encounters
-          .filter((e) => e.personId === p.id)
-          .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0];
+        const meeting = meetings.get(p.id);
         return (
           <Pressable
             accessibilityRole="button"
@@ -195,12 +239,7 @@ export function NetworkFeed({
             </View>
           </Pressable>
         );
-      })}
-      {!visible.length && (
-        <Body muted>
-          No matches yet. Add what you offer or need to tune your feed.
-        </Body>
-      )}
-    </View>
+      }}
+    />
   );
 }
