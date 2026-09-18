@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Keyboard,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -89,6 +91,32 @@ export function AuthScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [settings, setSettings] = useState(false);
+  const scroll = useRef<ScrollView>(null);
+  function revealFocusedInput() {
+    if (Platform.OS === "web") return;
+    requestAnimationFrame(() => {
+      const input = TextInput.State.currentlyFocusedInput();
+      if (input)
+        scroll.current?.scrollResponderScrollNativeHandleToKeyboard(
+          input,
+          24,
+          true,
+        );
+    });
+  }
+  useEffect(() => {
+    const listener = Keyboard.addListener(
+      "keyboardDidShow",
+      revealFocusedInput,
+    );
+    return () => listener.remove();
+  }, []);
+  function useMayaAccount() {
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    setError("");
+    Keyboard.dismiss();
+  }
   async function submit() {
     setBusy(true);
     setError("");
@@ -103,10 +131,21 @@ export function AuthScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={
+          Platform.OS === "ios"
+            ? "padding"
+            : Platform.OS === "android"
+              ? "height"
+              : undefined
+        }
         style={{ flex: 1 }}
       >
         <ScrollView
+          ref={scroll}
+          onLayout={() => {
+            if (Keyboard.isVisible()) revealFocusedInput();
+          }}
+          keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             padding: 28,
@@ -209,40 +248,38 @@ export function AuthScreen() {
           {create && (
             <Field
               label="Your name"
+              onFocus={revealFocusedInput}
               value={name}
               onChangeText={setName}
               autoComplete="name"
               placeholder="How should we call you?"
             />
           )}
-          {!create && (
-            <View style={{ flexDirection: "row", gap: 8, marginBottom: 18 }}>
-              {[
-                ["Maya · Northstar", "maya@northstar.example"],
-                ["Noah · Fieldwork", "noah@fieldwork.example"],
-              ].map(([label, value]) => (
-                <Pressable
-                  key={value}
-                  onPress={() => setEmail(value)}
-                  accessibilityRole="button"
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 9,
-                    borderRadius: 12,
-                    backgroundColor: C.soft,
-                  }}
-                >
-                  <Text
-                    style={{ fontSize: 11, color: C.teal, fontWeight: "600" }}
-                  >
-                    {label}
-                  </Text>
-                </Pressable>
-              ))}
+          {!create && demoReady && (
+            <View
+              style={{
+                backgroundColor: C.soft,
+                padding: 16,
+                borderRadius: 14,
+                marginBottom: 20,
+                gap: 8,
+              }}
+            >
+              <Label>MAYA · NORTHSTAR</Label>
+              <Text selectable style={{ color: C.ink, fontSize: 14 }}>
+                {demoEmail}
+              </Text>
+              <Text selectable style={{ color: C.ink, fontSize: 14 }}>
+                {demoPassword}
+              </Text>
+              <Button small tone="secondary" onPress={useMayaAccount}>
+                Use Maya’s account
+              </Button>
             </View>
           )}
           <Field
             label="Email address"
+            onFocus={revealFocusedInput}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -253,6 +290,7 @@ export function AuthScreen() {
           />
           <Field
             label="Password"
+            onFocus={revealFocusedInput}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -263,6 +301,7 @@ export function AuthScreen() {
           {create && (
             <Field
               label="Pilot invite code · if provided"
+              onFocus={revealFocusedInput}
               value={inviteCode}
               onChangeText={setInviteCode}
               autoCapitalize="none"
@@ -309,8 +348,8 @@ export function AuthScreen() {
               lineHeight: 18,
             }}
           >
-            DUIT · 2026{"\n"}Your notes stay private. Your business
-            card travels.
+            DUIT · 2026{"\n"}Your notes stay private. Your business card
+            travels.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

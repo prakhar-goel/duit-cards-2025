@@ -280,3 +280,9 @@ What are you showing below "How We Work" heading? I only see address. How is add
 Remove the edit button from the received card. How can I edit someone else's card? Rethink the Meeting memory and record a meeting buttons. They are too complex. And not looking beautiful. Make that flow simpler. 
 
 The CTA button text should be small, not in 2 lines. 1-2 words only.
+
+
+## 2026-09-18T21:25:29+05:30
+
+Please prefill maya credentials in the apk. Also show them on the login page with a button to prefill them.
+I found a problem. Clicking on the password field is not scrolling it above. Password field is getting hidden behind the keyboard.
