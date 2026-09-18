@@ -7,22 +7,49 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "node scripts/dev.mjs",
+    "dev": "node scripts/pilot.mjs dev",
+    "api": "npm run dev --workspace @duit/api",
     "start": "npm run start --workspace @duit/mobile",
     "android": "npm run android --workspace @duit/mobile",
     "ios": "npm run ios --workspace @duit/mobile",
     "web": "npm run web --workspace @duit/mobile",
-    "test": "npm run test --workspace @duit/mobile",
-    "typecheck": "npm run typecheck --workspace @duit/mobile",
+    "test": "npm run test:mobile && npm run test:api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
     "build:web": "npm run build:web --workspace @duit/mobile",
-    "ci:verify": "npm run ci:verify --workspace @duit/mobile"
+    "ci:verify": "npm run typecheck && npm run test && npm run build:public && npm run build:web",
+    "setup:pilot": "node scripts/setup-pilot.mjs",
+    "pilot": "node scripts/pilot.mjs start",
+    "dev:pilot": "node scripts/pilot.mjs dev",
+    "phone": "node scripts/pilot.mjs phone",
+    "phone:status": "node scripts/pilot.mjs status",
+    "phone:stop": "node scripts/pilot.mjs stop",
+    "phone:internet": "node scripts/pilot.mjs internet",
+    "phone:internet:stop": "node scripts/pilot.mjs internet:stop",
+    "seed:pilot": "node --env-file=.env.local scripts/seed-pilot.mjs",
+    "import:archive": "node --env-file=.env.local scripts/import-archive.mjs",
+    "build:apk": "node scripts/build-pilot-android.mjs",
+    "build:public": "npm run build --workspace @duit/web",
+    "test:api": "node --env-file-if-exists=.env.local --test --test-timeout=30000 apps/api/test/*.test.js",
+    "test:mobile": "npm run test --workspace @duit/mobile",
+    "test:web": "node scripts/verify-pilot-web.mjs"
   },
   "packageManager": "npm@10.9.2",
   "overrides": {
-    "postcss": "$postcss"
+    "postcss": "^8.5.25",
+    "vite": "7.3.6",
+    "browserslist": "^4.28.7",
+    "fast-uri": "^3.1.6",
+    "nanoid": "^3.3.18",
+    "qs": "6.16.0",
+    "expo-asset": "~12.0.13"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "postcss": "^8.5.25",
+    "prettier": "^3.9.7",
     "qrcode-terminal": "0.11.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

@@ -81,23 +81,37 @@ def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBu
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+def pilotSigningProperties = new Properties()
+def pilotSigningFile = rootProject.file('../../../.local/signing/pilot.properties')
+if (pilotSigningFile.exists()) {
+    pilotSigningFile.withInputStream { pilotSigningProperties.load(it) }
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
 
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'io.duit.ecards'
+    namespace 'io.duit.ecards.pilot'
     defaultConfig {
-        applicationId 'io.duit.ecards'
+        applicationId 'io.duit.ecards.pilot'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "3.0.3"
+        versionCode 2026091806
+        versionName "4.3.0"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
     signingConfigs {
+        pilot {
+            if (pilotSigningFile.exists()) {
+                storeFile file(pilotSigningProperties.getProperty('storeFile'))
+                storePassword pilotSigningProperties.getProperty('storePassword')
+                keyAlias pilotSigningProperties.getProperty('keyAlias')
+                keyPassword pilotSigningProperties.getProperty('keyPassword')
+            }
+        }
         debug {
             storeFile file('debug.keystore')
             storePassword 'android'
@@ -110,10 +124,7 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            // EAS Build injects production signing credentials during build.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.pilot
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
@@ -179,5 +190,16 @@ dependencies {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
+    }
+}
+
+// Debug builds can run without the private release identity.
+tasks.configureEach { task ->
+    if (task.name == 'validateSigningRelease') {
+        task.doFirst {
+            if (!pilotSigningFile.exists()) {
+                throw new GradleException('Missing private pilot signing key. Run npm run build:apk to prepare the signed build.')
+            }
+        }
     }
 }

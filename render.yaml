@@ -1,0 +1,25 @@
+# Non-production only. Stable Render hostname; private account sign-in stays enforced.
+services:
+  - type: web
+    name: duit-cards-staging
+    runtime: node
+    region: singapore
+    plan: free
+    branch: main
+    autoDeployTrigger: checksPass
+    buildCommand: npm ci --include=dev && npm run build:public
+    startCommand: node scripts/start-staging.mjs
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.18.0
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PILOT_INVITE_CODE
+        generateValue: true
+      - key: PILOT_APK_URL
+        value: https://github.com/prakhar-goel/duit-cards-2025/releases/download/v4.3.0-staging/DUIT-2026-Pilot.apk

@@ -59,3 +59,9 @@ apps/mobile/ios/build/
 .env
 .env.*
 !.env.example
+
+# Private pilot data, media, signing and generated delivery artifacts
+.local/
+artifacts/
+playwright-report/
+test-results/

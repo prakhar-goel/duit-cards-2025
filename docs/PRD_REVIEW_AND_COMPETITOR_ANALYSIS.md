@@ -1,41 +1,56 @@
 # Duit Cards PRD Review and Competitor Analysis
 
 **Research date:** 2026-08-05
-**Purpose:** Product-review input; recommendations here do not supersede `PRD.md` until the open decisions are approved.
+
+**Product interpretation updated:** 2026-08-06
+
+**Purpose:** Competitive evidence supporting `PRD.md`; the PRD remains the product source of truth.
 
 ## Executive conclusion
 
-Duit is aimed at a real problem, but the current differentiation is no longer sufficient. Blinq now combines digital cards, universal contact scanning, in-person AI notes, contact-linked summaries, next steps and CRM follow-through. Wave and Covve combine digital identity, scanning, notes and reminders; HiHello, Popl and CamCard cover adjacent portions of the same flow; Dex covers long-term relationship memory extremely well.
+Duit is not competing only in the digital-card category. Its intended product combines two jobs that competitors usually separate:
 
-The opportunity is therefore not “combine card capture, context and follow-up.” That combination is already entering the category baseline. Duit needs to become the fastest and most locally relevant **post-encounter action system** for a narrow segment, then prove that it produces more completed follow-ups—not simply more stored contacts.
+1. an AI-crafted, recipient-facing pitch that structures attention and captures intent; and
+2. a private relationship feed that resurfaces who is relevant to a current need or offer.
 
-Recommended initial thesis:
+**LinkedIn is the closest strategic competitor** because it owns professional identity, the professional graph and a strong relevance feed. Duit's model is different: private encounter memory instead of a public content graph, and a short owner-controlled pitch instead of a profile plus posts.
 
-> For founders, consultants and partnership professionals who build business through events and introductions, Duit turns a 10-second post-conversation voice note into a trusted memory and a ready-to-send follow-up in the channel they actually use.
+Blinq, HiHello and Wave are important capability benchmarks, not the full product benchmark. They set expectations for sharing, QR, Wallet and contact exchange. Popl and Mobilo set expectations for lead capture. Covve, Dex and CamCard set expectations for memory and follow-up. None should be dismissed; none alone defines Duit's intended experience.
 
-The candidate India/SEA advantage is a WhatsApp-first follow-up workflow, multilingual/accent-tolerant capture, event-session grouping, warm-introduction commitments, and localized pricing. These are hypotheses to validate, not established advantages.
+Recommended thesis:
+
+> For India-based founders and partnership leaders who build business through events and introductions, Duit turns their business card into an engaging, actionable pitch—and turns each new contact into a trusted relationship memory that resurfaces when either side has a relevant need or offer.
 
 ## Category map
 
 | Ring | Products | Primary strength | Implication for Duit |
 | --- | --- | --- | --- |
-| Direct and converging | Blinq, HiHello, Covve | Card sharing + capture + contact management; Blinq now adds encounter notes and next steps | Duit cannot claim the full workflow is unoccupied |
+| Strategic platform | LinkedIn | Professional identity, graph, content, relevance and messaging | Build a private, encounter-grounded relevance layer; do not imitate a public social feed |
+| Card benchmarks | Blinq, HiHello, Wave | Card creation, QR/Wallet sharing, capture and contact management | These capabilities are table stakes; win on pitch quality and expressed intent |
 | Event lead capture | Popl, Mobilo | Universal scanning, enrichment, attribution, CRM routing and team administration | Avoid enterprise event lead retrieval in the first wedge |
 | Scanning incumbents | CamCard | Mature OCR, multilingual card capture, duplicate handling and team contact management | OCR is table stakes and should not be positioned as the product |
 | Personal relationship managers | Dex, Mesh/Clay, folk | Automatic interaction history, enrichment, reminders and pre-meeting context | Duit must earn continued use after initial capture |
-| Free substitutes | LinkedIn, phone contacts, WhatsApp, Notes, Google Lens | Already installed, familiar and usually free | The workflow must be meaningfully faster than combining existing tools |
+| Free substitutes | Phone contacts, WhatsApp, Notes, Google Lens | Already installed, familiar and usually free | The workflow must be meaningfully more useful than combining existing tools |
 | Traditional CRM | HubSpot and similar tools | Pipeline, automation, shared records and integrations | Duit should hand qualified relationships off, not recreate CRM depth |
 
 ## Competitor profiles
 
-### 1. Blinq — closest strategic threat
+### 0. LinkedIn — closest strategic comparison
+
+- Links: [product](https://www.linkedin.com/), [mobile apps](https://www.linkedin.com/mobile/), [Premium](https://premium.linkedin.com/)
+- Position: professional identity, network, content discovery, messaging, jobs and business development.
+- Key capabilities: durable professional profiles, connection graph, recommendations, personalized feed, search, messaging, newsletters/events and premium sales/recruiting products.
+- Strategic assessment: LinkedIn demonstrates the long-term value of combining identity, network data and relevance. Its feed is optimized for public content and platform engagement; Duit should answer a narrower private question: “Who in my network is relevant to something I need or can offer right now?”
+- Possible Duit opening: an app-free five-second pitch at the moment of introduction, encounter-specific private memory and explicit intent capture. Duit should complement LinkedIn identity rather than require users to rebuild it.
+
+### 1. Blinq — strongest digital-card workflow benchmark
 
 - Links: [product](https://blinq.me/), [pricing](https://blinq.me/pricing), [iOS](https://apps.apple.com/us/app/blinq-digital-business-card/id1324102258), [Android](https://play.google.com/store/apps/details?id=com.rabbl.blinq)
 - Position: digital identity, contact capture and relationship context for individuals and teams.
 - Key capabilities: digital cards; universal scanning across paper cards, badges, QR codes and LinkedIn; enrichment; AI Notetaker; contact-linked private transcripts and summaries; extracted next steps; offline audio capture; CRM sync for business customers.
 - Published business pricing: $4.99/card/month annually or $6.99 monthly. Individual pricing should be rechecked at purchase because the public page can vary by region and billing cadence.
-- Strategic assessment: Blinq has crossed directly into Duit’s proposed wedge. Its official guidance explicitly recommends dictating what was discussed immediately after a networking conversation and generates summaries and next steps attached to the contact.
-- Possible Duit opening: a much shorter post-encounter flow, explicit promise tracking, WhatsApp-native action, event grouping and a relationship model designed for multiple encounters rather than notes attached to a card/contact.
+- Strategic assessment: Blinq covers much of the exchange-to-follow-up workflow. Duit should benchmark its card quality and capture speed, while differentiating through an attention-structured pitch, explicit recipient intent and a private relevance feed.
+- Possible Duit opening: pitch narrative quality, owner-specific CTAs, explicit promise tracking, WhatsApp-native action and a relationship model designed for multiple encounters.
 
 Sources: [Blinq AI Notetaker guide](https://support.blinq.me/en/articles/71264-ai-notetaker-the-basics), [Blinq Business](https://blinq.me/business), [lead-capture workflow](https://support.blinq.me/en/articles/76257-lead-capture-pricing).
 
@@ -45,8 +60,8 @@ Sources: [Blinq AI Notetaker guide](https://support.blinq.me/en/articles/71264-a
 - Position: digital business cards and business identity management.
 - Key capabilities: multiple cards, QR/widget/email/SMS/WhatsApp sharing, Apple and Google Wallet, offline sharing, business contact manager, AI card/badge scanning, enrichment, analytics, team templates and directory/CRM integrations.
 - Published pricing: Personal free; Professional $6/month billed annually; Business $5/user/month billed annually for 5–100 users; enterprise custom. Scan quotas vary by plan.
-- Strategic assessment: HiHello makes card creation and sharing difficult to monetize on their own. Duit should offer a credible card but keep customization intentionally modest.
-- Possible Duit opening: encounter-level memory, commitments and action completion rather than card branding and identity administration.
+- Strategic assessment: HiHello makes basic card creation and sharing difficult to monetize alone. Duit's card must be credible, but its value should come from the pitch and resulting action—not decorative customization.
+- Possible Duit opening: structured pitch, recipient intent, encounter-level memory and action completion.
 
 ### 3. Popl — event and team lead-capture leader
 
@@ -117,17 +132,19 @@ Sources: [Blinq AI Notetaker guide](https://support.blinq.me/en/articles/71264-a
 
 Legend: **Core** = central, marketed capability; **Yes** = supported; **Partial** = limited, tiered or not central; **No/unclear** = not evident as a current core capability.
 
-| Product | Digital card | Paper/badge capture | Encounter context | Multi-encounter person history | Follow-up/reminders | AI summary/next step | CRM/team workflow | Best fit |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Blinq | Core | Core | Core | Yes, via contact-linked notes | Partial/next steps | Core | Core | Individuals and teams networking in person |
-| HiHello | Core | Yes | Partial/contact notes | Partial | Partial | Partial | Core | Card-first individuals and managed teams |
-| Popl | Yes | Core | Qualification/notes | Lead-centric | CRM-driven | Yes | Core | Event exhibitors and revenue teams |
-| Covve | Yes | Core | Notes/tags | Contact-centric | Core | Partial | Yes | Mobile networkers and lead-capture teams |
-| CamCard | Yes | Core | Meeting/call notes | Yes | Tasks | AI writing, less relationship-centric | Core | High-volume card management |
-| Dex | No | No | Core after import/sync | Core | Core | Core | Limited | Long-term individual relationship management |
-| Mesh/Clay | No | No | Aggregated context | Core | Yes | Yes | Partial | Enriched personal network intelligence |
-| folk | No | Partial/import | Notes/activity | Core | Core | Yes | Core | Small relationship-driven teams |
-| Duit proposed | Yes | Yes | Core | Core | Core | Core | Later/export | Post-encounter personal action |
+| Product | Professional identity/card | Attention-structured owner pitch | Recipient intent/lead capture | Encounter memory | Private relevance feed | Best fit |
+| --- | --- | --- | --- | --- | --- | --- |
+| LinkedIn | Core | Partial via profile/content | Partial via messaging/forms | Partial | Core, primarily content-led | Professional identity and public network |
+| Blinq | Core | No/unclear | Yes | Core | No/unclear | Card exchange and contact follow-through |
+| HiHello | Core | No/unclear | Yes | Partial | No/unclear | Card-first individuals and managed teams |
+| Wave | Core | No/unclear | Yes | Partial | No/unclear | Free/low-cost card sharing and Wallet |
+| Popl | Yes | No/unclear | Core | Lead-centric | Lead workflow, not personal relevance | Event exhibitors and revenue teams |
+| Covve | Yes | No/unclear | Partial | Core | Reminder-led | Mobile networking and personal CRM |
+| CamCard | Yes | No/unclear | Partial | Yes | Task-led | High-volume card management |
+| Dex | No | No | No | Core | Relationship reminders/context | Long-term personal relationship management |
+| Duit proposed | Core | Core | Core | Core | Core | Memorable introductions and relevant action |
+
+No individual cell proves absence across every plan or release. The table compares marketed product centers, not every possible feature.
 
 ## PRD strengths to retain
 
@@ -135,14 +152,14 @@ Legend: **Core** = central, marketed capability; **Yes** = supported; **Partial*
 2. “AI proposes; user confirms” is a sound trust principle.
 3. The 45-second budget, manual fallback and offline queue are appropriate.
 4. Public and private identity separation is necessary and well articulated.
-5. Follow-up completion—not passive card views—is the right value direction.
+5. Action—not passive card views or stored contacts—is the right value direction.
 6. Avoiding enterprise CRM scope and multiple card personas is disciplined.
 
 ## Material PRD weaknesses
 
-### 1. Differentiation is outdated
+### 1. Differentiation must span both sides of the exchange
 
-The competitive narrative says card apps stop at sharing and that Duit can own encounter memory. Blinq now explicitly owns that story; Covve and CamCard cover meaningful portions. The PRD must acknowledge convergence and state a measurable advantage.
+Card sharing, scanning, encounter notes and reminders already exist. Duit's distinct hypothesis is the combination of an attention-structured owner pitch, immediate recipient intent and a private relevance feed. Each element must be validated; listing all three is not itself differentiation.
 
 ### 2. The beachhead is too broad
 
@@ -152,9 +169,9 @@ Recommended test segment:
 
 > India-based founders and partnership leaders who attend at least two ecosystem events per month, meet at least ten new people monthly, and personally follow up on WhatsApp or LinkedIn.
 
-### 3. My Card dilutes the validation target
+### 3. The card is core; decorative customization is not
 
-A digital card helps cold-start acquisition but competes with excellent free products. It should be a thin enabler, not one of two equal MVP pillars. The strongest first test can use capture/manual identity plus native sharing; card customization can follow.
+The earlier review treated My Card as a thin acquisition utility. Product clarification changes that conclusion: the recipient-facing pitch and CTA are one of two equal product loops. Validate narrative comprehension and action, while keeping themes, multiple personas and elaborate editing out of the first test.
 
 ### 4. The north-star metric mixes unequal events
 
@@ -170,16 +187,13 @@ Track captures as the leading input and completed follow-ups as the outcome.
 
 Opening WhatsApp and self-marking complete can create false positives. MVP analytics should distinguish `opened_channel`, `returned_to_app`, `marked_complete`, and an optional later outcome (`replied`, `meeting_booked`, `no_response`). Do not claim a message was sent when the OS cannot verify it.
 
-### 6. AI scope is too ambitious too early
+### 6. AI needs two narrow, testable contracts
 
-Summary, relevance, tags and next-action generation risks producing decorative output. The first AI contract should transform a raw note into only:
+**Pitch AI:** turn approved source material into selectable hooks and a concise pitch sequence. Test comprehension, factuality and CTA action—not prose quality alone.
 
-- an editable factual recap;
-- explicit commitments by person;
-- a proposed follow-up date/channel;
-- a draft grounded entirely in those commitments.
+**Memory AI:** turn a raw note into an editable factual recap, explicit commitments, a proposed follow-up and a grounded draft.
 
-“Why this relationship matters” should be deferred until longitudinal evidence exists.
+Feed relevance should begin with explainable evidence and user-declared needs/offers. Avoid opaque relationship scores.
 
 ### 7. Discovery gates are based mostly on stated demand
 
@@ -197,32 +211,43 @@ Recommended discovery exit:
 
 The 5%–8% networking subset, five-million-person SAM and $36–$48 willingness to pay are unsupported. Keep them labeled as scenario math, but do not let them drive MVP scope or investor claims. A narrow bottom-up reachable-market model should begin with actual communities, events and acquisition costs.
 
-## Recommended MVP change
+## Recommended MVP
 
-### Product loop
+### Loop A: pitch to intent
 
-1. Capture identity by scan, QR, share-back link or minimal manual entry.
-2. Hold one button and speak a 5–15 second private post-conversation note.
-3. Confirm only the facts, commitments and follow-up date.
-4. At the right time, open a grounded WhatsApp/email draft.
-5. Record the outcome and show the relationship timeline before the next interaction.
+1. Capture the owner's audience, problem, offer, proof and CTA.
+2. Generate selectable hooks and a five- or six-panel pitch.
+3. Owner verifies and publishes.
+4. Recipient understands the offer and acts without installing Duit.
+5. Owner receives the lead with its source and intent.
+
+### Loop B: encounter to relevance
+
+1. Capture identity and a 5–15 second post-conversation note.
+2. Confirm facts, commitments and follow-up.
+3. Declare a current need or offer when useful.
+4. Feed surfaces a relevant person or promise with a reason.
+5. User opens a grounded draft, acts and records the outcome.
 
 ### MVP must-have
 
 - Person, Encounter and FollowUp model.
+- One owner-approved public pitch and CTA.
+- App-free card viewing, QR, native share and Apple/Google Wallet.
+- Lead capture with consent, source and intent.
 - Manual identity capture plus one reliable scan path.
 - Post-conversation voice or text note.
 - Commitment extraction with source traceability.
-- Today queue and person timeline.
+- Private relevance feed and person timeline.
 - WhatsApp/email deep link with an editable draft.
-- Search by person, company and event.
+- Search by person, company, event, need and offer.
 - Export/delete/privacy controls.
-- One minimal public card/share-back page only if it accelerates reciprocal capture.
 
 ### Defer
 
-- Multiple card designs/personas and rich customization.
-- Generic AI relevance scoring.
+- Multiple card personas and rich theme customization.
+- Automated pitch video generation.
+- Opaque AI relevance scoring.
 - Nearby discovery.
 - Advanced feed filters and buckets.
 - Full meeting recording/transcription.
@@ -241,15 +266,16 @@ Features will not be defensible by themselves. A possible moat compounds from:
 
 This is only defensible if users repeatedly capture and act. Stored contact volume alone is not a moat.
 
-## Decisions recommended before PRD v0.2
+## Decisions carried into PRD v0.2
 
-1. Choose one beachhead behavioral segment and city/community access path.
-2. Decide whether Duit is voice-first after a conversation or camera-first around a card.
-3. Decide whether My Card is required for activation or only an acquisition utility.
-4. Define the first follow-up channel: WhatsApp is the recommended India-first hypothesis.
-5. Replace broad AI “relevance” with commitment extraction and grounded drafting.
-6. Choose a competitive benchmark: Blinq for the immediate encounter and Dex for retained relationship memory.
-7. Define a four-week concierge test before implementing the full backend.
+1. Beachhead: India-based founders and partnership leaders with repeated event behavior.
+2. My Card is a core pitch-and-intent surface, not a profile ornament.
+3. Duit creates the owner's/company's pitch; Duit is not the pitch subject.
+4. The home feed is private and answers relevance to a current need or offer.
+5. LinkedIn is the strategic comparison; card and personal-CRM products are capability benchmarks.
+6. Apple/Google Wallet belongs in the feature set.
+
+Remaining choices are tracked in `PRD.md` under Open decisions.
 
 ## Suggested four-week validation plan
 

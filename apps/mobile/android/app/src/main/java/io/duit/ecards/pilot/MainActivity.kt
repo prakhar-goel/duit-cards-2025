@@ -1,4 +1,4 @@
-package io.duit.ecards
+package io.duit.ecards.pilot
 
 import android.os.Build
 import android.os.Bundle
