@@ -30,7 +30,7 @@ export type Card = {
   title: string;
   subtitle: string;
   bio?: string;
-  theme?: { color?: string };
+  theme?: { color?: string; logoUrl?: string };
   imageUrl?: string | null;
   coverUrl?: string | null;
   businessCardBackUrl?: string | null;

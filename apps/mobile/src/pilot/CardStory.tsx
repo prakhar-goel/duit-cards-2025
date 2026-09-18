@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useEvent } from "expo";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -28,6 +29,7 @@ import {
   Label,
   Notice,
   RemoteImage,
+  ParallaxMedia,
   Title,
 } from "./ui";
 import { getServer, mediaUrl, mediaHeaders, shareUrl } from "./api";
@@ -343,13 +345,10 @@ export function CardStory({
   const [enquiry, setEnquiry] = useState(false);
   const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  // Budget the full carousel (image + captions), not just the image, within 65% of usable height.
+  // Captions sit inside the portrait frame, leaving about 30% for About below.
   const imageHeight = immersive
-    ? Math.max(
-        150,
-        (screenHeight - insets.top - insets.bottom - 64 - 64) * 0.65 - 120,
-      )
-    : 300;
+    ? Math.max(250, (screenHeight - insets.top - insets.bottom - 64 - 60) * 0.7)
+    : 440;
   const [width, setWidth] = useState(340);
   const [original, setOriginal] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -379,9 +378,7 @@ export function CardStory({
       title: name,
       caption: [role, company].filter(Boolean).join(" · "),
       ctaLabel: "Let’s connect",
-      ctaPrompt: card?.slug.startsWith("business-")
-        ? company
-        : `Meet ${name.split(" ")[0]} · ${company}`,
+      ctaPrompt: `Meet ${name.split(" ")[0]} · ${company}`,
       ctaColor: card?.theme?.color,
     },
     {
@@ -518,126 +515,157 @@ export function CardStory({
   }
   return (
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
-      <ScrollView
-        ref={scroll}
-        horizontal
-        pagingEnabled
-        directionalLockEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={(e) =>
-          setPage(Math.round(e.nativeEvent.contentOffset.x / width))
-        }
+      <View
         style={{
           height: imageHeight,
+          overflow: "hidden",
           borderRadius: immersive ? 0 : 20,
           backgroundColor: "#102822",
         }}
       >
-        {slides.map((slide, index) => (
-          <View
-            key={index}
+        <ParallaxMedia height={imageHeight}>
+          <ScrollView
+            ref={scroll}
+            horizontal
+            pagingEnabled
+            directionalLockEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={(e) =>
+              setPage(Math.round(e.nativeEvent.contentOffset.x / width))
+            }
             style={{
-              width,
               height: imageHeight,
-              overflow: "hidden",
-              justifyContent: "center",
+              borderRadius: immersive ? 0 : 20,
+              backgroundColor: "#102822",
             }}
           >
-            {Math.abs(index - page) > 1 ? (
-              <View />
-            ) : slide.kind === "video" ? (
-              index === page && visible && !enquiry ? (
-                <StoryVideo
-                  key={slide.url}
-                  uri={slide.url!}
-                  poster={card?.coverUrl}
-                />
-              ) : (
-                <View />
-              )
-            ) : slide.kind === "card" ? (
-              <CardArtwork
-                uri={slide.url}
-                name={name}
-                company={company}
-                role={role}
-                height={imageHeight}
-                onPress={slide.url ? () => setOriginal(slide.url!) : undefined}
-                style={{
-                  borderWidth: 0,
-                  borderRadius: 0,
-                  backgroundColor: "#102822",
-                }}
-              />
-            ) : slide.url ? (
-              <RemoteImage
-                uri={slide.url}
-                contain={
-                  slide.kind !== "person" || card?.slug.startsWith("business-")
-                }
-                style={{ width: "100%", height: "100%" }}
-              />
-            ) : (
-              <View style={{ alignItems: "center", padding: 28 }}>
-                <Avatar name={name} size={120} />
-                <Title size={28} style={{ marginTop: 24 }}>
-                  {company || name}
-                </Title>
-              </View>
-            )}
-          </View>
-        ))}
-      </ScrollView>
-      <View style={{ paddingHorizontal: immersive ? 22 : 0 }}>
-        <View style={{ flexDirection: "row", gap: 5, marginTop: 12 }}>
-          {slides.map((slide, index) => (
-            <Pressable
-              key={index}
-              accessibilityRole="tab"
-              accessibilityLabel={`Slide ${index + 1}: ${slide.title}`}
-              accessibilityState={{ selected: page === index }}
-              onPress={() => move(index)}
-              style={{ flex: 1, paddingVertical: 8 }}
-            >
+            {slides.map((slide, index) => (
               <View
+                key={index}
                 style={{
-                  height: 3,
-                  borderRadius: 4,
-                  backgroundColor: page === index ? C.teal : C.line,
+                  width,
+                  height: imageHeight,
+                  overflow: "hidden",
+                  justifyContent: "center",
                 }}
-              />
-            </Pressable>
-          ))}
-        </View>
-        <View style={[s.row, { marginTop: 4, alignItems: "flex-start" }]}>
-          <View style={{ flex: 1 }}>
-            <Text
-              numberOfLines={1}
-              style={{
-                fontSize: 23,
-                lineHeight: 28,
-                fontWeight: "600",
-                color: C.ink,
-              }}
-            >
-              {slides[page]?.title}
-            </Text>
-            <Text
-              numberOfLines={2}
-              style={{
-                color: C.muted,
-                fontSize: 13,
-                lineHeight: 20,
-                marginTop: 6,
-              }}
-            >
-              {slides[page]?.caption}
+              >
+                {Math.abs(index - page) > 1 ? (
+                  <View />
+                ) : slide.kind === "video" ? (
+                  index === page && visible && !enquiry ? (
+                    <StoryVideo
+                      key={slide.url}
+                      uri={slide.url!}
+                      poster={card?.coverUrl}
+                    />
+                  ) : (
+                    <View />
+                  )
+                ) : slide.kind === "card" ? (
+                  <CardArtwork
+                    uri={slide.url}
+                    name={name}
+                    company={company}
+                    role={role}
+                    height={imageHeight}
+                    onPress={
+                      slide.url ? () => setOriginal(slide.url!) : undefined
+                    }
+                    style={{
+                      borderWidth: 0,
+                      borderRadius: 0,
+                      backgroundColor: "#102822",
+                    }}
+                  />
+                ) : slide.url ? (
+                  <RemoteImage
+                    uri={slide.url}
+                    contain
+                    style={{ width: "100%", height: "100%" }}
+                  />
+                ) : (
+                  <View style={{ alignItems: "center", padding: 28 }}>
+                    <Avatar name={name} size={120} />
+                    <Title size={28} style={{ marginTop: 24 }}>
+                      {company || name}
+                    </Title>
+                  </View>
+                )}
+              </View>
+            ))}
+          </ScrollView>
+        </ParallaxMedia>
+        <LinearGradient
+          pointerEvents="none"
+          colors={["transparent", "rgba(5,20,17,0.35)", "rgba(5,20,17,0.94)"]}
+          locations={[0, 0.35, 1]}
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 170,
+          }}
+        />
+        <View
+          style={{ position: "absolute", bottom: 12, left: 20, right: 20 }}
+          pointerEvents="box-none"
+        >
+          <View
+            style={[s.row, { alignItems: "flex-end" }]}
+            pointerEvents="none"
+          >
+            <View style={{ flex: 1 }}>
+              <Text
+                numberOfLines={2}
+                style={{
+                  fontSize: 25,
+                  lineHeight: 29,
+                  fontWeight: "600",
+                  color: C.white,
+                }}
+              >
+                {current?.title}
+              </Text>
+              <Text
+                numberOfLines={2}
+                style={{
+                  fontSize: 13,
+                  lineHeight: 18,
+                  color: "#E5EDE8",
+                  marginTop: 5,
+                }}
+              >
+                {current?.caption}
+              </Text>
+            </View>
+            <Text style={{ fontSize: 12, color: C.white, paddingBottom: 2 }}>
+              {page + 1} / {slides.length}
             </Text>
           </View>
-          <Text style={{ fontSize: 11, color: C.muted, marginTop: 7 }}>
-            {page + 1} / {slides.length}
-          </Text>
+          <View style={{ flexDirection: "row", gap: 5, marginTop: 6 }}>
+            {slides.map((slide, index) => (
+              <Pressable
+                key={index}
+                accessibilityRole="tab"
+                accessibilityLabel={`Slide ${index + 1}: ${slide.title}`}
+                accessibilityState={{ selected: page === index }}
+                onPress={() => move(index)}
+                style={{ flex: 1, paddingVertical: 10 }}
+              >
+                <View
+                  style={{
+                    height: 3,
+                    borderRadius: 4,
+                    backgroundColor: page === index ? C.white : "#FFFFFF55",
+                  }}
+                />
+              </Pressable>
+            ))}
+          </View>
         </View>
+      </View>
+      <View style={{ paddingHorizontal: immersive ? 22 : 0 }}>
         {!!error && <Notice error>{error}</Notice>}
         {canAct && !onDockChange && (
           <Button
@@ -655,8 +683,10 @@ export function CardStory({
           label={cta}
           context={current?.title || company}
           productImage={
-            current?.kind === "video"
-              ? card?.coverUrl
+            current?.kind === "video" ||
+            current?.kind === "person" ||
+            current?.kind === "card"
+              ? card?.coverUrl || gallery.find((m) => m.type === "image")?.url
               : current?.url || card?.coverUrl
           }
           category={[role, company, card?.bio, current?.caption]
@@ -688,8 +718,8 @@ export function StoryDock({ action }: { action: StoryAction | null }) {
     <View
       style={{
         backgroundColor: action.color,
-        paddingVertical: 8,
-        paddingHorizontal: 16,
+        paddingVertical: 6,
+        paddingHorizontal: 14,
         flexDirection: "row",
         alignItems: "center",
         gap: 10,
@@ -706,11 +736,14 @@ export function StoryDock({ action }: { action: StoryAction | null }) {
         onPress={action.act}
         style={({ pressed }) => ({
           backgroundColor: "#fff",
-          borderRadius: 12,
-          paddingHorizontal: 12,
-          paddingVertical: 10,
+          borderRadius: 10,
+          paddingHorizontal: 14,
+          paddingVertical: 6,
           minHeight: 44,
-          maxWidth: "53%",
+          flexBasis: "48%",
+          flexShrink: 0,
+          alignItems: "center",
+          justifyContent: "center",
           opacity: pressed ? 0.8 : 1,
         })}
       >
@@ -719,6 +752,9 @@ export function StoryDock({ action }: { action: StoryAction | null }) {
             color: "#153D35",
             fontWeight: "700",
             fontSize: 12,
+            lineHeight: 17,
+            includeFontPadding: false,
+            textAlignVertical: "center",
             textAlign: "center",
           }}
         >
