@@ -67,7 +67,7 @@ try {
   await expect(
     admin.getByRole("heading", { name: "Good connections. Real progress." }),
   ).toBeVisible();
-  await expect(admin.getByLabel("Data source")).toHaveValue("fictional_demo");
+  await expect(admin.getByLabel("Data source")).toHaveValue("all");
   await shot(admin, "01-admin-overview");
   await admin.getByLabel("Data source").selectOption("user_created");
   await expect(

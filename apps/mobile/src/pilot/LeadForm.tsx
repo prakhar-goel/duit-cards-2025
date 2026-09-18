@@ -22,7 +22,7 @@ export function LeadForm({
   context,
   onClose,
 }: {
-  card: Card;
+  card: Pick<Card, "slug" | "title" | "company" | "imageUrl">;
   label: string;
   context: string;
   onClose: () => void;

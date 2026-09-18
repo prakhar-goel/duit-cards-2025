@@ -418,8 +418,14 @@ export function CardStory({
         eventKey: `view:${card.id}:${Date.now()}`,
       }).catch(() => {});
   }, [card?.id]);
+  const leadCard = card?.slug && (card.isPublished || card.publicUrl)
+    ? card
+    : person?.cardSlug
+      ? { slug: person.cardSlug, title: name, company, imageUrl: portrait }
+      : null;
   const canAct = Boolean(
     onCTA ||
+    leadCard ||
     card?.isPublished ||
     card?.publicUrl ||
     person?.email ||
@@ -432,9 +438,9 @@ export function CardStory({
       onCTA();
       return;
     }
-    if (card?.slug && (card.isPublished || card.publicUrl)) {
+    if (leadCard) {
       setEnquiry(true);
-      void post(`/public/cards/${encodeURIComponent(card.slug)}/cta`, {
+      void post(`/public/cards/${encodeURIComponent(leadCard.slug)}/cta`, {
         source: "android-card",
       }).catch(() => {});
       return;
@@ -582,9 +588,9 @@ export function CardStory({
           </Button>
         )}
       </View>
-      {enquiry && card && (
+      {enquiry && leadCard && (
         <LeadForm
-          card={card}
+          card={leadCard}
           label={cta}
           context={current?.title || company}
           onClose={() => setEnquiry(false)}
