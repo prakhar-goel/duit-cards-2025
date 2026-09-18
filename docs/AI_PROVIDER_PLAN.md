@@ -1,5 +1,7 @@
 # AI provider plan and contract
 
+**18 September update:** The owner selected GCP project `duit-cards-2025` for Google AI. See [Google AI limits](GOOGLE_AI_LIMITS.md) for the configured cloud cap and application safeguards. The OpenAI implementation below is the existing adapter, not the selected Google integration. Live AI remains disabled until the Google adapter and its credentials are ready.
+
 Verified against official OpenAI documentation on **18 September 2026**. The implementation is `apps/api/src/providers/index.js`. It uses Node’s built-in `fetch`, `FormData`, `Blob` and abort signals plus the API’s existing Zod dependency. There are **no live AI calls in the tests** and no credentials in source.
 
 ## Default providers and price assumptions

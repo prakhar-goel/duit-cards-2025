@@ -5,6 +5,7 @@ import { auth } from './auth.js';
 import { wrap, fail, uuid, owned, camel, rateLimit } from './common.js';
 import { mediaForAi, storeMedia, mediaDto } from './media.js';
 import { searchOwned } from './relationships.js';
+import { aiLimits, enforceAiAdmission } from './ai-limits.js';
 import { getProviderStatus, estimateCost, runAi, TASKS } from './providers/index.js';
 const jobDto = row => ({
   ...camel(row),
@@ -17,7 +18,7 @@ export async function recoverInterruptedJobs() {
 }
 async function budget() {
   const row = (await query('SELECT * FROM ai_budgets WHERE id=$1', ['pilot'])).rows[0];
-  const limit = Math.max(0, Number(process.env.DUIT_AI_BUDGET_APPROVED_USD) || 0);
+  const limit = aiLimits().totalUsd;
   return {
     limitUsd: limit,
     spentUsd: Number(row?.spent_usd || 0),
@@ -92,7 +93,8 @@ export function aiRouter() {
       enabled: state.configured,
       reason: state.configured ? 'Real AI is available; every output remains a draft.' : 'Real AI is not enabled. Configure approved credentials and spending before using these tools.',
       tasks: TASKS,
-      budget: await budget()
+      budget: await budget(),
+      limits: aiLimits()
     });
   }));
   router.post('/ai/jobs', rateLimit({
@@ -157,10 +159,11 @@ export function aiRouter() {
     const reserve = estimate.reserveUsd;
     if (!Number.isFinite(reserve) || reserve <= 0) fail(503, 'AI cost could not be estimated safely', 'AI_COST_UNAVAILABLE');
     const job = await transaction(async db => {
-      const limit = Number(process.env.DUIT_AI_BUDGET_APPROVED_USD) || 0;
+      const limit = aiLimits().totalUsd;
       await db.query("UPDATE ai_budgets SET limit_usd=$1 WHERE id='pilot'", [limit]);
       const budget = (await db.query("UPDATE ai_budgets SET reserved_usd=reserved_usd+$1 WHERE id='pilot' AND spent_usd+reserved_usd+$1<=limit_usd RETURNING *", [reserve])).rows[0];
       if (!budget) fail(402, 'The pilot AI spending limit is reached', 'AI_BUDGET_EXHAUSTED');
+      await enforceAiAdmission(db, req.userId, reserve);
       return (await db.query('INSERT INTO ai_jobs(owner_id,task,input,media_ids,provider,model,reserved_usd) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *', [req.userId, request.task, input, request.mediaIds, estimate.provider, estimate.model, reserve])).rows[0];
     });
     res.status(202).json({
