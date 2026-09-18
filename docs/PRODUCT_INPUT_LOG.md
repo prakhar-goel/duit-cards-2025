@@ -259,3 +259,8 @@ Add this parallex effect in the main card carousel too. There should be gradient
 ## 2026-09-18T12:17:01.744436+05:30
 
 The CTA bar is still weird. Why is there so much padding on the button? why isnt the text center aligned? Dont reduce the font size. Play with padding etc to remove the ugliness.
+
+
+## 2026-09-18T12:47:10.700057+05:30
+
+remove that checkbox at the bottom before send enquiry button is enabled. No need for that.
