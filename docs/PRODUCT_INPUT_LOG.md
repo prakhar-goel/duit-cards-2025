@@ -236,3 +236,11 @@ The CTA bar should be thinner. Its very thick and wide right now. Looks weird. C
 The leadgen forms should contain appropriate checkboxes etc to minimize user typing. It should be visual too, it should contain the images of the product/service.
 
 I have to integrate AI features. suggest me where to start. Shall I use google's AI? I already have google gcp account with billing enabled. Give me this apk first and then start on AI work
+
+
+## 2026-09-18T11:43:05.043658+05:30
+
+[https://console.cloud.google.com/agent-platform/overview?authuser=5&project=duit-cards-2025](https://console.cloud.google.com/agent-platform/overview?authuser=5\&project=duit-cards-2025)
+This is the AI project in GCP
+
+set conservative limits initially. to prevent runaway billing.
