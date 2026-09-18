@@ -142,7 +142,7 @@ export function LeadForm({
               respond to this enquiry.
             </Text>
           </Pressable>
-          {error && <Notice error>{error}</Notice>}
+          {!!error && <Notice error>{error}</Notice>}
         </>
       )}
     </Sheet>

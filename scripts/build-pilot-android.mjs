@@ -136,6 +136,10 @@ fs.copyFileSync(
   path.join(android, "app/build/outputs/apk/release/app-release.apk"),
   apk,
 );
+const bundledCode = execFileSync("/usr/bin/unzip", ["-p", apk, "assets/index.android.bundle"], { maxBuffer: 32 * 1024 * 1024 });
+if (!bundledCode.includes(Buffer.from(apiUrl))) {
+  throw new Error("APK verification failed: the requested server address is missing from the compiled bundle.");
+}
 const toolVersion = fs
   .readdirSync(path.join(sdk, "build-tools"))
   .filter((v) => /^\d/.test(v))

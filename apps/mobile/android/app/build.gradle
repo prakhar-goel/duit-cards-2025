@@ -203,3 +203,15 @@ tasks.configureEach { task ->
         }
     }
 }
+
+// Environment-based Expo values are bundle inputs too. Without this, Gradle can
+// reuse an APK built for a previous server despite a successful release build.
+def duitPublicConfig = ["EXPO_PUBLIC_API_URL", "EXPO_PUBLIC_DEMO_EMAIL", "EXPO_PUBLIC_DEMO_PASSWORD"]
+    .collect { System.getenv(it) ?: "" }.join("\n")
+def duitPublicConfigHash = java.security.MessageDigest.getInstance("SHA-256")
+    .digest(duitPublicConfig.getBytes("UTF-8")).encodeHex().toString()
+tasks.configureEach { task ->
+    if (task.name.startsWith("createBundle") && task.name.endsWith("JsAndAssets")) {
+        task.inputs.property("duitPublicConfigHash", duitPublicConfigHash)
+    }
+}

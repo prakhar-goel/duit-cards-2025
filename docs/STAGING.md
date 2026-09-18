@@ -2,6 +2,13 @@
 
 The modern app lives in this repository. The restored legacy app and its supplied archive remain separate and local.
 
+## Addresses
+
+- App server: https://duit-cards-staging.onrender.com
+- APK: https://duit-cards-staging.onrender.com/download
+- Owner dashboard: https://duit-cards-staging.onrender.com/admin
+- Render service: `srv-damc5v142hec738h1sq0`
+
 ## Hosting choice
 
 Render Free hosts the Node API, public cards and owner dashboard together in Singapore. A dedicated Neon PostgreSQL project (`duit-cards-staging`, project `lingering-king-65095951`, branch `staging`) persists accounts, meetings, enquiries and uploaded media. No paid plan or AI spend is enabled.
@@ -28,7 +35,7 @@ The checked-in portrait/card/business assets remain static build assets. Their s
 
 The Android app can switch servers in its server settings without reinstalling. Moving from the Mac's tunnel to staging requires one intentional server-address change and a new login because sessions and personal changes are isolated by server. Keep the old tunnel alive until testers have moved.
 
-The owner dashboard is `/admin`. The owner password remains in the private `.local/credentials.json`; it is never embedded in the APK. Tester accounts cannot open owner APIs. Invite-only signup stays enabled. Paid AI and external email delivery remain disabled; enquiries are stored in the app inbox.
+The owner dashboard is `/admin`. The staging owner credentials are in the private `.local/deployment/owner-access.json`. Local owner credentials remain in `.local/credentials.json`. Both use independent random passwords, different from tester accounts; neither is embedded in the APK. Tester accounts cannot open owner APIs. Invite-only signup stays enabled. Paid AI and external email delivery remain disabled; enquiries are stored in the app inbox.
 
 The `/download` page uses a GitHub release APK when `PILOT_APK_URL` is set. Build with the existing signing key; never replace it. Source code and credentials are not included in release assets.
 
