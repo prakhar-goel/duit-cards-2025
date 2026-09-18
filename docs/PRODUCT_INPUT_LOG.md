@@ -219,3 +219,20 @@ The APK has not been attached to this server yet. Use the build supplied with yo
 
 I see this on [https://duit-cards-staging.onrender.com/download](https://duit-cards-staging.onrender.com/download)
 Where and how to download apk?
+
+
+## 2026-09-18T11:07:17.028528+05:30
+
+The app's home page is stuttering when scrolling on the homepage. Why is it not smooth? We are using react native right? Which is supposed to be light and native. Is it not?
+
+The visiting cards should be fuller. It should contain website, phone, email, address etc. Also logos for the companies. Use real companies and real logos of existing companies. This is private internal demo, not going outside of our office. So no copyright issues.
+
+There are many blank pages in the business profile. Check in the profiles. You are still not using images from pexels and other websites. Any issues there?
+
+The carousel is taking a huge amount of vertical space, such that the text below gets hidden even on large phones like S25 Ultra. The carousel should take about 65% space, not more than that.
+
+The CTA bar should be thinner. Its very thick and wide right now. Looks weird. Check the screenshots.
+
+The leadgen forms should contain appropriate checkboxes etc to minimize user typing. It should be visual too, it should contain the images of the product/service.
+
+I have to integrate AI features. suggest me where to start. Shall I use google's AI? I already have google gcp account with billing enabled. Give me this apk first and then start on AI work
