@@ -13,7 +13,10 @@ import {
 } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useEvent } from "expo";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import {
   C,
   s,
@@ -58,7 +61,7 @@ export function CardArtwork({
     <RemoteImage
       uri={uri}
       contain
-      onSize={(w, h) => setRatio(w / h)}
+      onSize={height === undefined ? (w, h) => setRatio(w / h) : undefined}
       style={{ width: "100%", height: frameHeight }}
     />
   ) : (
@@ -115,14 +118,22 @@ export function CardArtwork({
       accessibilityRole="button"
       accessibilityLabel={`Open ${name}’s card`}
       onPress={onPress}
-      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      onLayout={
+        height === undefined
+          ? (e) => setWidth(e.nativeEvent.layout.width)
+          : undefined
+      }
       style={[frame, style]}
     >
       {content}
     </Pressable>
   ) : (
     <View
-      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      onLayout={
+        height === undefined
+          ? (e) => setWidth(e.nativeEvent.layout.width)
+          : undefined
+      }
       style={[frame, style]}
     >
       {content}
@@ -262,15 +273,19 @@ function OriginalCard({
 
 type StoryPage = "Person" | "Card" | "Business";
 
-function StoryVideo({ uri }: { uri: string }) {
+function StoryVideo({ uri, poster }: { uri: string; poster?: string | null }) {
   const url = mediaUrl(uri) || uri;
   const player = useVideoPlayer(
     { uri: url, headers: mediaHeaders(url) },
     (p) => {
-      p.loop = false;
+      p.loop = true;
+      p.muted = true;
+      p.play();
     },
   );
-  const { error } = useEvent(player, "statusChange", { status: player.status });
+  const { error, status } = useEvent(player, "statusChange", {
+    status: player.status,
+  });
   return (
     <View style={{ flex: 1, backgroundColor: "#12201d" }}>
       <VideoView
@@ -280,6 +295,15 @@ function StoryVideo({ uri }: { uri: string }) {
         allowsFullscreen
         style={{ width: "100%", height: "100%" }}
       />
+      {status !== "readyToPlay" && poster && (
+        <View pointerEvents="none" style={{ position: "absolute", inset: 0 }}>
+          <RemoteImage
+            uri={poster}
+            contain
+            style={{ width: "100%", height: "100%" }}
+          />
+        </View>
+      )}
       {!!error && (
         <Text
           style={{
@@ -318,9 +342,14 @@ export function CardStory({
   const [page, setPage] = useState(0);
   const [enquiry, setEnquiry] = useState(false);
   const { height: screenHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  // Budget the full carousel (image + captions), not just the image, within 65% of usable height.
   const imageHeight = immersive
-    ? Math.max(360, Math.min(740, screenHeight * 0.67))
-    : 350;
+    ? Math.max(
+        150,
+        (screenHeight - insets.top - insets.bottom - 64 - 64) * 0.65 - 120,
+      )
+    : 300;
   const [width, setWidth] = useState(340);
   const [original, setOriginal] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -350,7 +379,9 @@ export function CardStory({
       title: name,
       caption: [role, company].filter(Boolean).join(" · "),
       ctaLabel: "Let’s connect",
-      ctaPrompt: `Meet ${name.split(" ")[0]} · ${company}`,
+      ctaPrompt: card?.slug.startsWith("business-")
+        ? company
+        : `Meet ${name.split(" ")[0]} · ${company}`,
       ctaColor: card?.theme?.color,
     },
     {
@@ -372,15 +403,18 @@ export function CardStory({
           },
         ]
       : []),
-    ...gallery.slice(0, 4).map((m) => ({
-      kind: m.type,
-      url: m.url,
-      title: m.title || company,
-      caption: m.caption || hook,
-      ctaLabel: "ctaLabel" in m ? (m.ctaLabel as string) : undefined,
-      ctaPrompt: "ctaPrompt" in m ? (m.ctaPrompt as string) : undefined,
-      ctaColor: "ctaColor" in m ? (m.ctaColor as string) : undefined,
-    })),
+    ...gallery
+      .filter((m) => !!m.url?.trim())
+      .slice(0, 4)
+      .map((m) => ({
+        kind: m.type,
+        url: m.url,
+        title: m.title || company,
+        caption: m.caption || hook,
+        ctaLabel: "ctaLabel" in m ? (m.ctaLabel as string) : undefined,
+        ctaPrompt: "ctaPrompt" in m ? (m.ctaPrompt as string) : undefined,
+        ctaColor: "ctaColor" in m ? (m.ctaColor as string) : undefined,
+      })),
   ];
   const storyId = person?.id || card?.id;
   useEffect(() => {
@@ -418,11 +452,12 @@ export function CardStory({
         eventKey: `view:${card.id}:${Date.now()}`,
       }).catch(() => {});
   }, [card?.id]);
-  const leadCard = card?.slug && (card.isPublished || card.publicUrl)
-    ? card
-    : person?.cardSlug
-      ? { slug: person.cardSlug, title: name, company, imageUrl: portrait }
-      : null;
+  const leadCard =
+    card?.slug && (card.isPublished || card.publicUrl)
+      ? card
+      : person?.cardSlug
+        ? { slug: person.cardSlug, title: name, company, imageUrl: portrait }
+        : null;
   const canAct = Boolean(
     onCTA ||
     leadCard ||
@@ -508,9 +543,15 @@ export function CardStory({
               justifyContent: "center",
             }}
           >
-            {slide.kind === "video" ? (
-              index === page && visible ? (
-                <StoryVideo key={slide.url} uri={slide.url!} />
+            {Math.abs(index - page) > 1 ? (
+              <View />
+            ) : slide.kind === "video" ? (
+              index === page && visible && !enquiry ? (
+                <StoryVideo
+                  key={slide.url}
+                  uri={slide.url!}
+                  poster={card?.coverUrl}
+                />
               ) : (
                 <View />
               )
@@ -531,7 +572,9 @@ export function CardStory({
             ) : slide.url ? (
               <RemoteImage
                 uri={slide.url}
-                contain={slide.kind !== "person"}
+                contain={
+                  slide.kind !== "person" || card?.slug.startsWith("business-")
+                }
                 style={{ width: "100%", height: "100%" }}
               />
             ) : (
@@ -568,10 +611,28 @@ export function CardStory({
         </View>
         <View style={[s.row, { marginTop: 4, alignItems: "flex-start" }]}>
           <View style={{ flex: 1 }}>
-            <Title size={23}>{slides[page]?.title}</Title>
-            <Body muted style={{ fontSize: 13, lineHeight: 20, marginTop: 6 }}>
+            <Text
+              numberOfLines={1}
+              style={{
+                fontSize: 23,
+                lineHeight: 28,
+                fontWeight: "600",
+                color: C.ink,
+              }}
+            >
+              {slides[page]?.title}
+            </Text>
+            <Text
+              numberOfLines={2}
+              style={{
+                color: C.muted,
+                fontSize: 13,
+                lineHeight: 20,
+                marginTop: 6,
+              }}
+            >
               {slides[page]?.caption}
-            </Body>
+            </Text>
           </View>
           <Text style={{ fontSize: 11, color: C.muted, marginTop: 7 }}>
             {page + 1} / {slides.length}
@@ -593,6 +654,14 @@ export function CardStory({
           card={leadCard}
           label={cta}
           context={current?.title || company}
+          productImage={
+            current?.kind === "video"
+              ? card?.coverUrl
+              : current?.url || card?.coverUrl
+          }
+          category={[role, company, card?.bio, current?.caption]
+            .filter(Boolean)
+            .join(" ")}
           onClose={() => setEnquiry(false)}
         />
       )}
@@ -619,16 +688,16 @@ export function StoryDock({ action }: { action: StoryAction | null }) {
     <View
       style={{
         backgroundColor: action.color,
-        paddingVertical: 14,
-        paddingHorizontal: 18,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
         flexDirection: "row",
         alignItems: "center",
-        gap: 16,
+        gap: 10,
       }}
     >
       <Text
         numberOfLines={2}
-        style={{ color: "#fff", fontSize: 13, lineHeight: 19, flex: 1 }}
+        style={{ color: "#fff", fontSize: 11, lineHeight: 15, flex: 1 }}
       >
         {action.prompt}
       </Text>
@@ -638,8 +707,9 @@ export function StoryDock({ action }: { action: StoryAction | null }) {
         style={({ pressed }) => ({
           backgroundColor: "#fff",
           borderRadius: 12,
-          paddingHorizontal: 18,
-          paddingVertical: 15,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          minHeight: 44,
           maxWidth: "53%",
           opacity: pressed ? 0.8 : 1,
         })}
@@ -648,7 +718,7 @@ export function StoryDock({ action }: { action: StoryAction | null }) {
           style={{
             color: "#153D35",
             fontWeight: "700",
-            fontSize: 14,
+            fontSize: 12,
             textAlign: "center",
           }}
         >

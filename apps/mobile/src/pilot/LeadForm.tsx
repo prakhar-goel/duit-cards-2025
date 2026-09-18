@@ -12,6 +12,8 @@ import {
   Title,
   Body,
   Icon,
+  RemoteImage,
+  Pill,
 } from "./ui";
 import type { Card } from "./types";
 
@@ -20,11 +22,15 @@ export function LeadForm({
   card,
   label,
   context,
+  productImage,
+  category = "",
   onClose,
 }: {
   card: Pick<Card, "slug" | "title" | "company" | "imageUrl">;
   label: string;
   context: string;
+  productImage?: string | null;
+  category?: string;
   onClose: () => void;
 }) {
   const { data, session } = usePilot();
@@ -37,6 +43,42 @@ export function LeadForm({
     me?.email || ownCard?.contact?.email || "",
   );
   const [intent, setIntent] = useState("");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [timing, setTiming] = useState("Just exploring");
+  const subject = `${category} ${context} ${label}`.toLowerCase();
+  const choices = /coffee|café|bakery|pastr|breakfast|sweet/.test(subject)
+    ? ["Office orders", "Gifting", "Wholesale", "Tasting / samples"]
+    : /flower|floral|wedding/.test(subject)
+      ? ["Weekly flowers", "An event", "A wedding", "See a moodboard"]
+      : /solar|energy/.test(subject)
+        ? ["Site assessment", "Savings estimate", "Installation", "Maintenance"]
+        : /hotel|stay|hospitality|travel/.test(subject)
+          ? [
+              "Room options",
+              "Group booking",
+              "Local experiences",
+              "Business partnership",
+            ]
+          : /interior|design|space|atelier|jewell|ceramic|home/.test(subject)
+            ? [
+                "Browse the collection",
+                "Custom design",
+                "Bulk order",
+                "Project consultation",
+              ]
+            : /fitness|coach|health|clinic/.test(subject)
+              ? [
+                  "Team programme",
+                  "One-to-one session",
+                  "Pricing",
+                  "Introductory visit",
+                ]
+              : [
+                  "See the products",
+                  "Get pricing",
+                  "Try it first",
+                  "Work together",
+                ];
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -49,7 +91,10 @@ export function LeadForm({
       await post(`/public/cards/${encodeURIComponent(card.slug)}/leads`, {
         name: name.trim(),
         email: email.trim(),
-        intent: intent.trim() || label,
+        intent: [selected.join(", ") || label, timing, intent.trim()]
+          .filter(Boolean)
+          .join(" · ")
+          .slice(0, 1500),
         consent: true,
         source: "android-card",
         ctaContext: `${label} · ${context}`.slice(0, 120),
@@ -80,6 +125,19 @@ export function LeadForm({
         </Button>
       }
     >
+      {!sent && productImage && (
+        <RemoteImage
+          uri={productImage}
+          contain
+          style={{
+            width: "100%",
+            height: 155,
+            borderRadius: 16,
+            marginBottom: 16,
+            backgroundColor: C.soft,
+          }}
+        />
+      )}
       <View
         style={{
           flexDirection: "row",
@@ -103,12 +161,79 @@ export function LeadForm({
             A conversation starts here.
           </Title>
           <Body style={{ marginTop: 12 }}>
-            Your enquiry is in {card.title.split(" ")[0]}’s inbox, along with
-            the part of their business that caught your eye.
+            Your enquiry is in{" "}
+            {card.slug.startsWith("business-")
+              ? card.company || card.title
+              : card.title.split(" ")[0]}
+            ’s inbox, along with the part of their business that caught your
+            eye.
           </Body>
         </View>
       ) : (
         <>
+          <Title size={18}>What interests you?</Title>
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 8,
+              marginVertical: 14,
+            }}
+          >
+            {choices.map((choice) => (
+              <Pressable
+                key={choice}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: selected.includes(choice) }}
+                onPress={() =>
+                  setSelected((values) =>
+                    values.includes(choice)
+                      ? values.filter((v) => v !== choice)
+                      : [...values, choice],
+                  )
+                }
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 7,
+                  padding: 12,
+                  borderRadius: 12,
+                  backgroundColor: selected.includes(choice) ? C.soft : C.white,
+                  borderWidth: 1,
+                  borderColor: selected.includes(choice) ? C.teal : C.line,
+                }}
+              >
+                <Icon
+                  name={
+                    selected.includes(choice) ? "checkbox" : "square-outline"
+                  }
+                  size={19}
+                />
+                <Text style={{ fontSize: 12, color: C.ink }}>{choice}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={{ fontSize: 12, color: C.muted }}>
+            When are you thinking?
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 8,
+              marginVertical: 12,
+            }}
+          >
+            {["This week", "This month", "Just exploring"].map((value) => (
+              <Pill
+                key={value}
+                active={timing === value}
+                onPress={() => setTiming(value)}
+              >
+                {value}
+              </Pill>
+            ))}
+          </View>
           <Field label="Your name" value={name} onChangeText={setName} />
           <Field
             label="Email"
@@ -117,11 +242,11 @@ export function LeadForm({
             keyboardType="email-address"
           />
           <Field
-            label="What do you have in mind? (optional)"
+            label="Anything else? (optional)"
             value={intent}
             onChangeText={setIntent}
             multiline
-            placeholder={`Tell ${card.title.split(" ")[0]} a little about what you need`}
+            placeholder={`Tell ${card.slug.startsWith("business-") ? card.company || card.title : card.title.split(" ")[0]} a little about what you need`}
           />
           <Pressable
             accessibilityRole="checkbox"

@@ -72,207 +72,234 @@ export function TodayScreen({
     }
   }
   return (
-    <Page refreshing={loading} onRefresh={() => void refresh()}>
-      <View style={s.row}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              gap: 3,
-              transform: [{ rotate: "-8deg" }],
-            }}
-          >
-            {[0, 1].map((i) => (
-              <View key={i} style={{ gap: 3, marginTop: i ? 4 : 0 }}>
-                {[0, 1].map((j) => (
-                  <View
-                    key={j}
-                    style={{
-                      width: 9,
-                      height: 9,
-                      borderRadius: 2,
-                      backgroundColor: C.ink,
-                    }}
-                  />
-                ))}
-              </View>
-            ))}
-          </View>
-          <Text
-            style={{
-              fontSize: 31,
-              fontWeight: "800",
-              letterSpacing: -1.6,
-              color: C.ink,
-            }}
-          >
-            duit<Text style={{ color: C.teal }}>.</Text>
-          </Text>
-        </View>
-      </View>
-      {offline && (
-        <Notice action="Retry" onPress={() => void sync()}>
-          Offline · your saved cards and notes are here.
-        </Notice>
-      )}
-      {queue.length > 0 && (
-        <Notice action="Sync" onPress={() => void sync()}>
-          {queue.length} capture{queue.length === 1 ? "" : "s"} waiting to sync.
-        </Notice>
-      )}
-      {error && !offline && (
-        <Notice error action="Retry" onPress={() => void refresh()}>
-          {error}
-        </Notice>
-      )}
-      <View style={{ marginTop: 28, marginBottom: 18 }}>
-        <Label>GOOD TO SEE YOU, {firstName(name).toUpperCase()}</Label>
-
-      </View>
-      {leads.length > 0 && (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Open enquiries"
-          onPress={() => setLeadInbox(true)}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 10,
-            padding: 14,
-            borderRadius: 15,
-            backgroundColor: C.soft,
-            marginTop: 4,
-          }}
-        >
-          <Icon name="chatbubble-ellipses-outline" size={20} />
-          <Text style={{ flex: 1, fontSize: 13, color: C.ink }}>
-            {leads.length} new enquiries
-          </Text>
-          <Icon name="arrow-forward-outline" size={18} />
-        </Pressable>
-      )}
-      <NetworkFeed onPerson={onPerson} onFocus={() => setIntent(true)} />
-      <Section title="Pick up the conversation">
-        {open.length ? (
-          open.slice(0, 2).map((c) => {
-            const p = data.people.find((p) => p.id === c.personId);
-            return (
+    <>
+      <NetworkFeed
+        onPerson={onPerson}
+        onFocus={() => setIntent(true)}
+        refreshing={loading}
+        onRefresh={() => void refresh()}
+        header={
+          <>
+            <View style={s.row}>
               <View
-                key={c.id}
-                style={{
-                  paddingVertical: 14,
-                  borderBottomWidth: 1,
-                  borderBottomColor: C.line,
-                  flexDirection: "row",
-                  gap: 11,
-                  alignItems: "center",
-                }}
+                style={{ flexDirection: "row", alignItems: "center", gap: 9 }}
               >
-                <Pressable
-                  onPress={() => onPerson(c.personId)}
-                  accessibilityRole="button"
+                <View
                   style={{
-                    flex: 1,
                     flexDirection: "row",
-                    gap: 11,
-                    alignItems: "center",
+                    gap: 3,
+                    transform: [{ rotate: "-8deg" }],
                   }}
                 >
-                  <Avatar
-                    name={(c as any).personName ?? p?.name ?? "Connection"}
-                    url={p?.photoUrl}
-                    size={42}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{ fontSize: 13, fontWeight: "600", color: C.ink }}
-                    >
-                      {(c as any).personName ?? p?.name ?? "Connection"}
-                    </Text>
-                    <Text
-                      numberOfLines={2}
+                  {[0, 1].map((i) => (
+                    <View key={i} style={{ gap: 3, marginTop: i ? 4 : 0 }}>
+                      {[0, 1].map((j) => (
+                        <View
+                          key={j}
+                          style={{
+                            width: 9,
+                            height: 9,
+                            borderRadius: 2,
+                            backgroundColor: C.ink,
+                          }}
+                        />
+                      ))}
+                    </View>
+                  ))}
+                </View>
+                <Text
+                  style={{
+                    fontSize: 31,
+                    fontWeight: "800",
+                    letterSpacing: -1.6,
+                    color: C.ink,
+                  }}
+                >
+                  duit<Text style={{ color: C.teal }}>.</Text>
+                </Text>
+              </View>
+            </View>
+            {offline && (
+              <Notice action="Retry" onPress={() => void sync()}>
+                Offline · your saved cards and notes are here.
+              </Notice>
+            )}
+            {queue.length > 0 && (
+              <Notice action="Sync" onPress={() => void sync()}>
+                {queue.length} capture{queue.length === 1 ? "" : "s"} waiting to
+                sync.
+              </Notice>
+            )}
+            {error && !offline && (
+              <Notice error action="Retry" onPress={() => void refresh()}>
+                {error}
+              </Notice>
+            )}
+            <View style={{ marginTop: 28, marginBottom: 18 }}>
+              <Label>GOOD TO SEE YOU, {firstName(name).toUpperCase()}</Label>
+            </View>
+            {leads.length > 0 && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Open enquiries"
+                onPress={() => setLeadInbox(true)}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: 14,
+                  borderRadius: 15,
+                  backgroundColor: C.soft,
+                  marginTop: 4,
+                }}
+              >
+                <Icon name="chatbubble-ellipses-outline" size={20} />
+                <Text style={{ flex: 1, fontSize: 13, color: C.ink }}>
+                  {leads.length} new enquiries
+                </Text>
+                <Icon name="arrow-forward-outline" size={18} />
+              </Pressable>
+            )}
+          </>
+        }
+        footer={
+          <>
+            <Section title="Pick up the conversation">
+              {open.length ? (
+                open.slice(0, 2).map((c) => {
+                  const p = data.people.find((p) => p.id === c.personId);
+                  return (
+                    <View
+                      key={c.id}
                       style={{
-                        fontSize: 12,
-                        lineHeight: 18,
-                        color: C.muted,
-                        marginTop: 4,
+                        paddingVertical: 14,
+                        borderBottomWidth: 1,
+                        borderBottomColor: C.line,
+                        flexDirection: "row",
+                        gap: 11,
+                        alignItems: "center",
                       }}
                     >
-                      {c.text}
-                    </Text>
-                    {c.dueAt && (
-                      <Text
-                        style={{ fontSize: 10, color: C.teal, marginTop: 4 }}
+                      <Pressable
+                        onPress={() => onPerson(c.personId)}
+                        accessibilityRole="button"
+                        style={{
+                          flex: 1,
+                          flexDirection: "row",
+                          gap: 11,
+                          alignItems: "center",
+                        }}
                       >
-                        {dateLabel(c.dueAt)}
-                      </Text>
-                    )}
-                  </View>
-                </Pressable>
-                <Pressable
-                  onPress={() => void complete(c.id)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Mark promise complete"
-                  hitSlop={10}
+                        <Avatar
+                          name={
+                            (c as any).personName ?? p?.name ?? "Connection"
+                          }
+                          url={p?.photoUrl}
+                          size={42}
+                        />
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              fontSize: 13,
+                              fontWeight: "600",
+                              color: C.ink,
+                            }}
+                          >
+                            {(c as any).personName ?? p?.name ?? "Connection"}
+                          </Text>
+                          <Text
+                            numberOfLines={2}
+                            style={{
+                              fontSize: 12,
+                              lineHeight: 18,
+                              color: C.muted,
+                              marginTop: 4,
+                            }}
+                          >
+                            {c.text}
+                          </Text>
+                          {c.dueAt && (
+                            <Text
+                              style={{
+                                fontSize: 10,
+                                color: C.teal,
+                                marginTop: 4,
+                              }}
+                            >
+                              {dateLabel(c.dueAt)}
+                            </Text>
+                          )}
+                        </View>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => void complete(c.id)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Mark promise complete"
+                        hitSlop={10}
+                      >
+                        <Icon name="ellipse-outline" size={24} />
+                      </Pressable>
+                    </View>
+                  );
+                })
+              ) : (
+                <Body muted>All caught up.</Body>
+              )}
+            </Section>
+            <Button
+              tone="quiet"
+              icon="compass-outline"
+              onPress={() => setIntent(true)}
+              style={{ marginTop: 20 }}
+            >
+              What are you looking for?
+            </Button>
+            {data.needs
+              .filter((n) => n.active)
+              .slice(0, 2)
+              .map((n) => (
+                <View
+                  key={n.id}
+                  style={{
+                    borderLeftWidth: 2,
+                    borderLeftColor: C.line,
+                    paddingLeft: 12,
+                    marginTop: 12,
+                  }}
                 >
-                  <Icon name="ellipse-outline" size={24} />
-                </Pressable>
-              </View>
-            );
-          })
-        ) : (
-          <Body muted>All caught up.</Body>
-        )}
-      </Section>
-      <Button
-        tone="quiet"
-        icon="compass-outline"
-        onPress={() => setIntent(true)}
-        style={{ marginTop: 20 }}
-      >
-        What are you looking for?
-      </Button>
-      {data.needs
-        .filter((n) => n.active)
-        .slice(0, 2)
-        .map((n) => (
-          <View
-            key={n.id}
-            style={{
-              borderLeftWidth: 2,
-              borderLeftColor: C.line,
-              paddingLeft: 12,
-              marginTop: 12,
-            }}
-          >
-            <Text style={{ fontSize: 10, color: C.muted }}>
-              {n.kind === "need" ? "LOOKING FOR" : "CAN HELP WITH"}
-            </Text>
-            <Text
-              numberOfLines={2}
-              style={{
-                fontSize: 12,
-                lineHeight: 18,
-                color: C.ink,
-                marginTop: 5,
-              }}
-            >
-              {n.text}
-            </Text>
-            <Pressable
-              onPress={() =>
-                void patch(`/need-offers/${n.id}`, { active: false })
-                  .then(refresh)
-                  .catch((e) => notify(e.message))
-              }
-              accessibilityRole="button"
-            >
-              <Text style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>
-                Done with this focus
-              </Text>
-            </Pressable>
-          </View>
-        ))}
+                  <Text style={{ fontSize: 10, color: C.muted }}>
+                    {n.kind === "need" ? "LOOKING FOR" : "CAN HELP WITH"}
+                  </Text>
+                  <Text
+                    numberOfLines={2}
+                    style={{
+                      fontSize: 12,
+                      lineHeight: 18,
+                      color: C.ink,
+                      marginTop: 5,
+                    }}
+                  >
+                    {n.text}
+                  </Text>
+                  <Pressable
+                    onPress={() =>
+                      void patch(`/need-offers/${n.id}`, { active: false })
+                        .then(refresh)
+                        .catch((e) => notify(e.message))
+                    }
+                    accessibilityRole="button"
+                  >
+                    <Text
+                      style={{ fontSize: 11, color: C.muted, marginTop: 5 }}
+                    >
+                      Done with this focus
+                    </Text>
+                  </Pressable>
+                </View>
+              ))}
+          </>
+        }
+      />
       <Sheet
         visible={intent}
         title="Give your network a direction"
@@ -406,6 +433,6 @@ export function TodayScreen({
           />
         )}
       </Sheet>
-    </Page>
+    </>
   );
 }

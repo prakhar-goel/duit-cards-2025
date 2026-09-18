@@ -129,7 +129,9 @@ export function PeopleScreen({
         .sort(
           (a, b) =>
             Number(Boolean(b.businessCardUrl && b.photoUrl && b.cardSlug)) -
-            Number(Boolean(a.businessCardUrl && a.photoUrl && a.cardSlug)),
+              Number(Boolean(a.businessCardUrl && a.photoUrl && a.cardSlug)) ||
+            Number(Boolean(b.cardSlug?.startsWith("business-"))) -
+              Number(Boolean(a.cardSlug?.startsWith("business-"))),
         ),
     [data.people, query, filter, country],
   );
@@ -621,7 +623,10 @@ export function PersonDetail({
                   </Body>
                   {publishedCard?.panels
                     ?.filter(
-                      (x) => (x.panelType === "offer" || x.panelType === "proof") && x.body.trim() !== (publishedCard?.bio || p.bio || "").trim(),
+                      (x) =>
+                        (x.panelType === "offer" || x.panelType === "proof") &&
+                        x.body.trim() !==
+                          (publishedCard?.bio || p.bio || "").trim(),
                     )
                     .map((x) => (
                       <View key={x.panelType} style={{ marginTop: 18 }}>
@@ -635,6 +640,47 @@ export function PersonDetail({
                         </Body>
                       </View>
                     ))}
+                  <View style={{ gap: 9, marginTop: 18 }}>
+                    {[
+                      [
+                        "call-outline",
+                        publishedCard?.contact?.phone || p.phone,
+                      ],
+                      [
+                        "mail-outline",
+                        publishedCard?.contact?.email || p.email,
+                      ],
+                      [
+                        "globe-outline",
+                        publishedCard?.contact?.website || p.website,
+                      ],
+                      ["location-outline", publishedCard?.contact?.address],
+                    ]
+                      .filter(([, value]) => !!value)
+                      .map(([icon, value]) => (
+                        <View
+                          key={icon}
+                          style={{
+                            flexDirection: "row",
+                            gap: 10,
+                            alignItems: "center",
+                          }}
+                        >
+                          <Icon name={icon as any} size={17} />
+                          <Text
+                            selectable
+                            style={{
+                              color: C.ink,
+                              fontSize: 13,
+                              lineHeight: 19,
+                              flex: 1,
+                            }}
+                          >
+                            {value}
+                          </Text>
+                        </View>
+                      ))}
+                  </View>
                   <Text style={{ fontSize: 12, color: C.muted, marginTop: 18 }}>
                     {[p.role, p.city, p.countryCode]
                       .filter(Boolean)
