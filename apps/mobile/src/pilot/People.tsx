@@ -128,8 +128,8 @@ export function PeopleScreen({
         )
         .sort(
           (a, b) =>
-            Number(Boolean(b.businessCardUrl)) -
-            Number(Boolean(a.businessCardUrl)),
+            Number(Boolean(b.businessCardUrl && b.photoUrl && b.cardSlug)) -
+            Number(Boolean(a.businessCardUrl && a.photoUrl && a.cardSlug)),
         ),
     [data.people, query, filter, country],
   );
