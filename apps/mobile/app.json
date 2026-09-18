@@ -3,7 +3,7 @@
     "name": "DUIT 2026",
     "slug": "duit-cards-2025",
     "scheme": "duitpilot",
-    "version": "4.3.0",
+    "version": "4.5.0",
     "orientation": "portrait",
     "icon": "./assets/pilot-icon.png",
     "userInterfaceStyle": "light",

@@ -727,7 +727,7 @@ export function StoryDock({ action }: { action: StoryAction | null }) {
     >
       <Text
         numberOfLines={2}
-        style={{ color: "#fff", fontSize: 11, lineHeight: 15, flex: 1 }}
+        style={{ color: "#fff", fontSize: 12, lineHeight: 16, flex: 1 }}
       >
         {action.prompt}
       </Text>
@@ -751,8 +751,8 @@ export function StoryDock({ action }: { action: StoryAction | null }) {
           style={{
             color: "#153D35",
             fontWeight: "700",
-            fontSize: 12,
-            lineHeight: 17,
+            fontSize: 14,
+            lineHeight: 19,
             includeFontPadding: false,
             textAlignVertical: "center",
             textAlign: "center",
