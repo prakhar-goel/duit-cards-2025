@@ -60,6 +60,9 @@ export function webRouter() {
     if (process.env.PILOT_APK_URL) {
       const target = new URL(process.env.PILOT_APK_URL);
       if (target.protocol !== 'https:' || target.hostname !== 'github.com' || !target.pathname.startsWith('/prakhar-goel/duit-cards-2025/releases/download/')) fail(500, 'Invalid APK release URL');
+      // Keep the browser availability probe on this origin; GitHub redirects do not allow fetch CORS.
+      res.setHeader('Cache-Control', 'private, no-store');
+      if (req.method === 'HEAD') return res.type('application/vnd.android.package-archive').status(200).end();
       return res.redirect(302, target.href);
     }
     const apk = process.env.PILOT_APK_PATH || defaultApk;

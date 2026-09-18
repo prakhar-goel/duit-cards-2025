@@ -211,3 +211,11 @@ I have to also deploy this project, such that I am no longer dependent on keepin
 ## 2026-09-18T09:37:43+05:30
 
 how about using gcp? compare gcp vs render. If the need be, use render's free tier for staging. However do evaluate gcp too (I have account there and billing is enabled).
+
+
+## 2026-09-18T10:50:35.460558+05:30
+
+The APK has not been attached to this server yet. Use the build supplied with your pilot invitation.
+
+I see this on [https://duit-cards-staging.onrender.com/download](https://duit-cards-staging.onrender.com/download)
+Where and how to download apk?

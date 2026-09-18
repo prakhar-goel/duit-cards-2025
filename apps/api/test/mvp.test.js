@@ -859,6 +859,24 @@ test('private pilot end-to-end: two accounts, public card, verified claim and re
     assert.equal(apk.status, 200);
     assert.match(apk.headers.get('content-type'), /android/);
     assert.equal(await apk.text(), '');
+    const previousApkUrl = process.env.PILOT_APK_URL;
+    const releaseUrl = 'https://github.com/prakhar-goel/duit-cards-2025/releases/download/v4.3.0-staging/DUIT-2026-Pilot.apk';
+    try {
+      process.env.PILOT_APK_URL = releaseUrl;
+      const probe = await fetch(`${origin}/downloads/DUIT-2026-Pilot.apk`, { method: 'HEAD', redirect: 'manual' });
+      assert.equal(probe.status, 200);
+      assert.match(probe.headers.get('content-type'), /android/);
+      assert.equal(probe.headers.get('location'), null);
+      assert.equal(probe.headers.get('cache-control'), 'private, no-store');
+      assert.equal(await probe.text(), '');
+      const download = await fetch(`${origin}/downloads/DUIT-2026-Pilot.apk`, { redirect: 'manual' });
+      assert.equal(download.status, 302);
+      assert.equal(download.headers.get('location'), releaseUrl);
+    } finally {
+      if (previousApkUrl === undefined) delete process.env.PILOT_APK_URL;
+      else process.env.PILOT_APK_URL = previousApkUrl;
+    }
+
     assert.equal((await fetch(`${origin}/assets/app.js`)).status, 200);
     assert.equal((await fetch(`${origin}/admin`)).status, 200);
     for (const route of ['/.env.local', '/.local/media/example.png', '/.private', '/assets/%2e%2e%2f.private', '/demo/%2e%2e%2f.private']) {
