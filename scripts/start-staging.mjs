@@ -6,7 +6,7 @@ Object.assign(process.env, {
  PUBLIC_WEB_ORIGIN:origin, PUBLIC_WEB_URL:origin, API_PUBLIC_ORIGIN:origin,
  APP_ORIGIN:origin, DUIT_ALLOW_CUSTOM_DATABASE:'true', APP_ENV:'staging',
  MEDIA_STORAGE:'database', MEDIA_STORAGE_LIMIT_MB:'200', LOCAL_OUTBOX:'false',
- DUIT_AI_ENABLED:'false', DUIT_AI_BUDGET_APPROVED_USD:'0', HOST:'0.0.0.0',
+ DUIT_AI_ENABLED:'false', DUIT_AI_BUDGET_APPROVED_USD:process.env.DUIT_AI_BUDGET_APPROVED_USD || '0', HOST:'0.0.0.0',
  TRUST_PROXY_HOPS:'1'
 });
 await import('../apps/api/src/server.js');
