@@ -523,12 +523,14 @@ function PublicCard({
       url: c.imageUrl,
       title: c.title,
       caption: [c.role, c.company].filter(Boolean).join(" · "),
+      ctaLabel: "Let’s connect", ctaPrompt: c.company, ctaColor: c.theme?.color,
     },
     {
       kind: "card",
       url: c.businessCardUrl,
       title: "Business card",
       caption: c.company,
+      ctaLabel: "Work with us", ctaPrompt: c.subtitle, ctaColor: c.theme?.color,
     },
     ...(c.businessCardBackUrl
       ? [
@@ -547,6 +549,7 @@ function PublicCard({
         url: m.url,
         title: m.title || c.company,
         caption: m.caption || c.subtitle,
+        ctaLabel: m.ctaLabel, ctaPrompt: m.ctaPrompt || m.caption, ctaColor: m.ctaColor,
       })),
   ];
   const pages = slides.map((s: Row, i: number) =>
@@ -563,6 +566,8 @@ function PublicCard({
   const panels = [...(c.panels || [])].sort(
     (a: Row, b: Row) => a.position - b.position,
   );
+  const activeSlide = slides[active];
+  const activeLabel = activeSlide?.ctaLabel || c.ctaLabel || "Start a conversation";
   const publicPath = `/public/cards/${c.slug}`;
   const firstName = c.title.split(" ")[0];
   const hook =
@@ -609,17 +614,7 @@ function PublicCard({
   }
   function action() {
     track("cta_opened");
-    const phone = c.contact?.phone?.replace(/[^+\d]/g, "");
-    const target =
-      c.ctaType === "whatsapp" && phone
-        ? `https://wa.me/${phone.replace("+", "")}`
-        : c.ctaType === "call" && phone
-          ? `tel:${phone}`
-          : c.ctaType === "email" && c.contact?.email
-            ? `mailto:${c.contact.email}`
-            : safeUrl(c.ctaUrl);
-    if (target) location.href = target;
-    else setDialog("interest");
+    setDialog("interest");
   }
   return (
     <div className="public-story">
@@ -809,17 +804,17 @@ function PublicCard({
           </div>
         </section>
       </main>
-      <div className="story-dock">
+      <div className="story-dock" style={{borderTopColor: activeSlide?.ctaColor || c.theme?.color}}>
         <div className="story-dock-identity">
           <Avatar name={c.title} src={c.imageUrl} size={42} />
           <div>
             <strong>{c.title}</strong>
-            <span>{c.company || c.role}</span>
+            <span>{activeSlide?.ctaPrompt || c.company || c.role}</span>
           </div>
         </div>
         <div className="story-dock-actions">
           <button className="story-primary-action" onClick={action}>
-            {c.ctaLabel || "Start a conversation"}
+            {activeLabel}
             <ArrowUpRight size={19} />
           </button>
           <a
@@ -885,6 +880,8 @@ function PublicCard({
       {dialog === "interest" && (
         <InterestModal
           slug={c.slug}
+          label={activeLabel}
+          context={activeSlide?.title || c.company}
           name={c.title}
           onClose={() => setDialog("")}
         />
@@ -1017,11 +1014,15 @@ function ShareModal({
   );
 }
 function InterestModal({
+  label = "Start a conversation",
+  context = "",
   slug,
   name,
   onClose,
 }: {
   slug: string;
+  label?: string;
+  context?: string;
   name: string;
   onClose: () => void;
 }) {
@@ -1040,6 +1041,7 @@ function InterestModal({
         intent: f.get("intent"),
         consent: true,
         source: "web_profile",
+        ctaContext: `${label} · ${context}`.slice(0,120),
       });
       setDone(true);
     } catch (e) {
@@ -1050,7 +1052,7 @@ function InterestModal({
   }
   return (
     <Modal
-      title={done ? "You’ve started something." : "Start a conversation"}
+      title={done ? "You’ve started something." : label}
       onClose={onClose}
     >
       {done ? (
@@ -1069,6 +1071,7 @@ function InterestModal({
             Your name
             <input
               name="name"
+              defaultValue={session()?.user?.profile?.fullName || session()?.user?.displayName || ""}
               autoComplete="name"
               required
               maxLength={120}
@@ -1079,6 +1082,7 @@ function InterestModal({
             Email
             <input
               name="email"
+              defaultValue={session()?.user?.email || ""}
               type="email"
               autoComplete="email"
               required
@@ -1615,7 +1619,7 @@ function Stat({
   );
 }
 function Overview({ navigate }: { navigate: (s: string) => void }) {
-  const [origin, setOrigin] = useState("fictional_demo");
+  const [origin, setOrigin] = useState("");
   const { data, error, loading, reload } = useData(
     `/admin/overview?dataOrigin=${origin}`,
   );
@@ -1661,7 +1665,7 @@ function Overview({ navigate }: { navigate: (s: string) => void }) {
         <div>
           <Tag tone="lime">
             {origin === "fictional_demo"
-              ? "FICTIONAL DEMO ACTIVITY"
+              ? "CURATED WORKSPACE"
               : origin === "user_created"
                 ? "LIVE PILOT ACTIVITY"
                 : "ALL PILOT ACTIVITY"}
@@ -1718,6 +1722,17 @@ function Overview({ navigate }: { navigate: (s: string) => void }) {
           tone="highlight"
         />
       </div>
+      <section className="panel" style={{margin: "24px 0", padding: 24}}>
+        <h3>Cards starting conversations</h3>
+        <p className="muted">Recorded card views, CTA opens and enquiries across app and web.</p>
+        <div style={{overflowX: "auto"}}><table className="data-table"><thead><tr><th>Business</th><th>Views</th><th>CTA opens</th><th>Enquiries</th></tr></thead><tbody>{(data?.topCards || []).map((c: Row) => <tr key={c.id}><td><strong>{c.company || c.title}</strong><br/><small>{c.title}</small></td><td>{count(c.views)}</td><td>{count(c.ctaOpens)}</td><td>{count(c.leads)}</td></tr>)}</tbody></table></div>
+        {!(data?.topCards || []).length && <p>Engagement will appear as people explore cards.</p>}
+      </section>
+      <section className="panel" style={{margin: "24px 0", padding: 24}}>
+        <h3>Recent enquiries</h3>
+        {(data?.recentLeads || []).map((l: Row) => <div key={l.id} style={{padding: "16px 0", borderBottom: "1px solid #e1e5df"}}><strong>{l.name} → {l.company || l.cardTitle}</strong><p>{l.intent || l.ctaContext}</p><small>{l.ctaContext} · {l.source} · {date(l.createdAt,true)} · {l.status}</small></div>)}
+        {!(data?.recentLeads || []).length && <p>New enquiries arrive here when someone submits a card’s contact form.</p>}
+      </section>
       <div className="overview-grid">
         <section className="panel">
           <div className="panel-title">

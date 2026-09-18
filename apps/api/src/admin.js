@@ -24,7 +24,16 @@ export function adminRouter() {
     const countries = (await query("SELECT COALESCE(NULLIF(profile->>'countryCode',''),'Unknown') AS country_code,count(*)::int AS users FROM users WHERE $1::text IS NULL OR data_origin=$1 GROUP BY 1 ORDER BY users DESC", [origin])).rows;
     const ai = (await query('SELECT * FROM ai_budgets WHERE id=$1', ['pilot'])).rows[0];
     const dataOrigins = (await query(`SELECT o.data_origin,(SELECT count(*)::int FROM users u WHERE u.data_origin=o.data_origin) AS users,(SELECT count(*)::int FROM cards c JOIN users u ON u.id=c.owner_id WHERE u.data_origin=o.data_origin) AS cards,(SELECT count(*)::int FROM encounters e JOIN users u ON u.id=e.owner_id WHERE u.data_origin=o.data_origin) AS encounters,(SELECT count(*)::int FROM leads l JOIN cards c ON c.id=l.card_id JOIN users u ON u.id=c.owner_id WHERE u.data_origin=o.data_origin) AS leads,(SELECT count(*)::int FROM card_events ce JOIN cards c ON c.id=ce.card_id JOIN users u ON u.id=c.owner_id WHERE u.data_origin=o.data_origin AND ce.event_type='viewed') AS views FROM(SELECT DISTINCT data_origin FROM users) o`)).rows;
+    const topCards = (await query(`SELECT c.id,c.title,c.company,
+      (SELECT count(*)::int FROM card_events e WHERE e.card_id=c.id AND e.event_type='viewed') AS views,
+      (SELECT count(*)::int FROM card_events e WHERE e.card_id=c.id AND e.event_type='cta_opened') AS cta_opens,
+      (SELECT count(*)::int FROM leads l WHERE l.card_id=c.id) AS leads
+      FROM cards c JOIN users u ON u.id=c.owner_id WHERE ($1::text IS NULL OR u.data_origin=$1)
+      ORDER BY leads DESC,views DESC,c.title LIMIT 12`,[origin])).rows;
+    const recentLeads = (await query(`SELECT l.id,l.name,l.intent,l.cta_context,l.source,l.status,l.created_at,c.company,c.title AS card_title FROM leads l JOIN cards c ON c.id=l.card_id JOIN users u ON u.id=c.owner_id WHERE ($1::text IS NULL OR u.data_origin=$1) ORDER BY l.created_at DESC LIMIT 12`,[origin])).rows;
     res.json({
+      topCards: camel(topCards),
+      recentLeads: camel(recentLeads),
       stats: camel(stats),
       daily: camel(daily),
       countries: camel(countries),
