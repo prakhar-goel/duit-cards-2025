@@ -193,7 +193,7 @@ export async function feedFor(ownerId) {
         title: result.title,
         reason: need.kind === "offer" ? "A conversation that could grow your business" : "A service worth exploring",
         intent: need.kind === "offer" ? "grow" : "improve",
-        focus: need.text,
+        focus: result.person?.bio || result.evidence?.[0]?.text || result.title,
         evidence: result.evidence,
         person: result.person,
         score: result.score

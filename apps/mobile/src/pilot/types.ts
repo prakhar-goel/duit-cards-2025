@@ -20,12 +20,17 @@ export type BusinessMedia = {
   type: "image" | "video";
   title: string;
   caption: string;
+  ctaLabel?: string;
+  ctaPrompt?: string;
+  ctaColor?: string;
 };
 export type Card = {
   id: string;
   slug: string;
   title: string;
   subtitle: string;
+  bio?: string;
+  theme?: { color?: string };
   imageUrl?: string | null;
   coverUrl?: string | null;
   businessCardBackUrl?: string | null;

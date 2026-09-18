@@ -519,6 +519,7 @@ export function Sheet({
   onClose,
   children,
   footer,
+  edgeToEdge = false,
 }: {
   visible: boolean;
   title: string;
@@ -526,6 +527,7 @@ export function Sheet({
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  edgeToEdge?: boolean;
 }) {
   return (
     <Modal
@@ -542,9 +544,14 @@ export function Sheet({
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{ flex: 1 }}
         >
-          <View style={s.sheetHeader}>
+          <View
+            style={[
+              s.sheetHeader,
+              edgeToEdge && { paddingVertical: 10, paddingHorizontal: 18 },
+            ]}
+          >
             <View style={{ flex: 1 }}>
-              <Title size={25}>{title}</Title>
+              <Title size={edgeToEdge ? 20 : 25}>{title}</Title>
               {subtitle && (
                 <Body muted style={{ fontSize: 13, marginTop: 6 }}>
                   {subtitle}
@@ -560,7 +567,7 @@ export function Sheet({
           <ScrollView
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{
-              padding: 24,
+              padding: edgeToEdge ? 0 : 24,
               paddingBottom: 40,
               maxWidth: 720,
               width: "100%",
@@ -569,7 +576,17 @@ export function Sheet({
           >
             {children}
           </ScrollView>
-          {footer && <View style={s.sheetFooter}>{footer}</View>}
+          {footer && (
+            <View
+              style={
+                edgeToEdge
+                  ? { borderTopWidth: 1, borderColor: C.line }
+                  : s.sheetFooter
+              }
+            >
+              {footer}
+            </View>
+          )}
         </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>

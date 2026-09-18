@@ -12,7 +12,7 @@ export const cardSchema = z.object({
   coverUrl: httpUrl.nullable().optional(),
   businessCardUrl: httpUrl.nullable().optional(),
   businessCardBackUrl: httpUrl.nullable().optional(),
-  businessMedia: z.array(z.object({url: httpUrl, type: z.enum(['image', 'video']), title: text(100).default(''), caption: text(240).default('')})).max(4).default([]),
+  businessMedia: z.array(z.object({url: httpUrl, type: z.enum(['image', 'video']), title: text(100).default(''), caption: text(240).default(''), ctaLabel: text(80).optional(), ctaPrompt: text(160).optional(), ctaColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional()})).max(4).default([]),
   company: text(120).default(''),
   role: text(120).default(''),
   bio: text(3000).default(''),

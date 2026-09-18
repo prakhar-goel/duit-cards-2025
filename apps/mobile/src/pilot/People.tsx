@@ -25,7 +25,12 @@ import {
   RemoteImage,
 } from "./ui";
 import { AIReview } from "./AI";
-import { CardStory, WalletTile } from "./CardStory";
+import {
+  CardStory,
+  WalletTile,
+  StoryDock,
+  type StoryAction,
+} from "./CardStory";
 export function PersonRow({
   person,
   onPress,
@@ -389,6 +394,7 @@ export function PersonDetail({
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(false);
   const [view, setView] = useState<"card" | "memory">("card");
+  const [dock, setDock] = useState<StoryAction | null>(null);
   const [publishedCard, setPublishedCard] = useState<Card | null>(null);
   const [edit, setEdit] = useState<any>({});
   const [busy, setBusy] = useState(false);
@@ -410,6 +416,7 @@ export function PersonDetail({
   }
   useEffect(() => {
     setDetail(null);
+    setDock(null);
     setEditing(false);
     setAddingReminder(false);
     setAiTask("");
@@ -495,6 +502,7 @@ export function PersonDetail({
     <>
       <Sheet
         visible={Boolean(id)}
+        edgeToEdge={!editing && view === "card"}
         title={
           editing
             ? "Edit person"
@@ -532,265 +540,317 @@ export function PersonDetail({
                 Follow up
               </Button>
             </View>
+          ) : view === "card" ? (
+            <StoryDock action={dock} />
           ) : undefined
         }
       >
         {error && <Notice error>{error}</Notice>}
-        {p&&<View style={{display:!editing&&view==="card"?"flex":"none"}}><CardStory person={p} card={publishedCard} visible={!suspended&&!editing&&view==="card"}/></View>}
-        {!p ? (
-          <Empty
-            title="Loading this connection"
-            body="Bringing their story together."
-          />
-        ) : editing ? (
-          <>
-            {["name", "role", "company", "email", "phone", "city", "bio"].map(
-              (k) => (
-                <Field
-                  key={k}
-                  label={k[0].toUpperCase() + k.slice(1)}
-                  value={edit[k] ?? ""}
-                  onChangeText={(v) => setEdit({ ...edit, [k]: v })}
-                  multiline={k === "bio"}
-                />
-              ),
-            )}
-            <Label>RELATIONSHIP STAGE</Label>
-            <View
-              style={{
-                flexDirection: "row",
-                flexWrap: "wrap",
-                gap: 8,
-                marginTop: 14,
-              }}
-            >
-              {[
-                "new",
-                "active",
-                "promising",
-                "customer",
-                "partner",
-                "archived",
-              ].map((stage) => (
-                <Pill
-                  key={stage}
-                  active={edit.stage === stage}
-                  onPress={() => setEdit({ ...edit, stage })}
-                >
-                  {stage}
-                </Pill>
-              ))}
-            </View>
-          </>
-        ) : (
-          <>
-            {view === "card" && detail?.encounters[0] && (
+        {p && (
+          <View
+            style={{ display: !editing && view === "card" ? "flex" : "none" }}
+          >
+            <CardStory
+              immersive
+              onDockChange={setDock}
+              person={p}
+              card={publishedCard}
+              visible={!suspended && !editing && view === "card"}
+            />
+          </View>
+        )}
+        <View
+          style={
+            !editing && view === "card"
+              ? { paddingHorizontal: 22, paddingBottom: 28 }
+              : undefined
+          }
+        >
+          {!p ? (
+            <Empty
+              title="Loading this connection"
+              body="Bringing their story together."
+            />
+          ) : editing ? (
+            <>
+              {["name", "role", "company", "email", "phone", "city", "bio"].map(
+                (k) => (
+                  <Field
+                    key={k}
+                    label={k[0].toUpperCase() + k.slice(1)}
+                    value={edit[k] ?? ""}
+                    onChangeText={(v) => setEdit({ ...edit, [k]: v })}
+                    multiline={k === "bio"}
+                  />
+                ),
+              )}
+              <Label>RELATIONSHIP STAGE</Label>
               <View
                 style={{
-                  marginTop: 16,
-                  padding: 14,
-                  borderRadius: 14,
-                  backgroundColor: C.soft,
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  marginTop: 14,
                 }}
               >
-                <Text style={{ fontSize: 11, color: C.muted }}>
-                  LAST MET · {dateLabel(detail.encounters[0].occurredAt, true)}
-                </Text>
-                <Text style={{ fontSize: 13, color: C.ink, marginTop: 5 }}>
-                  {[
-                    detail.encounters[0].eventName,
-                    detail.encounters[0].location,
-                    detail.encounters[0].city,
-                    detail.encounters[0].countryCode,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </Text>
+                {[
+                  "new",
+                  "active",
+                  "promising",
+                  "customer",
+                  "partner",
+                  "archived",
+                ].map((stage) => (
+                  <Pill
+                    key={stage}
+                    active={edit.stage === stage}
+                    onPress={() => setEdit({ ...edit, stage })}
+                  >
+                    {stage}
+                  </Pill>
+                ))}
               </View>
-            )}
-            <View
-              style={{
-                flexDirection: "row",
-                gap: 8,
-                marginTop: 18,
-                marginBottom: 8,
-              }}
-            >
-              <Button
-                tone="secondary"
-                small
-                icon={
-                  view === "memory" ? "id-card-outline" : "calendar-outline"
-                }
-                style={{ flex: 1 }}
-                onPress={() => setView(view === "card" ? "memory" : "card")}
-              >
-                {view === "memory"
-                  ? "Back to card"
-                  : `Meeting memory · ${detail?.encounters.length ?? p.encounterCount ?? 0}`}
-              </Button>
-              <Button
-                tone="quiet"
-                small
-                icon="create-outline"
-                onPress={() => setEditing(true)}
-              >
-                Edit
-              </Button>
-            </View>
-            {view === "card" && (
-              <Button
-                tone="quiet"
-                small
-                icon="add-outline"
-                onPress={() => onCapture(p)}
-              >
-                Record a meeting
-              </Button>
-            )}
-            {view === "memory" && (
-              <>
-                <Section
-                  title="Promises & next steps"
-                  action="Add"
-                  onPress={() => setAddingReminder(true)}
-                >
-                  {detail?.commitments.length ? (
-                    detail.commitments.map((c) => (
-                      <Pressable
-                        key={c.id}
-                        onPress={() => void complete(c)}
-                        style={[
-                          s.row,
-                          {
-                            paddingVertical: 13,
-                            borderBottomWidth: 1,
-                            borderColor: C.line,
-                            alignItems: "flex-start",
-                          },
-                        ]}
-                      >
-                        <Icon
-                          name={
-                            c.status === "done"
-                              ? "checkmark-circle"
-                              : "ellipse-outline"
-                          }
-                          color={c.status === "done" ? C.teal : C.muted}
-                          size={22}
-                        />
-                        <View style={{ flex: 1 }}>
-                          <Body
-                            style={
-                              c.status === "done"
-                                ? {
-                                    textDecorationLine: "line-through",
-                                    color: C.muted,
-                                  }
-                                : undefined
-                            }
-                          >
-                            {c.text}
-                          </Body>
-                          <Text style={s.hint}>
-                            {c.status === "done"
-                              ? "Completed"
-                              : c.dueAt
-                                ? "Due " + dateLabel(c.dueAt)
-                                : "No date set"}
-                          </Text>
-                        </View>
-                      </Pressable>
-                    ))
-                  ) : (
-                    <Body muted>
-                      No open promises. A perfectly fine place to start.
-                    </Body>
-                  )}
-                </Section>
-                <Section title="Your meeting memory">
-                  {detail?.encounters.length ? (
-                    detail.encounters.map((e) => (
-                      <View key={e.id} style={[s.card, { marginBottom: 14 }]}>
-                        <View style={s.row}>
-                          <Label>{dateLabel(e.occurredAt, true)}</Label>
-                          <Icon
-                            name="location-outline"
-                            size={17}
-                            color={C.muted}
-                          />
-                        </View>
-                        <Text
-                          style={{
-                            fontSize: 16,
-                            color: C.ink,
-                            fontWeight: "600",
-                            marginTop: 10,
-                          }}
-                        >
-                          {e.eventName || e.location || e.meetingType}
-                        </Text>
-                        {e.eventName && e.location && (
-                          <Text style={s.hint}>
-                            {[e.location, e.city, e.countryCode]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </Text>
-                        )}
-                        {e.latitude != null && e.longitude != null && (
-                          <Button
-                            tone="quiet"
-                            small
-                            icon="map-outline"
-                            onPress={() =>
-                              void Linking.openURL(
-                                `https://www.google.com/maps/search/?api=1&query=${e.latitude},${e.longitude}`,
-                              ).catch(() => notify("Could not open Maps."))
-                            }
-                          >
-                            {e.latitude.toFixed(4)}, {e.longitude.toFixed(4)} ·
-                            Map
-                          </Button>
-                        )}
-                        <Body style={{ marginTop: 12 }}>
-                          {e.originalNote ||
-                            "No note was added for this meeting."}
+            </>
+          ) : (
+            <>
+              {view === "card" && (
+                <View style={{ marginTop: 24 }}>
+                  <Label>{p.company || "ABOUT"}</Label>
+                  <Body style={{ fontSize: 17, lineHeight: 26, marginTop: 10 }}>
+                    {publishedCard?.bio || p.bio}
+                  </Body>
+                  {publishedCard?.panels
+                    ?.filter(
+                      (x) => x.panelType === "offer" || x.panelType === "proof",
+                    )
+                    .map((x) => (
+                      <View key={x.panelType} style={{ marginTop: 18 }}>
+                        <Label>
+                          {x.panelType === "offer"
+                            ? "WHAT WE CAN DO TOGETHER"
+                            : "HOW WE WORK"}
+                        </Label>
+                        <Body muted style={{ marginTop: 7 }}>
+                          {x.body}
                         </Body>
-                        {e.recap && (
-                          <View
+                      </View>
+                    ))}
+                  <Text style={{ fontSize: 12, color: C.muted, marginTop: 18 }}>
+                    {[p.role, p.city, p.countryCode]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </Text>
+                </View>
+              )}
+              {view === "card" && detail?.encounters[0] && (
+                <View
+                  style={{
+                    marginTop: 16,
+                    padding: 14,
+                    borderRadius: 14,
+                    backgroundColor: C.soft,
+                  }}
+                >
+                  <Text style={{ fontSize: 11, color: C.muted }}>
+                    LAST MET ·{" "}
+                    {dateLabel(detail.encounters[0].occurredAt, true)}
+                  </Text>
+                  <Text style={{ fontSize: 13, color: C.ink, marginTop: 5 }}>
+                    {[
+                      detail.encounters[0].eventName,
+                      detail.encounters[0].location,
+                      detail.encounters[0].city,
+                      detail.encounters[0].countryCode,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </Text>
+                </View>
+              )}
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: 8,
+                  marginTop: 18,
+                  marginBottom: 8,
+                }}
+              >
+                <Button
+                  tone="secondary"
+                  small
+                  icon={
+                    view === "memory" ? "id-card-outline" : "calendar-outline"
+                  }
+                  style={{ flex: 1 }}
+                  onPress={() => setView(view === "card" ? "memory" : "card")}
+                >
+                  {view === "memory"
+                    ? "Back to card"
+                    : `Meeting memory · ${detail?.encounters.length ?? p.encounterCount ?? 0}`}
+                </Button>
+                <Button
+                  tone="quiet"
+                  small
+                  icon="create-outline"
+                  onPress={() => setEditing(true)}
+                >
+                  Edit
+                </Button>
+              </View>
+              {view === "card" && (
+                <Button
+                  tone="quiet"
+                  small
+                  icon="add-outline"
+                  onPress={() => onCapture(p)}
+                >
+                  Record a meeting
+                </Button>
+              )}
+              {view === "memory" && (
+                <>
+                  <Section
+                    title="Promises & next steps"
+                    action="Add"
+                    onPress={() => setAddingReminder(true)}
+                  >
+                    {detail?.commitments.length ? (
+                      detail.commitments.map((c) => (
+                        <Pressable
+                          key={c.id}
+                          onPress={() => void complete(c)}
+                          style={[
+                            s.row,
+                            {
+                              paddingVertical: 13,
+                              borderBottomWidth: 1,
+                              borderColor: C.line,
+                              alignItems: "flex-start",
+                            },
+                          ]}
+                        >
+                          <Icon
+                            name={
+                              c.status === "done"
+                                ? "checkmark-circle"
+                                : "ellipse-outline"
+                            }
+                            color={c.status === "done" ? C.teal : C.muted}
+                            size={22}
+                          />
+                          <View style={{ flex: 1 }}>
+                            <Body
+                              style={
+                                c.status === "done"
+                                  ? {
+                                      textDecorationLine: "line-through",
+                                      color: C.muted,
+                                    }
+                                  : undefined
+                              }
+                            >
+                              {c.text}
+                            </Body>
+                            <Text style={s.hint}>
+                              {c.status === "done"
+                                ? "Completed"
+                                : c.dueAt
+                                  ? "Due " + dateLabel(c.dueAt)
+                                  : "No date set"}
+                            </Text>
+                          </View>
+                        </Pressable>
+                      ))
+                    ) : (
+                      <Body muted>
+                        No open promises. A perfectly fine place to start.
+                      </Body>
+                    )}
+                  </Section>
+                  <Section title="Your meeting memory">
+                    {detail?.encounters.length ? (
+                      detail.encounters.map((e) => (
+                        <View key={e.id} style={[s.card, { marginBottom: 14 }]}>
+                          <View style={s.row}>
+                            <Label>{dateLabel(e.occurredAt, true)}</Label>
+                            <Icon
+                              name="location-outline"
+                              size={17}
+                              color={C.muted}
+                            />
+                          </View>
+                          <Text
                             style={{
-                              marginTop: 14,
-                              padding: 13,
-                              backgroundColor: C.soft,
-                              borderRadius: 12,
+                              fontSize: 16,
+                              color: C.ink,
+                              fontWeight: "600",
+                              marginTop: 10,
                             }}
                           >
-                            <Label>REVIEWED RECAP</Label>
-                            <Body style={{ fontSize: 13, marginTop: 6 }}>
-                              {e.recap}
-                            </Body>
-                          </View>
-                        )}
-                        <Text style={s.hint}>{e.exchangeType}</Text>
-                      </View>
-                    ))
-                  ) : (
-                    <Body muted>
-                      The next conversation can be the first one you remember
-                      here.
-                    </Body>
+                            {e.eventName || e.location || e.meetingType}
+                          </Text>
+                          {e.eventName && e.location && (
+                            <Text style={s.hint}>
+                              {[e.location, e.city, e.countryCode]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </Text>
+                          )}
+                          {e.latitude != null && e.longitude != null && (
+                            <Button
+                              tone="quiet"
+                              small
+                              icon="map-outline"
+                              onPress={() =>
+                                void Linking.openURL(
+                                  `https://www.google.com/maps/search/?api=1&query=${e.latitude},${e.longitude}`,
+                                ).catch(() => notify("Could not open Maps."))
+                              }
+                            >
+                              {e.latitude.toFixed(4)}, {e.longitude.toFixed(4)}{" "}
+                              · Map
+                            </Button>
+                          )}
+                          <Body style={{ marginTop: 12 }}>
+                            {e.originalNote ||
+                              "No note was added for this meeting."}
+                          </Body>
+                          {e.recap && (
+                            <View
+                              style={{
+                                marginTop: 14,
+                                padding: 13,
+                                backgroundColor: C.soft,
+                                borderRadius: 12,
+                              }}
+                            >
+                              <Label>REVIEWED RECAP</Label>
+                              <Body style={{ fontSize: 13, marginTop: 6 }}>
+                                {e.recap}
+                              </Body>
+                            </View>
+                          )}
+                          <Text style={s.hint}>{e.exchangeType}</Text>
+                        </View>
+                      ))
+                    ) : (
+                      <Body muted>
+                        The next conversation can be the first one you remember
+                        here.
+                      </Body>
+                    )}
+                  </Section>
+                  {p.createdAt && (
+                    <Text style={[s.hint, { marginTop: 24 }]}>
+                      Added {dateLabel(p.createdAt)} · Only you can see your
+                      notes.
+                    </Text>
                   )}
-                </Section>
-                {p.createdAt && (
-                  <Text style={[s.hint, { marginTop: 24 }]}>
-                    Added {dateLabel(p.createdAt)} · Only you can see your
-                    notes.
-                  </Text>
-                )}
-              </>
-            )}
-          </>
-        )}
+                </>
+              )}
+            </>
+          )}
+        </View>
       </Sheet>
       <Sheet
         visible={addingReminder}

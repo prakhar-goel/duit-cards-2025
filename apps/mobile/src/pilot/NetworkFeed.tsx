@@ -24,7 +24,7 @@ export function NetworkFeed({
           person: p,
           intent: f.intent || "improve",
           reason: f.reason,
-          focus: f.focus || p.bio || "",
+          focus: p.bio || f.focus || "",
           label:
             f.intent === "grow"
               ? "Grow your business"
@@ -33,7 +33,7 @@ export function NetworkFeed({
       });
     const recent = data.people
       .filter((p) => p.businessCardUrl && !seen.has(p.id))
-      .slice(0, 6)
+      .slice(0, 24)
       .map((p) => ({
         person: p,
         intent: "network",
@@ -41,7 +41,19 @@ export function NetworkFeed({
         focus: p.bio || "",
         label: "From your network",
       }));
-    return [...matches, ...recent];
+    return [...matches, ...recent].sort(
+      (a, b) =>
+        Number(
+          Boolean(
+            b.person.photoUrl && b.person.businessCardUrl && b.person.cardSlug,
+          ),
+        ) -
+        Number(
+          Boolean(
+            a.person.photoUrl && a.person.businessCardUrl && a.person.cardSlug,
+          ),
+        ),
+    );
   }, [data.people, data.feed]);
   const visible = items.filter(
     (i) =>
@@ -86,7 +98,10 @@ export function NetworkFeed({
           .filter((e) => e.personId === p.id)
           .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0];
         return (
-          <View
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${p.name}’s card`}
+            onPress={() => onPerson(p.id)}
             key={p.id}
             style={{
               backgroundColor: C.white,
@@ -131,7 +146,6 @@ export function NetworkFeed({
               company={p.company}
               role={p.role}
               height={205}
-              onPress={() => onPerson(p.id)}
               style={{ borderRadius: 0, borderWidth: 0 }}
             />
             <View style={{ padding: 18 }}>
@@ -179,7 +193,7 @@ export function NetworkFeed({
                 </View>
               )}
             </View>
-          </View>
+          </Pressable>
         );
       })}
       {!visible.length && (

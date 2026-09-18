@@ -191,3 +191,23 @@ You may use stock images etc from the internet apart from creating your own. You
 ## 2026-09-18T03:05:24+05:30
 
 whether you use cloudflare or ngrok try to keep the server url constant, with minimal changes. Since some testers are testing it over the internet. Changing server url repeatedly is irritating them. 
+
+
+## 2026-09-18T09:32:24+05:30
+
+- On the list view, make the entire card clickable, right now only business card is clickable.
+- Add more cards and profiles. Leverage stock photos and videos from pexels and other free websites. Make the business profiles richer. The first set of profiles (15-20 )in the list view should be full, not empty with missing profile mage, business cards etc.
+- When inside the card details view, make the carousel fuller. It should be displayed end to end on the screen, like the old app. Infact take cues from the attached screenshots from the old app. The bottom bar is fixed position and the CTAs change with the carousel slides, making the whole thing very attractive and intuitive. Think of engaging instagram ads. They are full view screen and also have similar styled CTA buttons at the bottom.
+- Make a lead gen form, instagram style. When one of the CTA button is pressed, it opens up an in-app, lead gen form, with limited fields and many of them pre-filled based on my information (if the person viewing the card is logged in and system has its information). It should not have any lag.
+- Be creative in designing the bottom bar with CTA. It should be aligned to the business profile image for that carousel slide and should be fixed in nature, if the person scrolls up or down.
+- Use the area below the carousel, to explain the person and the business. Use that real estate judiciously so that I can connect and understand the person and business.
+- Use real texts for persons and businesses in the samples. Dont mention fake, demo etc. I told you, invent real looking profiles and businesses from various domains and verticals.
+- The text on the list view outsode should be unique across the users/cards and alighed to their profiles. Right now its just a canned text.
+- So overall, make the app look like I have been using it for several months, with absolutely real looking profiles.
+
+I have to also deploy this project, such that I am no longer dependent on keeping my macbook open all the time. You have access to render, vercel, google cloud platform etc. You have deployed dutyexchange, crm, mfscreener etc, so you have the full context of my system. Use chrome if the need be, ask me questions if you need. Update the github repo (do commits, pushes etc. Use multiple commits, based on different features you are building instead of one large commit. Manage branches and PRs and do appropriate deployments, connections etc). Use it to deploy this project (for lower environment, below production). Give me the access to the admin dashboard too, where as owner of Duit cards platform, I can get the overview of engagement happening on Duit app.
+
+
+## 2026-09-18T09:37:43+05:30
+
+how about using gcp? compare gcp vs render. If the need be, use render's free tier for staging. However do evaluate gcp too (I have account there and billing is enabled).

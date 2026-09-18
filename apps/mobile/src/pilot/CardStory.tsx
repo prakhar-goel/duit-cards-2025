@@ -29,6 +29,8 @@ import {
 } from "./ui";
 import { getServer, mediaUrl, mediaHeaders, shareUrl } from "./api";
 import { safeUrl } from "./domain";
+import { LeadForm } from "./LeadForm";
+import { post } from "./api";
 import type { Card, Person } from "./types";
 
 export function CardArtwork({
@@ -138,14 +140,18 @@ export function WalletTile({
   width?: number;
 }) {
   return (
-    <View style={{ width: width ?? "100%", marginBottom: 20 }}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${person.name}’s card`}
+      onPress={onPress}
+      style={{ width: width ?? "100%", marginBottom: 20 }}
+    >
       <CardArtwork
         uri={person.businessCardUrl}
         name={person.name}
         company={person.company}
         role={person.role}
         height={width ? width * 0.65 : undefined}
-        onPress={onPress}
       />
       <View
         style={{
@@ -173,7 +179,7 @@ export function WalletTile({
         </View>
         <Icon name="arrow-forward-outline" size={16} color={C.muted} />
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -297,6 +303,8 @@ export function CardStory({
   onCTA,
   ctaLabel,
   visible = true,
+  immersive = false,
+  onDockChange,
 }: {
   card?: Card | null;
   person?: Person | null;
@@ -304,8 +312,15 @@ export function CardStory({
   onCTA?: () => void;
   ctaLabel?: string;
   visible?: boolean;
+  immersive?: boolean;
+  onDockChange?: (action: StoryAction) => void;
 }) {
   const [page, setPage] = useState(0);
+  const [enquiry, setEnquiry] = useState(false);
+  const { height: screenHeight } = useWindowDimensions();
+  const imageHeight = immersive
+    ? Math.max(360, Math.min(740, screenHeight * 0.67))
+    : 350;
   const [width, setWidth] = useState(340);
   const [original, setOriginal] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -334,12 +349,18 @@ export function CardStory({
       url: portrait,
       title: name,
       caption: [role, company].filter(Boolean).join(" · "),
+      ctaLabel: "Let’s connect",
+      ctaPrompt: `Meet ${name.split(" ")[0]} · ${company}`,
+      ctaColor: card?.theme?.color,
     },
     {
       kind: "card",
       url: originalUri,
       title: company || name,
       caption: "Business card",
+      ctaLabel: "Work with us",
+      ctaPrompt: card?.subtitle || company,
+      ctaColor: card?.theme?.color,
     },
     ...(back
       ? [
@@ -351,14 +372,15 @@ export function CardStory({
           },
         ]
       : []),
-    ...gallery
-      .slice(0, 4)
-      .map((m) => ({
-        kind: m.type,
-        url: m.url,
-        title: m.title || company,
-        caption: m.caption || hook,
-      })),
+    ...gallery.slice(0, 4).map((m) => ({
+      kind: m.type,
+      url: m.url,
+      title: m.title || company,
+      caption: m.caption || hook,
+      ctaLabel: "ctaLabel" in m ? (m.ctaLabel as string) : undefined,
+      ctaPrompt: "ctaPrompt" in m ? (m.ctaPrompt as string) : undefined,
+      ctaColor: "ctaColor" in m ? (m.ctaColor as string) : undefined,
+    })),
   ];
   const storyId = person?.id || card?.id;
   useEffect(() => {
@@ -376,7 +398,26 @@ export function CardStory({
     setPage(next);
     scroll.current?.scrollTo({ x: next * width, animated: true });
   };
-  const cta = ctaLabel || card?.ctaLabel || "Start a conversation";
+  const current = slides[Math.min(page, slides.length - 1)];
+  const cta =
+    current?.ctaLabel || ctaLabel || card?.ctaLabel || "Start a conversation";
+  const prompt = current?.ctaPrompt || current?.caption || company;
+  const color = /^#[0-9a-f]{6}$/i.test(
+    current?.ctaColor || card?.theme?.color || "",
+  )
+    ? (current?.ctaColor || card?.theme?.color)!
+    : C.teal;
+  useEffect(() => {
+    onDockChange?.({ label: cta, prompt, color, act: () => void act() });
+  }, [page, card, person, ctaLabel, onDockChange]);
+  useEffect(() => {
+    if (card?.slug && visible)
+      void post(`/public/cards/${encodeURIComponent(card.slug)}/events`, {
+        type: "viewed",
+        source: "android-card",
+        eventKey: `view:${card.id}:${Date.now()}`,
+      }).catch(() => {});
+  }, [card?.id]);
   const canAct = Boolean(
     onCTA ||
     card?.isPublished ||
@@ -389,6 +430,13 @@ export function CardStory({
     setError("");
     if (onCTA) {
       onCTA();
+      return;
+    }
+    if (card?.slug && (card.isPublished || card.publicUrl)) {
+      setEnquiry(true);
+      void post(`/public/cards/${encodeURIComponent(card.slug)}/cta`, {
+        source: "android-card",
+      }).catch(() => {});
       return;
     }
     let destination: string | undefined;
@@ -438,14 +486,18 @@ export function CardStory({
         onMomentumScrollEnd={(e) =>
           setPage(Math.round(e.nativeEvent.contentOffset.x / width))
         }
-        style={{ height: 350, borderRadius: 20, backgroundColor: C.soft }}
+        style={{
+          height: imageHeight,
+          borderRadius: immersive ? 0 : 20,
+          backgroundColor: "#102822",
+        }}
       >
         {slides.map((slide, index) => (
           <View
             key={index}
             style={{
               width,
-              height: 350,
+              height: imageHeight,
               overflow: "hidden",
               justifyContent: "center",
             }}
@@ -462,9 +514,13 @@ export function CardStory({
                 name={name}
                 company={company}
                 role={role}
-                height={350}
+                height={imageHeight}
                 onPress={slide.url ? () => setOriginal(slide.url!) : undefined}
-                style={{ borderWidth: 0, borderRadius: 0 }}
+                style={{
+                  borderWidth: 0,
+                  borderRadius: 0,
+                  backgroundColor: "#102822",
+                }}
               />
             ) : slide.url ? (
               <RemoteImage
@@ -483,46 +539,56 @@ export function CardStory({
           </View>
         ))}
       </ScrollView>
-      <View style={{ flexDirection: "row", gap: 5, marginTop: 12 }}>
-        {slides.map((slide, index) => (
-          <Pressable
-            key={index}
-            accessibilityRole="tab"
-            accessibilityLabel={`Slide ${index + 1}: ${slide.title}`}
-            accessibilityState={{ selected: page === index }}
-            onPress={() => move(index)}
-            style={{ flex: 1, paddingVertical: 8 }}
-          >
-            <View
-              style={{
-                height: 3,
-                borderRadius: 4,
-                backgroundColor: page === index ? C.teal : C.line,
-              }}
-            />
-          </Pressable>
-        ))}
-      </View>
-      <View style={[s.row, { marginTop: 4, alignItems: "flex-start" }]}>
-        <View style={{ flex: 1 }}>
-          <Title size={23}>{slides[page]?.title}</Title>
-          <Body muted style={{ fontSize: 13, lineHeight: 20, marginTop: 6 }}>
-            {slides[page]?.caption}
-          </Body>
+      <View style={{ paddingHorizontal: immersive ? 22 : 0 }}>
+        <View style={{ flexDirection: "row", gap: 5, marginTop: 12 }}>
+          {slides.map((slide, index) => (
+            <Pressable
+              key={index}
+              accessibilityRole="tab"
+              accessibilityLabel={`Slide ${index + 1}: ${slide.title}`}
+              accessibilityState={{ selected: page === index }}
+              onPress={() => move(index)}
+              style={{ flex: 1, paddingVertical: 8 }}
+            >
+              <View
+                style={{
+                  height: 3,
+                  borderRadius: 4,
+                  backgroundColor: page === index ? C.teal : C.line,
+                }}
+              />
+            </Pressable>
+          ))}
         </View>
-        <Text style={{ fontSize: 11, color: C.muted, marginTop: 7 }}>
-          {page + 1} / {slides.length}
-        </Text>
+        <View style={[s.row, { marginTop: 4, alignItems: "flex-start" }]}>
+          <View style={{ flex: 1 }}>
+            <Title size={23}>{slides[page]?.title}</Title>
+            <Body muted style={{ fontSize: 13, lineHeight: 20, marginTop: 6 }}>
+              {slides[page]?.caption}
+            </Body>
+          </View>
+          <Text style={{ fontSize: 11, color: C.muted, marginTop: 7 }}>
+            {page + 1} / {slides.length}
+          </Text>
+        </View>
+        {error && <Notice error>{error}</Notice>}
+        {canAct && !onDockChange && (
+          <Button
+            onPress={() => void act()}
+            icon="arrow-forward-outline"
+            style={{ marginTop: 18 }}
+          >
+            {cta}
+          </Button>
+        )}
       </View>
-      {error && <Notice error>{error}</Notice>}
-      {canAct && (
-        <Button
-          onPress={() => void act()}
-          icon="arrow-forward-outline"
-          style={{ marginTop: 18 }}
-        >
-          {cta}
-        </Button>
+      {enquiry && card && (
+        <LeadForm
+          card={card}
+          label={cta}
+          context={current?.title || company}
+          onClose={() => setEnquiry(false)}
+        />
       )}
       {original && (
         <OriginalCard
@@ -531,6 +597,58 @@ export function CardStory({
           onClose={() => setOriginal(null)}
         />
       )}
+    </View>
+  );
+}
+
+export type StoryAction = {
+  label: string;
+  prompt: string;
+  color: string;
+  act: () => void;
+};
+export function StoryDock({ action }: { action: StoryAction | null }) {
+  if (!action) return null;
+  return (
+    <View
+      style={{
+        backgroundColor: action.color,
+        paddingVertical: 14,
+        paddingHorizontal: 18,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 16,
+      }}
+    >
+      <Text
+        numberOfLines={2}
+        style={{ color: "#fff", fontSize: 13, lineHeight: 19, flex: 1 }}
+      >
+        {action.prompt}
+      </Text>
+      <Pressable
+        accessibilityRole="button"
+        onPress={action.act}
+        style={({ pressed }) => ({
+          backgroundColor: "#fff",
+          borderRadius: 12,
+          paddingHorizontal: 18,
+          paddingVertical: 15,
+          maxWidth: "53%",
+          opacity: pressed ? 0.8 : 1,
+        })}
+      >
+        <Text
+          style={{
+            color: "#153D35",
+            fontWeight: "700",
+            fontSize: 14,
+            textAlign: "center",
+          }}
+        >
+          {action.label} ↗
+        </Text>
+      </Pressable>
     </View>
   );
 }
