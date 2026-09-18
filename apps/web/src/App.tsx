@@ -234,7 +234,7 @@ function Landing() {
       </nav>
       <main>
         <Tag tone="lime">
-          <span className="status-dot" /> DUIT 2026 · PRIVATE PILOT
+          <span className="status-dot" /> DUIT 2026 · PRIVATE WORKSPACE
         </Tag>
         <h1>
           Good meetings
@@ -351,7 +351,7 @@ function DownloadPage() {
         <span className="large-symbol">
           <Download size={32} />
         </span>
-        <Tag tone="lime">ANDROID · PRIVATE PILOT</Tag>
+        <Tag tone="lime">ANDROID · PRIVATE WORKSPACE</Tag>
         <h1>
           Your next meeting,
           <br />
@@ -1523,7 +1523,7 @@ function AdminLogin({ onLogin }: { onLogin: (a: Row) => void }) {
             <Shield size={28} />
           </span>
           <div>
-            <div className="eyebrow">PRIVATE PILOT</div>
+            <div className="eyebrow">PRIVATE WORKSPACE</div>
             <h2>Welcome to the workspace.</h2>
             <p>Sign in with your administrator account.</p>
           </div>

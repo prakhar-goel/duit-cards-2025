@@ -309,7 +309,7 @@ export function AuthScreen() {
               lineHeight: 18,
             }}
           >
-            PRIVATE PILOT · 2026{"\n"}Your notes stay private. Your business
+            DUIT · 2026{"\n"}Your notes stay private. Your business
             card travels.
           </Text>
         </ScrollView>

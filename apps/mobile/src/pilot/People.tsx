@@ -231,7 +231,7 @@ export function PeopleScreen({
           Ask DUIT to find a fit
         </Button>
       )}
-      {error && <Notice error>{error}</Notice>}
+      {!!error && <Notice error>{error}</Notice>}
       {searchResults !== null ? (
         <>
           <Label>{searchResults.length} RESULTS FROM YOUR PRIVATE NOTES</Label>
@@ -545,7 +545,7 @@ export function PersonDetail({
           ) : undefined
         }
       >
-        {error && <Notice error>{error}</Notice>}
+        {!!error && <Notice error>{error}</Notice>}
         {p && (
           <View
             style={{ display: !editing && view === "card" ? "flex" : "none" }}
@@ -621,7 +621,7 @@ export function PersonDetail({
                   </Body>
                   {publishedCard?.panels
                     ?.filter(
-                      (x) => x.panelType === "offer" || x.panelType === "proof",
+                      (x) => (x.panelType === "offer" || x.panelType === "proof") && x.body.trim() !== (publishedCard?.bio || p.bio || "").trim(),
                     )
                     .map((x) => (
                       <View key={x.panelType} style={{ marginTop: 18 }}>

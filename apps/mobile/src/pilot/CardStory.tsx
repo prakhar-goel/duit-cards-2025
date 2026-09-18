@@ -280,7 +280,7 @@ function StoryVideo({ uri }: { uri: string }) {
         allowsFullscreen
         style={{ width: "100%", height: "100%" }}
       />
-      {error && (
+      {!!error && (
         <Text
           style={{
             position: "absolute",
@@ -577,7 +577,7 @@ export function CardStory({
             {page + 1} / {slides.length}
           </Text>
         </View>
-        {error && <Notice error>{error}</Notice>}
+        {!!error && <Notice error>{error}</Notice>}
         {canAct && !onDockChange && (
           <Button
             onPress={() => void act()}
