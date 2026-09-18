@@ -1,5 +1,5 @@
 {
-  "retrievedAt": "2026-09-18T05:48:43.781Z",
+  "retrievedAt": "2026-09-18T05:57:54.079Z",
   "businesses": [
     {
       "key": "bluetokai",
@@ -89,6 +89,10 @@
       "source": "https://cdn.shopify.com/s/files/1/0738/1409/files/MixedBag__Front_c9b610f1-ce4a-4b53-8b30-f6ca758eb6bb.jpg?v=1717566490"
     },
     {
+      "file": "brands/bluetokai-third.png",
+      "source": "https://cdn.shopify.com/s/files/1/0738/1409/files/Creative1_10.jpg?v=1705469195"
+    },
+    {
       "file": "brands/bombay-logo.png",
       "source": "https://bombaysweetshop.com/cdn/shop/files/LOGO_5_298c1eb6-e72c-4d75-9d4d-4677ae52c2be.png?v=1672314252"
     },
@@ -101,6 +105,10 @@
       "source": "https://bombaysweetshop.com/cdn/shop/files/Choco_Butterscotch_Barks_200g_1.jpg?v=1783294897&width=1000"
     },
     {
+      "file": "brands/bombay-third.png",
+      "source": "https://bombaysweetshop.com/cdn/shop/files/DSC05303_1_03cd99ae-8f6b-45ac-a77c-8eecb0cfc79e.jpg?v=1788478758&width=1000"
+    },
+    {
       "file": "brands/nicobar-logo.png",
       "source": "https://www.nicobar.com/cdn/shop/files/logo_bigger.png?v=1686549350"
     },
@@ -110,7 +118,11 @@
     },
     {
       "file": "brands/nicobar-detail.png",
-      "source": "https://cdn.shopify.com/s/files/1/0270/5129/4854/files/giftingconceirge.png"
+      "source": "https://cdn.instant.so/sites/Kjw2A5cqqTRwFAan/assets/mionMkyQGsRTCuSD/guided-by-stars-product-shot.png"
+    },
+    {
+      "file": "brands/nicobar-third.png",
+      "source": "https://cdn.instant.so/sites/Kjw2A5cqqTRwFAan/assets/wYLWIhTRNLaiLVh5/model-in-magenta-kaftan-set.png"
     },
     {
       "file": "stock/solar.jpg",
