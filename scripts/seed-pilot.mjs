@@ -2,6 +2,7 @@
 // Repeatable local-only demo fixtures. All business activity is fictional.
 import {originalBrands} from './network-expansion-data.mjs';
 import fs from 'node:fs/promises';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -123,7 +124,7 @@ const sessions=new Map(),cards=new Map();
 async function login(owner){
  const email=owner.email||`${owner.key}@${originalBrands.find(b=>b.key===owner.key)?.domain||owner.key}.example`;
  let credential=credentials.accounts.find(account=>account.email===email);
- if(!credential){credential={email,password:seedPassword,label:owner.name};credentials.accounts.push(credential);await fs.writeFile(credentialsPath,JSON.stringify(credentials,null,2)+'\n',{mode:0o600});await fs.chmod(credentialsPath,0o600);}
+ if(!credential){credential={email,password:owner.key==='operator'?crypto.randomBytes(24).toString('base64url'):seedPassword,label:owner.name};credentials.accounts.push(credential);await fs.writeFile(credentialsPath,JSON.stringify(credentials,null,2)+'\n',{mode:0o600});await fs.chmod(credentialsPath,0o600);}
  const existing=(await query('SELECT id,profile FROM users WHERE email=$1',[email])).rows[0];
  const result=await api(`/auth/${existing?'login':'signup'}`,{method:'POST',body:{email,password:credential.password,...(!existing?{displayName:owner.name,inviteCode:process.env.PILOT_INVITE_CODE}: {})}});
  sessions.set(owner.key,{...result,email,seeded:existing?.profile?.seedVersion===version});return sessions.get(owner.key);

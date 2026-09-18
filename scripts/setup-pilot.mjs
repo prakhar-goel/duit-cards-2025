@@ -113,11 +113,12 @@ async function main() {
     const credentialFile = path.join(root, '.local/credentials.json');
     if (!existing) {
       const bcrypt = (await import('bcryptjs')).default;
-      await query("INSERT INTO users(email,password_hash,display_name,role,profile) VALUES($1,$2,'Pilot operator','admin',$3)", [email, await bcrypt.hash(env.PILOT_SEED_PASSWORD, 12), { fullName: 'Pilot operator' }]);
+      const operatorPassword = crypto.randomBytes(24).toString('base64url');
+      await query("INSERT INTO users(email,password_hash,display_name,role,profile) VALUES($1,$2,'Pilot operator','admin',$3)", [email, await bcrypt.hash(operatorPassword, 12), { fullName: 'Pilot operator' }]);
       let credentials = { note: 'Private local pilot accounts. Do not commit or share this file.', accounts: [] };
       try { credentials = JSON.parse(await fs.readFile(credentialFile, 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
       credentials.accounts ||= [];
-      if (!credentials.accounts.some(account => account.email === email)) credentials.accounts.push({ email, password: env.PILOT_SEED_PASSWORD, label: 'Pilot operator' });
+      if (!credentials.accounts.some(account => account.email === email)) credentials.accounts.push({ email, password: operatorPassword, label: 'Pilot operator' });
       await privateWrite(credentialFile, JSON.stringify(credentials, null, 2) + '\n');
       console.log('Created the first local operator; credentials were written privately.');
     } else {
