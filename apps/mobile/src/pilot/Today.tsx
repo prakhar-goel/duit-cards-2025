@@ -138,7 +138,7 @@ export function TodayScreen({
             <View style={{ marginTop: 28, marginBottom: 18 }}>
               <Label>GOOD TO SEE YOU, {firstName(name).toUpperCase()}</Label>
             </View>
-            {leads.length > 0 && (
+            {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Open enquiries"
@@ -155,11 +155,11 @@ export function TodayScreen({
               >
                 <Icon name="chatbubble-ellipses-outline" size={20} />
                 <Text style={{ flex: 1, fontSize: 13, color: C.ink }}>
-                  {leads.length} new enquiries
+                  Enquiries{leads.length ? ` · ${leads.length} new` : ""}
                 </Text>
                 <Icon name="arrow-forward-outline" size={18} />
               </Pressable>
-            )}
+            }
           </>
         }
         footer={
@@ -341,7 +341,7 @@ export function TodayScreen({
       </Sheet>
       <Sheet
         visible={leadInbox}
-        title="A little interest. A new beginning."
+        title="Enquiries"
         subtitle={`${data.leads.length} enquiries from your shared cards.`}
         onClose={() => {
           if (leadId) setLeadId(null);
@@ -403,13 +403,15 @@ export function TodayScreen({
               </Button>
             )}
             <Button tone="quiet" onPress={() => setLeadId(null)}>
-              Back to all leads
+              Back to enquiries
             </Button>
           </>
         ) : data.leads.length ? (
           data.leads.map((l) => (
             <Pressable
               key={l.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Enquiry from ${l.name || "a visitor"}`}
               onPress={() => setLeadId(l.id)}
               style={[s.card, { marginBottom: 12 }]}
             >

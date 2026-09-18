@@ -158,7 +158,7 @@ export function LeadForm({
             }}
           />
           <View
-            style={{ position: "absolute", bottom: 105, left: 24, right: 24 }}
+            style={{ position: "absolute", bottom: 28, left: 22, right: 22 }}
           >
             <Text
               style={{
@@ -178,16 +178,8 @@ export function LeadForm({
       )}
       <View
         style={{
-          marginTop: !sent && productImage ? -80 : 0,
-          marginHorizontal: 12,
-          padding: 20,
+          padding: 22,
           backgroundColor: C.bg,
-          borderRadius: 26,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -5 },
-          shadowOpacity: 0.18,
-          shadowRadius: 18,
-          elevation: 8,
         }}
       >
         <View

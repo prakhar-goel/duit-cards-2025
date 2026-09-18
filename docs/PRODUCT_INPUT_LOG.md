@@ -264,3 +264,19 @@ The CTA bar is still weird. Why is there so much padding on the button? why isnt
 ## 2026-09-18T12:47:10.700057+05:30
 
 remove that checkbox at the bottom before send enquiry button is enabled. No need for that.
+
+
+## 2026-09-18T13:17:17+05:30
+
+will meera see the query submission? Where will I see the queries/forms filled for my business?
+
+The third slide should start showing me the business profile. If a business card has two sides, show them both on 2nd slide. Only 20% profiles should have 2nd page of business card.
+
+In the query form, dont show that oval box below the hero image. Use the full width with appropriate paddings and minimize the shadow effects. Make things uncomplicated and simple.
+
+The CTA bar text and button text should be same font size
+
+What are you showing below "How We Work" heading? I only see address. How is address connected to the heading. Fix that layout. 
+Remove the edit button from the received card. How can I edit someone else's card? Rethink the Meeting memory and record a meeting buttons. They are too complex. And not looking beautiful. Make that flow simpler. 
+
+The CTA button text should be small, not in 2 lines. 1-2 words only.

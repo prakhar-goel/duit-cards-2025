@@ -33,6 +33,7 @@ import {
   Title,
 } from "./ui";
 import { getServer, mediaUrl, mediaHeaders, shareUrl } from "./api";
+import { shortCtaLabel } from "./storyLabels";
 import { safeUrl } from "./domain";
 import { LeadForm } from "./LeadForm";
 import { post } from "./api";
@@ -385,21 +386,11 @@ export function CardStory({
       kind: "card",
       url: originalUri,
       title: company || name,
-      caption: "Business card",
-      ctaLabel: "Work with us",
+      caption: back ? "Business card · front & back" : "Business card",
+      ctaLabel: "Enquire",
       ctaPrompt: card?.subtitle || company,
       ctaColor: card?.theme?.color,
     },
-    ...(back
-      ? [
-          {
-            kind: "card",
-            url: back,
-            title: company || name,
-            caption: "Business card · back",
-          },
-        ]
-      : []),
     ...gallery
       .filter((m) => !!m.url?.trim())
       .slice(0, 4)
@@ -415,8 +406,7 @@ export function CardStory({
   ];
   const storyId = person?.id || card?.id;
   useEffect(() => {
-    const next =
-      initialPage === "Person" ? 0 : initialPage === "Card" ? 1 : back ? 3 : 2;
+    const next = initialPage === "Person" ? 0 : initialPage === "Card" ? 1 : 2;
     setPage(next);
     scroll.current?.scrollTo({ x: next * width, animated: false });
     setError("");
@@ -430,8 +420,9 @@ export function CardStory({
     scroll.current?.scrollTo({ x: next * width, animated: true });
   };
   const current = slides[Math.min(page, slides.length - 1)];
-  const cta =
-    current?.ctaLabel || ctaLabel || card?.ctaLabel || "Start a conversation";
+  const cta = shortCtaLabel(
+    current?.ctaLabel || ctaLabel || card?.ctaLabel || "Connect",
+  );
   const prompt = current?.ctaPrompt || current?.caption || company;
   const color = /^#[0-9a-f]{6}$/i.test(
     current?.ctaColor || card?.theme?.color || "",
@@ -562,21 +553,32 @@ export function CardStory({
                     <View />
                   )
                 ) : slide.kind === "card" ? (
-                  <CardArtwork
-                    uri={slide.url}
-                    name={name}
-                    company={company}
-                    role={role}
-                    height={imageHeight}
-                    onPress={
-                      slide.url ? () => setOriginal(slide.url!) : undefined
-                    }
-                    style={{
-                      borderWidth: 0,
-                      borderRadius: 0,
-                      backgroundColor: "#102822",
-                    }}
-                  />
+                  <View style={{ paddingBottom: 115, gap: 12 }}>
+                    {[slide.url, back].filter(Boolean).map((uri, side) => (
+                      <CardArtwork
+                        key={uri}
+                        uri={uri}
+                        name={`${name} · ${side ? "back" : "front"}`}
+                        company={company}
+                        role={role}
+                        height={(imageHeight - 127) / (back ? 2 : 1)}
+                        onPress={() => setOriginal(uri!)}
+                        style={{
+                          borderWidth: 0,
+                          borderRadius: 0,
+                          backgroundColor: "#102822",
+                        }}
+                      />
+                    ))}
+                    {!slide.url && (
+                      <CardArtwork
+                        name={name}
+                        company={company}
+                        role={role}
+                        height={imageHeight - 127}
+                      />
+                    )}
+                  </View>
                 ) : slide.url ? (
                   <RemoteImage
                     uri={slide.url}
@@ -727,7 +729,7 @@ export function StoryDock({ action }: { action: StoryAction | null }) {
     >
       <Text
         numberOfLines={2}
-        style={{ color: "#fff", fontSize: 12, lineHeight: 16, flex: 1 }}
+        style={{ color: "#fff", fontSize: 14, lineHeight: 19, flex: 1 }}
       >
         {action.prompt}
       </Text>
@@ -740,7 +742,8 @@ export function StoryDock({ action }: { action: StoryAction | null }) {
           paddingHorizontal: 14,
           paddingVertical: 6,
           minHeight: 44,
-          flexBasis: "48%",
+          minWidth: 112,
+          maxWidth: "48%",
           flexShrink: 0,
           alignItems: "center",
           justifyContent: "center",
@@ -748,6 +751,7 @@ export function StoryDock({ action }: { action: StoryAction | null }) {
         })}
       >
         <Text
+          numberOfLines={1}
           style={{
             color: "#153D35",
             fontWeight: "700",
@@ -758,7 +762,7 @@ export function StoryDock({ action }: { action: StoryAction | null }) {
             textAlign: "center",
           }}
         >
-          {action.label} ↗
+          {shortCtaLabel(action.label)}
         </Text>
       </Pressable>
     </View>

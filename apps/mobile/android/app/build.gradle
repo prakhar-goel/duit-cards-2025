@@ -98,8 +98,8 @@ android {
         applicationId 'io.duit.ecards.pilot'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2026091809
-        versionName "4.5.1"
+        versionCode 2026091810
+        versionName "4.6.0"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
