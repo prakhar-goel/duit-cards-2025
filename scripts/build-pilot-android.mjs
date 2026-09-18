@@ -131,7 +131,7 @@ if (code !== 0) {
   console.error(tail);
   process.exit(Number(code) || 1);
 }
-const apk = path.join(artifacts, "DUIT-2026-Pilot.apk");
+const apk = path.join(artifacts, demoAccount ? "DUIT-2026-Private.apk" : "DUIT-2026-Pilot.apk");
 fs.copyFileSync(
   path.join(android, "app/build/outputs/apk/release/app-release.apk"),
   apk,
@@ -151,6 +151,7 @@ execFileSync(
 );
 const metadata = {
   builtAt: new Date().toISOString(),
+  prefilledLogin: Boolean(demoAccount),
   package: "io.duit.ecards.pilot",
   architecture: "arm64-v8a",
   initialApiUrl: apiUrl,
@@ -161,7 +162,7 @@ const metadata = {
   bytes: fs.statSync(apk).size,
 };
 fs.writeFileSync(
-  path.join(artifacts, "android-build.json"),
+  path.join(artifacts, demoAccount ? "android-build-private.json" : "android-build.json"),
   JSON.stringify(metadata, null, 2) + "\n",
 );
 console.log(
