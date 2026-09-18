@@ -286,3 +286,8 @@ The CTA button text should be small, not in 2 lines. 1-2 words only.
 
 Please prefill maya credentials in the apk. Also show them on the login page with a button to prefill them.
 I found a problem. Clicking on the password field is not scrolling it above. Password field is getting hidden behind the keyboard.
+
+
+## 2026-09-18T21:35:51+05:30
+
+put it there, in fact everytime you update apk, it should be downloadable

@@ -31,7 +31,8 @@
     "build:public": "npm run build --workspace @duit/web",
     "test:api": "node --env-file-if-exists=.env.local --test --test-timeout=30000 apps/api/test/*.test.js",
     "test:mobile": "npm run test --workspace @duit/mobile",
-    "test:web": "node scripts/verify-pilot-web.mjs"
+    "test:web": "node scripts/verify-pilot-web.mjs",
+    "release:apk": "node scripts/release-pilot-android.mjs"
   },
   "packageManager": "npm@10.9.2",
   "overrides": {

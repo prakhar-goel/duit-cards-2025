@@ -37,7 +37,19 @@ The Android app can switch servers in its server settings without reinstalling. 
 
 The owner dashboard is `/admin`. The staging owner credentials are in the private `.local/deployment/owner-access.json`. Local owner credentials remain in `.local/credentials.json`. Both use independent random passwords, different from tester accounts; neither is embedded in the APK. Tester accounts cannot open owner APIs. Invite-only signup stays enabled. Paid AI and external email delivery remain disabled; enquiries are stored in the app inbox.
 
-The `/download` page uses a GitHub release APK when `PILOT_APK_URL` is set. Build with the existing signing key; never replace it. Source code and credentials are not included in release assets.
+The `/download` page always points to the current Android release. Set `PILOT_APK_URL` once to `https://github.com/prakhar-goel/duit-cards-2025/releases/download/staging-latest/DUIT-2026-Pilot.apk`. It does not need to change with each version.
+
+After merging each mobile update to main, bumping its version and passing checks, run:
+
+```sh
+npm run release:apk
+```
+
+This builds with the existing signing key, checks the package, version, checksum and staging server, publishes an immutable versioned GitHub release, then updates the permanent download target. It verifies the uploaded checksum before reporting success. Use `npm run release:apk -- --existing` to publish an already verified build or retry a failed upload, and add `--dry-run` to check without publishing. Versioned releases remain available for rollback. Replacing the permanent channel asset can briefly interrupt a new download; retry the page if an upload is in progress.
+
+The user has requested Maya's shared staging login in downloadable APKs. The default release includes it; anyone downloading this public APK can access that shared tester workspace. Owner credentials and the legacy archive are excluded. Set `DUIT_DEMO_PREFILL=false` for a build that requires users to enter credentials. Keep the signing identity unchanged and do not commit private credential or signing files.
+
+`npm run build:apk` is a local build only. It is not a delivered update until `release:apk` has published it. The separate EAS workflow is not the staging APK release path.
 
 ## Recovery
 
