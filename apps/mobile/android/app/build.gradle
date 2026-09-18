@@ -213,5 +213,7 @@ def duitPublicConfigHash = java.security.MessageDigest.getInstance("SHA-256")
 tasks.configureEach { task ->
     if (task.name.startsWith("createBundle") && task.name.endsWith("JsAndAssets")) {
         task.inputs.property("duitPublicConfigHash", duitPublicConfigHash)
+        // The native plugin tracks JS/TS by default; imported image maps are JSON.
+        task.inputs.files(fileTree("../../src") { include "**/*.json" })
     }
 }
