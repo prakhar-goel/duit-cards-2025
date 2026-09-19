@@ -23,6 +23,12 @@
 - Keep each branch and pull request focused on one coherent milestone. Avoid generic, numbered, or screen-version branch names when a concise work description is available.
 - Whenever a commit is created, push it to the current remote branch in the same workflow.
 - Do not leave a successful local commit unpushed unless pushing is blocked or the user explicitly asks not to push; report either exception clearly.
+- In Codex cloud, terminal Git/`gh` access may be unavailable even when the GitHub
+  connector works. Use the task's **Create PR** web action for handoff (or direct
+  the user to click it). A missing `origin`, unauthenticated `gh`, or proxy 403
+  alone does not mean the connector needs reconnecting. Do not ask the user to
+  push a cloud-only `/workspace/...` directory from their laptop or copy GitHub
+  tokens into the cloud environment.
 - Merge through a pull request after required checks pass, then delete the short-lived branch.
 
 ## Laptop and mobile cloud development
