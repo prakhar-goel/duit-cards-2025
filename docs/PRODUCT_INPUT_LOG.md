@@ -291,3 +291,8 @@ I found a problem. Clicking on the password field is not scrolling it above. Pas
 ## 2026-09-18T21:35:51+05:30
 
 put it there, in fact everytime you update apk, it should be downloadable
+
+
+## 2026-09-19T10:54:01+05:30
+
+Ensure that the render website for download apk, shows the apk version number and the date and time of its release

@@ -1,4 +1,5 @@
 import express, { Router } from 'express';
+import { createApkReleaseReader } from './apk-release.js';
 import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -41,6 +42,7 @@ async function shell(dist, card) {
   if (card) html = html.replace(/<div id=["']root["']><\/div>/, `<div id="root">${minimal(card)}</div>`);
   return html;
 }
+const readApkRelease = createApkReleaseReader();
 export function webRouter() {
   const router = Router();
   const dist = process.env.WEB_DIST_DIR || defaultDist;
@@ -56,6 +58,15 @@ export function webRouter() {
   router.use('/assets', express.static(path.join(dist, 'assets'), staticOptions));
   router.use('/demo', express.static(path.join(dist, 'demo'), staticOptions));
   router.get('/robots.txt', (_req, res) => res.type('text/plain').send('User-agent: *\nDisallow: /\n'));
+  router.get('/downloads/release.json', wrap(async (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    if (!process.env.PILOT_APK_URL) fail(404, 'No published APK release is configured', 'APK_UNAVAILABLE');
+    try {
+      res.json(await readApkRelease(process.env.PILOT_APK_URL));
+    } catch {
+      fail(503, 'Release details are temporarily unavailable', 'APK_METADATA_UNAVAILABLE');
+    }
+  }));
   router.get('/downloads/DUIT-2026-Pilot.apk', wrap(async (req, res) => {
     if (process.env.PILOT_APK_URL) {
       const target = new URL(process.env.PILOT_APK_URL);

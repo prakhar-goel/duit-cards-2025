@@ -334,8 +334,18 @@ function Landing() {
 }
 
 function DownloadPage() {
+  const [release, setRelease] = useState<{ version: string; releasedAt: string } | null>(null);
+  const [releaseLoaded, setReleaseLoaded] = useState(false);
   const [exists, setExists] = useState<boolean | null>(null);
   useEffect(() => {
+    fetch("/downloads/release.json")
+      .then(async (response) => {
+        if (!response.ok) return;
+        const details = await response.json();
+        if (typeof details.version === "string" && typeof details.releasedAt === "string" && Number.isFinite(Date.parse(details.releasedAt))) setRelease(details);
+      })
+      .catch(() => {})
+      .finally(() => setReleaseLoaded(true));
     fetch("/downloads/DUIT-2026-Pilot.apk", { method: "HEAD" })
       .then((r) =>
         setExists(
@@ -361,6 +371,18 @@ function DownloadPage() {
           Install DUIT 2026 on your Android phone. It lives alongside the
           restored DUIT app.
         </p>
+        <div className="apk-release-details" aria-live="polite">
+          {release ? (
+            <>
+              <strong>Version {release.version}</strong>
+              <span>Released <time dateTime={release.releasedAt}>{new Intl.DateTimeFormat("en-IN", {
+                day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata",
+              }).format(new Date(release.releasedAt))} IST</time></span>
+            </>
+          ) : (
+            <span>{releaseLoaded ? "Release details temporarily unavailable." : "Loading release details…"}</span>
+          )}
+        </div>
         {exists ? (
           <a className="button primary" href="/downloads/DUIT-2026-Pilot.apk">
             Download the APK <Download size={18} />
