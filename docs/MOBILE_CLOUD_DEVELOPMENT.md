@@ -70,7 +70,9 @@ scripts against cloud staging as part of a coding task.
    select the pushed `codex/...` branch. State the desired behavior and ask Codex
    to preserve the existing product flows and run
    `CI=1 EXPO_NO_TELEMETRY=1 npm run verify:cloud:app`.
-3. Review changes and follow up in the same cloud task. Open a focused pull request.
+3. Review changes and follow up in the same cloud task. Click **Create PR** in the
+   task's web interface to publish a focused pull request. This uses the GitHub
+   connector even when the agent's terminal has no remote or authenticated `gh`.
 4. Let GitHub checks finish. Merge through the PR after required checks pass.
    If mobile behavior changed, update both `apps/mobile/app.json` and Android
    `app/build.gradle` with matching version and increasing versionCode before merge.
@@ -79,11 +81,35 @@ scripts against cloud staging as part of a coding task.
 6. Choose **Run workflow**, branch **main**. Leave **Publish** off for a trial build.
    Shared Maya login defaults on, preserving the existing tester experience.
 7. After success, download the `DUIT-Android-...` artifact, extract its ZIP and
-   install `DUIT-2026-Pilot.apk` over your current pilot. Artifacts expire after
+   install the versioned `DUIT-2026-<version>.apk` over your current pilot. Artifacts expire after
    seven days. This is not a Play Store release.
 8. For a new version intended for the shared download page, enable **Publish**.
    Existing immutable versioned APKs cannot be replaced: bump the version first.
    Open https://duit-cards-staging.onrender.com/download for the published APK.
+
+For the simplest phone download, enable **Publish** when running the workflow:
+open https://github.com/prakhar-goel/duit-cards-2025/releases and select the
+`DUIT-2026-<version>.apk` asset in the desired versioned release. This downloads
+the APK without an artifact ZIP and keeps its version in the filename. Install
+over the existing pilot; do not uninstall it just to update. The stable
+`staging-latest/DUIT-2026-Pilot.apk` alias remains available for older links, but
+prefer the versioned asset when downloading or retaining test builds.
+
+Render hosts the download page and API; the APK itself is hosted in GitHub
+Releases. A source-code change or successful Codex check does not publish an APK.
+The full sequence is **Create PR → passing PR checks → merge → passing main CI →
+Android staging APK with Publish enabled**. The Render page reads that published
+channel and can cache release details for up to five minutes. A direct GitHub
+download avoids Render's wake-up time.
+
+If a cloud agent reports no `origin`, unauthenticated `gh`, or a proxy 403, try
+the web task's **Create PR** action before changing the connector. These terminal
+restrictions are separate from the connector's permissions. Do not paste tokens
+or signing secrets into the coding task, or try to access its `/workspace` path
+from the laptop. Only investigate/reconnect the connector if the web action
+itself fails with an authorization error. The protected APK workflow can be
+triggered from GitHub in the phone browser; it does not require terminal access
+inside Codex cloud.
 
 A new Codex task does not automatically inherit desktop conversations or unpushed
 files. Give it the branch, current objective, and relevant documentation. No
