@@ -28,7 +28,12 @@
 ## Laptop and mobile cloud development
 
 - Read `docs/MOBILE_CLOUD_DEVELOPMENT.md` when working from Codex cloud or handing
-  work between devices. Use `npm run verify:cloud` in the prepared cloud environment.
+  work between devices. The standard cloud environment uses
+  `CI=1 EXPO_NO_TELEMETRY=1 npm run verify:cloud:app` for tooling, type checks,
+  mobile tests and web builds. It has no database. Database integration tests
+  must pass in GitHub Pilot CI before merging; report them separately from cloud
+  app checks. `npm run verify:cloud` is for an optional full environment with a
+  disposable local PostgreSQL instance.
 - Cloud tasks use a disposable local test database, never the hosted staging
   database or historical archive. Do not run staging initializers or seeders.
 - Keep work on one focused branch, push coherent changes for handoff, and fetch

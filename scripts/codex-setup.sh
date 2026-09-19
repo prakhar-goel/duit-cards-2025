@@ -3,6 +3,15 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 [[ "$(uname -s)" == Linux ]] || { echo 'Codex setup targets Linux, not the existing Mac environment.' >&2; exit 1; }
 node -e 'const [major,minor]=process.versions.node.split(".").map(Number); if(major<22 || (major===22 && minor<12)) throw Error("Select Node 22.12+ in Codex environment settings")'
+case "${1:-}" in
+  --app-only)
+    echo 'Installing app dependencies; database integration tests run in GitHub Pilot CI.'
+    timeout --kill-after=15s 300s npm ci --prefer-offline --no-audit --no-fund --foreground-scripts --fetch-retries=1 --fetch-timeout=60000
+    exit 0
+    ;;
+  '') ;;
+  *) echo 'Usage: codex-setup.sh [--app-only]' >&2; exit 1 ;;
+esac
 if ! command -v pg_config >/dev/null || [[ ! -x "$(pg_config --bindir)/initdb" ]]; then
   apt_runner=()
   [[ "$(id -u)" == 0 ]] || apt_runner=(sudo)
