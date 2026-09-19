@@ -65,57 +65,89 @@ scripts against cloud staging as part of a coding task.
 
 ## Phone workflow (laptop may be off)
 
-1. Open https://chatgpt.com/codex/cloud in Chrome and select **prakhar-goel/duit-cards-2025**.
-2. For new work start from current `main`. For unfinished laptop work, explicitly
-   select the pushed `codex/...` branch. State the desired behavior and ask Codex
-   to preserve the existing product flows and run
+1. Open https://chatgpt.com/codex/cloud in Chrome, using the configured Pro account,
+   and select **prakhar-goel/duit-cards-2025**.
+2. Start new work from current `main`; choose the pushed `codex/...` branch for
+   unfinished work. Ask Codex to read `AGENTS.md` and
+   `docs/DEVELOPMENT_HANDOFF.md`, implement the change, and run
    `CI=1 EXPO_NO_TELEMETRY=1 npm run verify:cloud:app`.
-3. Review changes and follow up in the same cloud task. Click **Create PR** in the
-   task's web interface to publish a focused pull request. This uses the GitHub
-   connector even when the agent's terminal has no remote or authenticated `gh`.
-4. Let GitHub checks finish. Merge through the PR after required checks pass.
-   If mobile behavior changed, update both `apps/mobile/app.json` and Android
-   `app/build.gradle` with matching version and increasing versionCode before merge.
-5. Wait for Pilot CI on the merged main commit, then open:
-   https://github.com/prakhar-goel/duit-cards-2025/actions/workflows/android-staging.yml
-6. Choose **Run workflow**, branch **main**. Leave **Publish** off for a trial build.
-   Shared Maya login defaults on, preserving the existing tester experience.
-7. After success, download the `DUIT-Android-...` artifact, extract its ZIP and
-   install the versioned `DUIT-2026-<version>.apk` over your current pilot. Artifacts expire after
-   seven days. This is not a Play Store release.
-8. For a new version intended for the shared download page, enable **Publish**.
-   Existing immutable versioned APKs cannot be replaced: bump the version first.
-   Open https://duit-cards-staging.onrender.com/download for the published APK.
+3. To request a new APK, have Codex run `npm run release:prepare` once and include
+   both version files in the PR. This increments the patch version and Android
+   versionCode together; it needs no signing credentials or internet access.
+4. Review the result and click **Create PR** (or **Update PR**) in the task web
+   interface. This uses the GitHub connector even if the terminal has no remote
+   or authenticated `gh`. Update the handoff notes before switching devices.
+5. Merge after required PR checks and review conversations are resolved. **Merge
+   is your release approval.** You can do it from GitHub on your phone.
+6. GitHub runs Pilot CI on main. After it passes, **Android staging APK starts
+   automatically**, signs a previously unpublished higher version, and publishes
+   it to GitHub Releases and the Render download channel. There is no separate
+   Run workflow step for normal releases. The shared Maya tester login is retained.
+7. Wait for a successful Android staging run, then open
+   https://duit-cards-staging.onrender.com/download or select the versioned
+   `DUIT-2026-<version>.apk` asset at
+   https://github.com/prakhar-goel/duit-cards-2025/releases. Install over the existing
+   pilot; do not uninstall merely to update. Camera/sharing/device tests happen
+   on the Samsung; CI alone does not prove those behaviors.
 
-For the simplest phone download, enable **Publish** when running the workflow:
-open https://github.com/prakhar-goel/duit-cards-2025/releases and select the
-`DUIT-2026-<version>.apk` asset in the desired versioned release. This downloads
-the APK without an artifact ZIP and keeps its version in the filename. Install
-over the existing pilot; do not uninstall it just to update. The stable
-`staging-latest/DUIT-2026-Pilot.apk` alias remains available for older links, but
-prefer the versioned asset when downloading or retaining test builds.
+### Release safeguards and recovery
 
-Render hosts the download page and API; the APK itself is hosted in GitHub
-Releases. A source-code change or successful Codex check does not publish an APK.
-The full sequence is **Create PR → passing PR checks → merge → passing main CI →
-Android staging APK with Publish enabled**. The Render page reads that published
-channel and can cache release details for up to five minutes. A direct GitHub
-download avoids Render's wake-up time.
+Only a successful **push** run of **Pilot CI** on this repository's current
+**main** can trigger automatic signing. PR, fork, failed and superseded CI runs
+cannot publish. Signing remains in the main-only `android-staging` environment;
+ordinary Codex tasks get no signing keys or personal GitHub tokens. Automatic
+builds retain Maya prefill and publish only to staging, not the Play Store.
 
-If a cloud agent reports no `origin`, unauthenticated `gh`, or a proxy 403, try
-the web task's **Create PR** action before changing the connector. These terminal
-restrictions are separate from the connector's permissions. Do not paste tokens
-or signing secrets into the coding task, or try to access its `/workspace` path
-from the laptop. Only investigate/reconnect the connector if the web action
-itself fails with an authorization error. The protected APK workflow can be
-triggered from GitHub in the phone browser; it does not require terminal access
-inside Codex cloud.
+Already published versions skip without rebuilding. Documentation changes and
+handoff checkpoints therefore do not generate duplicate APKs. A new version must
+increase both version and versionCode. An incomplete existing release fails for
+inspection instead of replacing an immutable published APK. If main advances
+before checkout, the stale build stops; the newer main CI handles the release.
 
-A new Codex task does not automatically inherit desktop conversations or unpushed
-files. Give it the branch, current objective, and relevant documentation. No
-remote connection to the laptop is needed for this workflow. Actual Android
-camera/sharing/device tests happen on the Samsung; passing CI is not proof of
-physical-device behavior. Render Free may need time to wake up.
+If a build fails, open its failed run and **Re-run failed jobs** after inspecting
+and correcting the cause. For manual builds or retries, use
+https://github.com/prakhar-goel/duit-cards-2025/actions/workflows/android-staging.yml
+→ **Run workflow**, branch **main**, after its CI passes. Enable **Publish** to
+update the shared channel, or leave it off for a build-only artifact (ZIP,
+seven-day retention). An immutable APK with different bytes requires a new
+version rather than a replacement. Do not call a release complete until the
+workflow succeeds and the intended versioned asset exists.
+
+Render hosts the download page and API; GitHub Releases hosts the APK. Source
+changes do not update already installed apps. Render can cache release details
+for five minutes; a direct versioned GitHub asset avoids Render wake-up time and
+keeps the version in the downloaded filename. The stable
+`staging-latest/DUIT-2026-Pilot.apk` alias remains for older links.
+
+If terminal commands report no `origin`, unauthenticated `gh`, or a proxy 403,
+use the task's **Create PR / Update PR** action before changing the connector.
+Do not paste tokens or signing secrets into the task or access its `/workspace`
+path from a laptop. Investigate the connector if the web action itself reports
+an authorization failure. OpenAI's documented cloud workflow ends with a diff
+and a PR handoff; the protected GitHub workflow does the unattended release work.
+
+## Cross-device continuity
+
+`docs/DEVELOPMENT_HANDOFF.md` carries the current objective, branch, tested work,
+remaining tasks and release status. Both cloud and desktop agents must read it
+when resuming and update it at checkpoints. `npm run handoff` prints it with the
+current commit and dirty paths without changing files or using the network.
+A new conversation does not automatically inherit another conversation.
+
+Cloud → laptop: use Create PR / Update PR so the branch exists on GitHub. On the
+laptop, inspect local changes and fetch, then resume that branch if its PR is open
+or current main if merged. Give desktop Codex the PR/branch and ask it to read the
+handoff. Cloud → cloud works the same way, without turning the laptop on.
+
+Laptop → phone: update the handoff, commit and push before leaving. Select the
+same branch in a new cloud task and ask it to resume from the handoff. If returning
+to an older cloud conversation, verify its checkout includes the latest GitHub
+commit first. If it cannot refresh, start a new task on the updated branch. Never
+use an old cloud snapshot to overwrite newer desktop work. Keep one active editor
+per branch; use separate branches for independent simultaneous work.
+
+Unfinished work may use a draft PR. It is backed up and accessible from either
+device, but will not sign or release until it is ready, checked and merged.
 
 ## Continue the same work on the laptop
 

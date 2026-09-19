@@ -311,3 +311,9 @@ Can you explain me these arrows like the upward trend on meera joshi card and 2 
 ## 2026-09-19T13:03:04+05:30
 
 Can you study instagram's interface. The colour combinations, themes, fonts etc and give me another apk (downloadable from render) with that theme enabled? Do it in a way that I am able to revert to the current theme. So create some sort of a toggle system in the app. I might add more such theme variations during development, before finalizing the final look and feel of the app. So start with instagram like theme and then allow room for more variations.
+
+
+## 2026-09-19T13:33:27+05:30
+
+I want that cloud codex should be able to release the apk, just like you were able to. Is it even possible safely?
+Setup things in such a way that I may continue development from codex app, after cloud codex finish and vice versa. Understand the core problem - I am on the move, without my laptop for next few days, only with my mobile and with sporadic/intermittent access to my laptop.
