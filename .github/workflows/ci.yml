@@ -84,8 +84,11 @@ jobs:
           retention-days: 7
 
   cloud-setup:
-    name: Cloud setup smoke
+    name: Cloud setup smoke (${{ matrix.user }})
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        user: [runner, root]
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -95,7 +98,17 @@ jobs:
           cache: npm
       - name: Exercise cloud setup and cached-environment maintenance
         run: |
-          bash scripts/codex-setup.sh
-          bash scripts/codex-maintenance.sh
+          if [ '${{ matrix.user }}' = root ]; then
+            sudo env PATH="$PATH" bash scripts/codex-setup.sh
+            sudo env PATH="$PATH" bash scripts/codex-maintenance.sh
+          else
+            bash scripts/codex-setup.sh
+            bash scripts/codex-maintenance.sh
+          fi
       - name: Run isolated API tests through the cloud database
-        run: node --env-file=.local/codex-test.env --test --test-timeout=30000 apps/api/test/*.test.js
+        run: |
+          if [ '${{ matrix.user }}' = root ]; then
+            sudo env PATH="$PATH" node --env-file=.local/codex-test.env --test --test-timeout=30000 apps/api/test/*.test.js
+          else
+            node --env-file=.local/codex-test.env --test --test-timeout=30000 apps/api/test/*.test.js
+          fi
