@@ -74,6 +74,16 @@ export function webRouter() {
       // Keep the browser availability probe on this origin; GitHub redirects do not allow fetch CORS.
       res.setHeader('Cache-Control', 'private, no-store');
       if (req.method === 'HEAD') return res.type('application/vnd.android.package-archive').status(200).end();
+      // The stable channel remains the entry point; use the verified versioned
+      // asset so Android's Downloads folder identifies the installed release.
+      if (target.pathname.includes('/staging-latest/')) {
+        try {
+          const release = await readApkRelease(target.href);
+          return res.redirect(302, release.downloadUrl);
+        } catch {
+          // Preserve download availability during a metadata provider outage.
+        }
+      }
       return res.redirect(302, target.href);
     }
     const apk = process.env.PILOT_APK_PATH || defaultApk;

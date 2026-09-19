@@ -98,7 +98,10 @@ const versionCode = Number(badging.match(/versionCode='([^']+)'/)?.[1]);
 if (packageName !== 'io.duit.ecards.pilot' || version !== appConfig.version || versionCode !== appConfig.android.versionCode) {
   throw new Error('APK package/version differs from app.json. Keep Android and Expo versions in sync.');
 }
+const fileName = `DUIT-2026-${version}.apk`;
+fs.copyFileSync(apk, path.join(artifacts, fileName));
 const metadata = {
+  fileName,
   builtAt: new Date().toISOString(),
   sourceCommit, sourceDirty, version, versionCode, signingCertificateSha256,
   prefilledLogin: Boolean(demoAccount),
@@ -116,5 +119,5 @@ fs.writeFileSync(
   JSON.stringify(metadata, null, 2) + "\n",
 );
 console.log(
-  `\nVerified APK: ${apk}\nSHA-256: ${metadata.sha256}\nBack up .local/signing privately. Future updates need the same key.`,
+  `\nVerified APK: ${path.join(artifacts, fileName)}\nSHA-256: ${metadata.sha256}\nBack up .local/signing privately. Future updates need the same key.`,
 );

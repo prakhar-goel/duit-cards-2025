@@ -14,7 +14,7 @@ test('release details use original publication time, cache concurrent reads, the
   let clock = 0, calls = 0, data = fixture();
   const read = createApkReleaseReader({ now: () => clock, fetchJson: async url => { calls++; return url.endsWith('android-build.json') ? data.manifest : data.release; } });
   const [a, b] = await Promise.all([read(channel), read(channel)]);
-  assert.deepEqual(a, { version: '4.6.1', releasedAt: '2026-09-18T16:11:23.000Z' });
+  assert.deepEqual(a, { version: '4.6.1', releasedAt: '2026-09-18T16:11:23.000Z', fileName: 'DUIT-2026-Pilot.apk', downloadUrl: `${base}v4.6.1-staging/DUIT-2026-Pilot.apk` });
   assert.deepEqual(a, b);
   assert.equal(calls, 2);
   clock = 300001;
@@ -45,4 +45,23 @@ test('metadata outage recovers and untrusted URLs are rejected before fetching',
   assert.equal(calls, 1);
   offline = false; clock = 30001;
   assert.equal((await read(channel)).version, '4.6.1');
+});
+
+test('downloads prefer the checksum-verified versioned filename, including older manifests', async () => {
+  for (const version of ['4.6.1', '4.7.0']) {
+    const data = fixture(version);
+    const fileName = `DUIT-2026-${version}.apk`;
+    data.release.assets.push({ name: fileName, digest: `sha256:${sha}` });
+    if (version === '4.7.0') data.manifest.url = `${base}v${version}-staging/${fileName}`;
+    const read = createApkReleaseReader({ fetchJson: async url => url.endsWith('android-build.json') ? data.manifest : data.release });
+    const details = await read(channel);
+    assert.equal(details.fileName, fileName);
+    assert.equal(details.downloadUrl, `${base}v${version}-staging/${fileName}`);
+  }
+});
+test('a versioned asset with a different checksum cannot be served even if the legacy alias matches', async () => {
+  const data = fixture();
+  data.release.assets.push({ name: 'DUIT-2026-4.6.1.apk', digest: 'sha256:wrong' });
+  const read = createApkReleaseReader({ fetchJson: async url => url.endsWith('android-build.json') ? data.manifest : data.release });
+  await assert.rejects(read(channel));
 });

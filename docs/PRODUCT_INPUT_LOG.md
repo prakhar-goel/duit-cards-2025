@@ -296,3 +296,8 @@ put it there, in fact everytime you update apk, it should be downloadable
 ## 2026-09-19T10:54:01+05:30
 
 Ensure that the render website for download apk, shows the apk version number and the date and time of its release
+
+
+## 2026-09-19T11:13:02+05:30
+
+the apk file should also contain the version number for quick identification. Also, in all future releases

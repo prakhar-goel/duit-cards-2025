@@ -53,8 +53,9 @@ const expectedVersion = expectedConfig.version;
 if (packageName !== 'io.duit.ecards.pilot' || !/^\d+\.\d+\.\d+$/.test(version || '') || version !== expectedVersion || Number(code) !== expectedConfig.android.versionCode) {
   throw new Error('APK package/version does not match this checkout.');
 }
+const fileName = `DUIT-2026-${version}.apk`;
 const tag = `v${version}-staging`;
-const url = `https://github.com/${repo}/releases/download/${tag}/DUIT-2026-Pilot.apk`;
+const url = `https://github.com/${repo}/releases/download/${tag}/${fileName}`;
 console.log(`Verified DUIT ${version} (${code}), SHA-256 ${digest}. Prefilled Maya login: ${prefill}.`);
 if (args.has('--dry-run')) {
   console.log(`Would publish ${tag} and update ${channel}. No remote changes made.`);
@@ -62,9 +63,11 @@ if (args.has('--dry-run')) {
 }
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'duit-apk-release-'));
 try {
-  const upload = path.join(temp, 'DUIT-2026-Pilot.apk');
+  const upload = path.join(temp, fileName);
+  const compatibilityUpload = path.join(temp, 'DUIT-2026-Pilot.apk');
   fs.copyFileSync(apk, upload);
-  const releaseMetadata = { ...metadata, version, versionCode: Number(code), url };
+  fs.copyFileSync(apk, compatibilityUpload);
+  const releaseMetadata = { ...metadata, version, versionCode: Number(code), fileName, url };
   const manifest = path.join(temp, 'android-build.json');
   fs.writeFileSync(manifest, JSON.stringify(releaseMetadata, null, 2) + '\n');
   const notes = path.join(temp, 'notes.md');
@@ -72,23 +75,23 @@ try {
   const releases = JSON.parse(run('gh', ['api', `repos/${repo}/releases?per_page=100`]));
   const existing = releases.find(release => release.tag_name === tag);
   if (existing) {
-    const asset = existing.assets.find(item => item.name === 'DUIT-2026-Pilot.apk');
+    const asset = existing.assets.find(item => item.name === fileName);
     if (asset?.digest !== `sha256:${digest}`) throw new Error(`${tag} already exists with a different or unverified APK. Bump the app version; released builds are immutable.`);
     if (existing.draft) gh('release', 'edit', tag, '--draft=false');
   } else {
-    gh('release', 'create', tag, upload, manifest, '--target', run('git', ['rev-parse', 'HEAD']).trim(), '--title', `DUIT ${version}`, '--notes-file', notes, '--prerelease', '--draft');
+    gh('release', 'create', tag, upload, compatibilityUpload, manifest, '--target', run('git', ['rev-parse', 'HEAD']).trim(), '--title', `DUIT ${version}`, '--notes-file', notes, '--prerelease', '--draft');
     gh('release', 'edit', tag, '--draft=false');
   }
   // Publish the immutable version first; update the permanent channel only after it succeeds.
   const current = releases.find(release => release.tag_name === channel);
   if (current) {
-    gh('release', 'upload', channel, upload, manifest, '--clobber');
+    gh('release', 'upload', channel, upload, compatibilityUpload, manifest, '--clobber');
     gh('release', 'edit', channel, '--title', `DUIT for Android · ${version}`, '--notes-file', notes);
   } else {
-    gh('release', 'create', channel, upload, manifest, '--target', run('git', ['rev-parse', 'HEAD']).trim(), '--title', `DUIT for Android · ${version}`, '--notes-file', notes, '--prerelease');
+    gh('release', 'create', channel, upload, compatibilityUpload, manifest, '--target', run('git', ['rev-parse', 'HEAD']).trim(), '--title', `DUIT for Android · ${version}`, '--notes-file', notes, '--prerelease');
   }
   const channelInfo = JSON.parse(gh('release', 'view', channel, '--json', 'assets'));
-  const channelAsset = channelInfo.assets.find(item => item.name === 'DUIT-2026-Pilot.apk');
+  const channelAsset = channelInfo.assets.find(item => item.name === fileName);
   if (channelAsset?.digest !== `sha256:${digest}`) throw new Error('Channel upload verification failed. Retry with --existing.');
   console.log(`\nPublished and verified ${version}.\nDownload: ${origin}/download\nVersioned APK: ${url}`);
 } finally {
