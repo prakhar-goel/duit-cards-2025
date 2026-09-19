@@ -82,6 +82,14 @@ try {
     gh('release', 'create', tag, upload, compatibilityUpload, manifest, '--target', run('git', ['rev-parse', 'HEAD']).trim(), '--title', `DUIT ${version}`, '--notes-file', notes, '--prerelease', '--draft');
     gh('release', 'edit', tag, '--draft=false');
   }
+  // Record GitHub's original publication time once, using the authenticated
+  // publisher. Public page loads should not depend on GitHub API rate limits.
+  const published = JSON.parse(run('gh', ['api', `repos/${repo}/releases/tags/${tag}`]));
+  const publishedAsset = published.assets.find(item => item.name === fileName);
+  if (published.draft || publishedAsset?.digest !== `sha256:${digest}` || !published.published_at) throw new Error('Published release verification failed.');
+  releaseMetadata.releasedAt = published.published_at;
+  fs.writeFileSync(manifest, JSON.stringify(releaseMetadata, null, 2) + '\n');
+  gh('release', 'upload', tag, manifest, '--clobber');
   // Publish the immutable version first; update the permanent channel only after it succeeds.
   const current = releases.find(release => release.tag_name === channel);
   if (current) {
