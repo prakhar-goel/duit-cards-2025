@@ -88,11 +88,12 @@ scripts against cloud staging as part of a coding task.
    Open https://duit-cards-staging.onrender.com/download for the published APK.
 
 For the simplest phone download, enable **Publish** when running the workflow:
-GitHub Releases provides a direct APK without an artifact ZIP. The stable link is
-https://github.com/prakhar-goel/duit-cards-2025/releases/download/staging-latest/DUIT-2026-Pilot.apk.
-The versioned release at https://github.com/prakhar-goel/duit-cards-2025/releases
-also supplies an immutable `DUIT-2026-<version>.apk`. Install over the existing
-pilot; do not uninstall it just to update.
+open https://github.com/prakhar-goel/duit-cards-2025/releases and select the
+`DUIT-2026-<version>.apk` asset in the desired versioned release. This downloads
+the APK without an artifact ZIP and keeps its version in the filename. Install
+over the existing pilot; do not uninstall it just to update. The stable
+`staging-latest/DUIT-2026-Pilot.apk` alias remains available for older links, but
+prefer the versioned asset when downloading or retaining test builds.
 
 Render hosts the download page and API; the APK itself is hosted in GitHub
 Releases. A source-code change or successful Codex check does not publish an APK.
