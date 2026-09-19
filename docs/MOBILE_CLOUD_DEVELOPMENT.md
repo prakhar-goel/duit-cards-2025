@@ -10,12 +10,14 @@ change its visibility. Do not commit credentials, real account data, uploads,
 
 ## One-time Codex cloud setup
 
-Configured environment: **DUIT — cloud development**
+Configured environment: **prakhar-goel/duit-cards-2025**, owned by the intended
+ChatGPT Pro account. Sign in to that same account on both devices.
 
-https://chatgpt.com/codex/cloud/settings/environment/6aae123771c081919861dab327d63a9a
+https://chatgpt.com/codex/cloud/settings/environment/6aae227c65cc81918f371168903af48c
 
-The GitHub connector is authorized for this repository only, and the
-`android-staging` secrets are configured with a branch policy allowing only `main`.
+The GitHub connector must have access to this repository. Its installation scope
+is managed separately in GitHub; the environment selects this one repository.
+The `android-staging` secrets have a branch policy allowing only `main`.
 
 For recreation, at https://chatgpt.com/codex/cloud/settings/environments, connect the confirmed GitHub
 repository with the minimum available repository scope, then create a DUIT
@@ -23,30 +25,51 @@ environment. This requires the owner's authorization of the GitHub connection.
 
 - Repository: `prakhar-goel/duit-cards-2025`.
 - Node: 22 (at least 22.12).
-- Setup script: `bash scripts/codex-setup.sh`.
-- Maintenance script: `bash scripts/codex-maintenance.sh`.
-- Verification command: `npm run verify:cloud`.
+- Setup script: `bash scripts/codex-setup.sh --app-only`.
+- Maintenance script: `bash scripts/codex-setup.sh --app-only`.
+- Verification command: `CI=1 EXPO_NO_TELEMETRY=1 npm run verify:cloud:app`.
 - No staging database, production credentials, provider keys, or signing secrets.
 - Agent internet access can remain disabled initially. Setup installs dependencies
   with network access. If a task needs new packages, configure only the necessary
   registry access or rebuild the environment after its lockfile change.
 
-The setup creates an isolated PostgreSQL instance on loopback port 55432 and only
-`duit_2026_pilot_test`. It persists its URL in ignored `.local/codex-test.env`.
-Maintenance restarts that instance after a cached environment resumes. It neither
-connects to Neon nor restores, seeds, or modifies the hosted staging data.
-`npm run verify:cloud` runs build safeguards, type checks, mobile/API tests and
-both web builds. No Android SDK or private key is needed in coding tasks.
+The standard environment installs locked npm dependencies without system-package
+changes. Maintenance repeats the locked install (using cached packages where
+available) so a resumed container matches the selected branch. Cloud app checks
+cover build safeguards, type checks, mobile tests and both web builds. **They do
+not run database integration tests.** GitHub Pilot CI runs those tests against its
+isolated PostgreSQL service, including durable-upload tests; its Typecheck + Build
+check must pass for the PR's current commit before merging. Report cloud app
+checks and GitHub database checks separately. No Android SDK or private key is
+needed in coding tasks.
+
+### Optional full database environment
+
+The full setup remains available with `bash scripts/codex-setup.sh`, maintenance
+`bash scripts/codex-maintenance.sh`, and verification `npm run verify:cloud`.
+It creates an isolated PostgreSQL instance on loopback port 55432 and only
+`duit_2026_pilot_test`, with its URL in ignored `.local/codex-test.env`.
+Maintenance restarts it after a cached environment resumes. It never connects
+to Neon or modifies hosted staging data. Validate this mode independently before
+using it: system-package installation in the current Codex image has not completed
+reliably, although the same scripts pass GitHub's root and non-root setup checks.
+
+The cloud image's signed Ubuntu snapshot supplies PostgreSQL. Setup avoids
+refreshing unrelated third-party APT sources when that snapshot is present.
+Package installation has explicit time limits so a network failure stops setup
+instead of appearing to run indefinitely. A timed-out setup is a failure, not a
+successful verification; inspect the package error before retrying.
 
 Do not run `setup:pilot`, `seed:pilot`, `initialize-staging.mjs`, or archive import
 scripts against cloud staging as part of a coding task.
 
 ## Phone workflow (laptop may be off)
 
-1. Open https://chatgpt.com/codex/cloud in Chrome and select **DUIT — cloud development**.
+1. Open https://chatgpt.com/codex/cloud in Chrome and select **prakhar-goel/duit-cards-2025**.
 2. For new work start from current `main`. For unfinished laptop work, explicitly
    select the pushed `codex/...` branch. State the desired behavior and ask Codex
-   to preserve the existing product flows and run `npm run verify:cloud`.
+   to preserve the existing product flows and run
+   `CI=1 EXPO_NO_TELEMETRY=1 npm run verify:cloud:app`.
 3. Review changes and follow up in the same cloud task. Open a focused pull request.
 4. Let GitHub checks finish. Merge through the PR after required checks pass.
    If mobile behavior changed, update both `apps/mobile/app.json` and Android
