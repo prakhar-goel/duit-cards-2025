@@ -108,12 +108,12 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts/cloud-download
           if [ "$PREFILL" = true ]; then
-            cp artifacts/DUIT-2026-Private.apk artifacts/cloud-download/DUIT-2026-Pilot.apk
             cp artifacts/android-build-private.json artifacts/cloud-download/android-build.json
           else
-            cp artifacts/DUIT-2026-Pilot.apk artifacts/cloud-download/DUIT-2026-Pilot.apk
             cp artifacts/android-build.json artifacts/cloud-download/android-build.json
           fi
+          APK_NAME=$(node -p "require('./artifacts/cloud-download/android-build.json').fileName")
+          cp "artifacts/$APK_NAME" "artifacts/cloud-download/$APK_NAME"
       - uses: actions/upload-artifact@v4
         with:
           name: DUIT-Android-${{ github.sha }}
@@ -133,7 +133,7 @@ jobs:
           {
             echo '## Verified DUIT APK'
             echo "Source commit: $SOURCE_SHA"
-            echo 'Download the DUIT-Android artifact below, extract the ZIP, and install DUIT-2026-Pilot.apk on your Samsung.'
+            echo 'Download the DUIT-Android artifact below, extract the ZIP, and install the versioned DUIT-2026-<version>.apk on your Samsung.'
             echo 'It uses the existing signing identity and the hosted staging server; the laptop can be off.'
             if [ "$PUBLISH" = true ]; then
               echo 'Published: https://duit-cards-staging.onrender.com/download'

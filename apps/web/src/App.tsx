@@ -334,7 +334,7 @@ function Landing() {
 }
 
 function DownloadPage() {
-  const [release, setRelease] = useState<{ version: string; releasedAt: string } | null>(null);
+  const [release, setRelease] = useState<{ version: string; releasedAt: string; fileName: string; downloadUrl: string } | null>(null);
   const [releaseLoaded, setReleaseLoaded] = useState(false);
   const [exists, setExists] = useState<boolean | null>(null);
   useEffect(() => {
@@ -384,7 +384,7 @@ function DownloadPage() {
           )}
         </div>
         {exists ? (
-          <a className="button primary" href="/downloads/DUIT-2026-Pilot.apk">
+          <a className="button primary" href={release?.downloadUrl || "/downloads/DUIT-2026-Pilot.apk"}>
             Download the APK <Download size={18} />
           </a>
         ) : (

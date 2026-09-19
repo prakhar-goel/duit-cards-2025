@@ -11,7 +11,7 @@ export function createApkReleaseReader({ fetchJson = async url => {
   let cached;
   return async function readRelease(apkUrl) {
     const target = new URL(apkUrl);
-    if (!target.href.startsWith(releaseRoot) || target.search || target.hash || !/^([^/]+)\/DUIT-2026-Pilot\.apk$/.test(target.href.slice(releaseRoot.length))) {
+    if (!target.href.startsWith(releaseRoot) || target.search || target.hash || !/^([^/]+)\/DUIT-2026-(?:Pilot|\d+\.\d+\.\d+)\.apk$/.test(target.href.slice(releaseRoot.length))) {
       throw new Error('Invalid APK release URL');
     }
     if (cached?.url === apkUrl && cached.expires > now()) return cached.result;
@@ -22,13 +22,16 @@ export function createApkReleaseReader({ fetchJson = async url => {
         throw new Error('Invalid APK build metadata');
       }
       const tag = `v${manifest.version}-staging`;
-      if (manifest.url !== `${releaseRoot}${tag}/DUIT-2026-Pilot.apk`) throw new Error('APK release does not match its version');
+      const fileName = `DUIT-2026-${manifest.version}.apk`;
+      const legacyUrl = `${releaseRoot}${tag}/DUIT-2026-Pilot.apk`;
+      const versionedUrl = `${releaseRoot}${tag}/${fileName}`;
+      if (![legacyUrl, versionedUrl].includes(manifest.url)) throw new Error('APK release does not match its version');
       const release = await fetchJson(`https://api.github.com/repos/${repository}/releases/tags/${tag}`);
-      const asset = release.assets?.find(item => item.name === 'DUIT-2026-Pilot.apk');
+      const asset = release.assets?.find(item => item.name === fileName) || release.assets?.find(item => item.name === 'DUIT-2026-Pilot.apk');
       if (release.draft || release.tag_name !== tag || asset?.digest !== `sha256:${manifest.sha256}` || !release.published_at || !Number.isFinite(Date.parse(release.published_at))) {
         throw new Error('Published APK could not be verified');
       }
-      return { version: manifest.version, releasedAt: new Date(release.published_at).toISOString() };
+      return { version: manifest.version, releasedAt: new Date(release.published_at).toISOString(), fileName: asset.name, downloadUrl: asset.name === fileName ? versionedUrl : legacyUrl };
     })().catch(error => {
       // A short failure cache prevents repeated page loads hammering GitHub.
       entry.expires = now() + 30_000;
