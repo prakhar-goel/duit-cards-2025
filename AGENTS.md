@@ -33,6 +33,11 @@
 
 ## Laptop and mobile cloud development
 
+- Read `docs/DEVELOPMENT_HANDOFF.md` at the start of resumed work and update it
+  before every device handoff or completed implementation milestone. Record the
+  objective, branch/PR, changes, actual validation, unresolved issues, release
+  status and next steps; never secrets. `npm run handoff` prints a read-only local
+  snapshot. Verify the latest GitHub state before editing an old cloud snapshot.
 - Read `docs/MOBILE_CLOUD_DEVELOPMENT.md` when working from Codex cloud or handing
   work between devices. The standard cloud environment uses
   `CI=1 EXPO_NO_TELEMETRY=1 npm run verify:cloud:app` for tooling, type checks,
@@ -40,12 +45,18 @@
   must pass in GitHub Pilot CI before merging; report them separately from cloud
   app checks. `npm run verify:cloud` is for an optional full environment with a
   disposable local PostgreSQL instance.
-- Cloud tasks use a disposable local test database, never the hosted staging
-  database or historical archive. Do not run staging initializers or seeders.
+- The optional full cloud environment uses only a disposable local test database,
+  never the hosted staging database or historical archive. The standard cloud
+  environment has no database. Do not run staging initializers or seeders.
 - Keep work on one focused branch, push coherent changes for handoff, and fetch
   before resuming on another device. Never discard uncommitted work or force-push
   to make devices agree. Desktop conversations do not automatically follow Git.
 - Signed APKs are built with `Android staging APK` from protected main after its
-  Pilot CI succeeds. Keep app.json and Android versions aligned; increment the
-  version and versionCode for a new published release. Never generate a replacement
-  signing key or give signing credentials to ordinary cloud tasks.
+  Pilot CI succeeds. A new version automatically builds and publishes; already
+  published versions skip. Use `npm run release:prepare` once per requested new
+  APK to increment aligned app.json/Android versions on the feature branch. Do not
+  bump versions for handoff-only or documentation-only commits. PR checks and
+  branch publication alone do not release; merging is the approval boundary.
+  Never generate a replacement signing key or give signing credentials or GitHub
+  tokens to ordinary cloud tasks. Only report an APK as published after verifying
+  the successful workflow and its versioned GitHub Release.

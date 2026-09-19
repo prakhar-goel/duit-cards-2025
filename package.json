@@ -35,7 +35,9 @@
     "release:apk": "node scripts/release-pilot-android.mjs",
     "test:tooling": "node --test scripts/test/*.test.mjs",
     "verify:cloud": "node scripts/verify-cloud.mjs",
-    "verify:cloud:app": "npm run test:tooling && npm run typecheck && npm run test:mobile && npm run build:public && npm run build:web"
+    "verify:cloud:app": "npm run test:tooling && npm run typecheck && npm run test:mobile && npm run build:public && npm run build:web",
+    "release:prepare": "node scripts/prepare-android-release.mjs",
+    "handoff": "node scripts/development-handoff.mjs"
   },
   "packageManager": "npm@10.9.2",
   "overrides": {
