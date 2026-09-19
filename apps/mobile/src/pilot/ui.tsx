@@ -30,19 +30,8 @@ import * as Haptics from "expo-haptics";
 import { mediaHeaders, mediaUrl } from "./api";
 import mediaManifest from "./media-manifest.json";
 import { initials } from "./domain";
-export const C = {
-  bg: "#F7F8F2",
-  ink: "#142E2B",
-  teal: "#163D35",
-  lime: "#D5F477",
-  muted: "#7F8981",
-  line: "#E1E6DC",
-  white: "#FFFFFF",
-  soft: "#EDF1E8",
-  red: "#A34232",
-  orange: "#B47B3F",
-  blue: "#E8EFED",
-};
+import { C, R, onThemeApplied } from "./theme";
+export { C } from "./theme";
 export function Icon({
   name,
   size = 22,
@@ -727,7 +716,7 @@ export function Stat({
     </View>
   );
 }
-export const s = StyleSheet.create({
+const createStyles = () => StyleSheet.create({
   page: {
     paddingHorizontal: 24,
     paddingTop: 16,
@@ -758,7 +747,7 @@ export const s = StyleSheet.create({
   },
   button: {
     minHeight: 52,
-    borderRadius: 16,
+    borderRadius: R.control,
     paddingHorizontal: 20,
     paddingVertical: 14,
     backgroundColor: C.teal,
@@ -809,7 +798,7 @@ export const s = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: C.line,
-    borderRadius: 14,
+    borderRadius: R.control,
     paddingHorizontal: 15,
     paddingVertical: 14,
     fontSize: 15,
@@ -878,3 +867,5 @@ export const s = StyleSheet.create({
   muted: { color: C.muted },
   sectionGap: { marginTop: 24 },
 });
+export const s = createStyles();
+onThemeApplied(() => Object.assign(s, createStyles()));

@@ -20,7 +20,7 @@ import { AuthScreen } from "./Auth";
 import { TodayScreen } from "./Today";
 import { PeopleScreen, PersonDetail } from "./People";
 import { MeetingsScreen } from "./Meetings";
-import {CardStory} from "./CardStory";
+import { CardStory } from "./CardStory";
 import { MyCardScreen } from "./Cards";
 import { CaptureSheet } from "./Capture";
 import {
@@ -37,6 +37,7 @@ import {
 } from "./ui";
 import { get, post } from "./api";
 import type { Person, Tab, Card } from "./types";
+import { ThemeProvider, useTheme } from "./theme";
 const tabs: { name: Tab; icon: React.ComponentProps<typeof Icon>["name"] }[] = [
   { name: "Today", icon: "grid-outline" },
   { name: "People", icon: "people-outline" },
@@ -45,6 +46,8 @@ const tabs: { name: Tab; icon: React.ComponentProps<typeof Icon>["name"] }[] = [
   { name: "My Card", icon: "id-card-outline" },
 ];
 function Main() {
+  // Re-render themed screens without remounting navigation or the account store.
+  useTheme();
   const store = usePilot();
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>("Today");
@@ -319,7 +322,7 @@ function Main() {
         }
       >
         {linkError && <Notice error>{linkError}</Notice>}
-        {publicCard && <CardStory card={publicCard}/>}
+        {publicCard && <CardStory card={publicCard} />}
       </Sheet>
     </SafeAreaView>
   );
@@ -328,9 +331,11 @@ export default function PilotApp() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      <PilotProvider>
-        <Main />
-      </PilotProvider>
+      <ThemeProvider>
+        <PilotProvider>
+          <Main />
+        </PilotProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }
