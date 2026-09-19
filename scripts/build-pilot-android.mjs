@@ -4,7 +4,7 @@ import os from "node:os";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { spawn, execFileSync } from "node:child_process";
-import { androidTools, requireExistingSigning, demoCredentials, certificateDigest } from "./android-build-config.mjs";
+import { androidTools, requireExistingSigning, demoCredentials, certificateDigest, androidBuildTools } from "./android-build-config.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const android = path.join(root, "apps/mobile/android");
@@ -78,16 +78,19 @@ const bundledCode = execFileSync("/usr/bin/unzip", ["-p", apk, "assets/index.and
 if (!bundledCode.includes(Buffer.from(apiUrl))) {
   throw new Error("APK verification failed: the requested server address is missing from the compiled bundle.");
 }
-const toolVersion = fs
-  .readdirSync(path.join(sdk, "build-tools"))
-  .filter((v) => /^\d/.test(v))
-  .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))[0];
+const androidTool = androidBuildTools(sdk);
 const signingOutput = execFileSync(
-  path.join(sdk, "build-tools", toolVersion, "apksigner"),
+  androidTool("apksigner"),
   ["verify", "--print-certs", apk], { env, encoding: "utf8" },
 );
-const signingCertificateSha256 = certificateDigest(signingOutput, process.env.DUIT_SIGNING_CERT_SHA256);
-const badging = execFileSync(path.join(sdk, "build-tools", toolVersion, "aapt"), ["dump", "badging", apk], { env, encoding: "utf8" });
+let signingCertificateSha256;
+try {
+  signingCertificateSha256 = certificateDigest(signingOutput, process.env.DUIT_SIGNING_CERT_SHA256);
+} catch (error) {
+  console.error("Android build-tools 35 certificate verification output:", signingOutput);
+  throw error;
+}
+const badging = execFileSync(androidTool("aapt"), ["dump", "badging", apk], { env, encoding: "utf8" });
 const appConfig = JSON.parse(fs.readFileSync(path.join(root, 'apps/mobile/app.json'), 'utf8')).expo;
 const packageName = badging.match(/^package: name='([^']+)'/m)?.[1];
 const version = badging.match(/versionName='([^']+)'/)?.[1];

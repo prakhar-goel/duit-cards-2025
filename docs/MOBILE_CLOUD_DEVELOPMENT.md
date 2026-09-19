@@ -10,7 +10,14 @@ change its visibility. Do not commit credentials, real account data, uploads,
 
 ## One-time Codex cloud setup
 
-At https://chatgpt.com/codex/settings/environments, connect the confirmed GitHub
+Configured environment: **DUIT — cloud development**
+
+https://chatgpt.com/codex/cloud/settings/environment/6aae123771c081919861dab327d63a9a
+
+The GitHub connector is authorized for this repository only, and the
+`android-staging` secrets are configured with a branch policy allowing only `main`.
+
+For recreation, at https://chatgpt.com/codex/cloud/settings/environments, connect the confirmed GitHub
 repository with the minimum available repository scope, then create a DUIT
 environment. This requires the owner's authorization of the GitHub connection.
 
@@ -36,7 +43,7 @@ scripts against cloud staging as part of a coding task.
 
 ## Phone workflow (laptop may be off)
 
-1. Open https://chatgpt.com/codex in Chrome and select the DUIT environment.
+1. Open https://chatgpt.com/codex/cloud in Chrome and select **DUIT — cloud development**.
 2. For new work start from current `main`. For unfinished laptop work, explicitly
    select the pushed `codex/...` branch. State the desired behavior and ask Codex
    to preserve the existing product flows and run `npm run verify:cloud`.

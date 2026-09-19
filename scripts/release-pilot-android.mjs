@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import { androidTools, certificateDigest } from './android-build-config.mjs';
+import { androidTools, certificateDigest, androidBuildTools } from './android-build-config.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repo = 'prakhar-goel/duit-cards-2025';
@@ -40,8 +40,7 @@ if (digest !== metadata.sha256 || fs.statSync(apk).size !== metadata.bytes) thro
 if (metadata.initialApiUrl !== `${origin}/api/v1`) throw new Error('Only the isolated staging server can be published here.');
 if (metadata.prefilledLogin !== prefill) throw new Error('APK login mode does not match requested release mode.');
 const { sdk, javaHome } = androidTools();
-const tools = fs.readdirSync(path.join(sdk, 'build-tools')).filter(v => /^\d/.test(v)).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))[0];
-const tool = name => path.join(sdk, 'build-tools', tools, name);
+const tool = androidBuildTools(sdk);
 const signingDigest = certificateDigest(run(tool('apksigner'), ['verify', '--print-certs', apk], { env: { ...process.env, JAVA_HOME: javaHome } }), metadata.signingCertificateSha256);
 if (!metadata.signingCertificateSha256 || !signingDigest) throw new Error('Rebuild with signing provenance before publishing.');
 if (metadata.sourceDirty || metadata.sourceCommit !== run('git', ['rev-parse', 'HEAD']).trim()) throw new Error('Rebuild the APK from this clean commit before publishing.');
