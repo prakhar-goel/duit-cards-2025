@@ -61,6 +61,8 @@ jobs:
           cache: "npm"
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
+      - name: Verify build and signing safeguards
+        run: npm run test:tooling
       - name: Typecheck all workspaces
         run: npm run typecheck
       - name: Mobile and isolated API/provider checks
@@ -80,3 +82,20 @@ jobs:
             apps/web/dist
           if-no-files-found: error
           retention-days: 7
+
+  cloud-setup:
+    name: Cloud setup smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Exercise cloud setup and cached-environment maintenance
+        run: |
+          bash scripts/codex-setup.sh
+          bash scripts/codex-maintenance.sh
+      - name: Run isolated API tests through the cloud database
+        run: node --env-file=.local/codex-test.env --test --test-timeout=30000 apps/api/test/*.test.js

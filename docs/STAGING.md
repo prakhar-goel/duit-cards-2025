@@ -54,3 +54,7 @@ The user has requested Maya's shared staging login in downloadable APKs. The def
 ## Recovery
 
 A Render restart or code redeploy preserves PostgreSQL data and uploads. Roll back code using Render's deployment history. Back up the Neon branch before destructive migrations; do not use the local fixture seeder against cloud data. If upload storage fills, the API rejects new files clearly rather than deleting old ones. Inspect current storage and compute quotas in Neon before expanding usage.
+
+## Cloud Android builds
+
+The `Android staging APK` GitHub Actions workflow builds the existing signed app on Linux, without the Mac or EAS. See [mobile/cloud setup and handoff](MOBILE_CLOUD_DEVELOPMENT.md). Configure its restricted `android-staging` environment before the first build. Build-only downloads do not change the shared release; publishing requires a new version. Local `release:apk` remains available and now requires matching clean source provenance.

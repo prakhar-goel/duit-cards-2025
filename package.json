@@ -16,7 +16,7 @@
     "test": "npm run test:mobile && npm run test:api",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "build:web": "npm run build:web --workspace @duit/mobile",
-    "ci:verify": "npm run typecheck && npm run test && npm run build:public && npm run build:web",
+    "ci:verify": "npm run test:tooling && npm run typecheck && npm run test && npm run build:public && npm run build:web",
     "setup:pilot": "node scripts/setup-pilot.mjs",
     "pilot": "node scripts/pilot.mjs start",
     "dev:pilot": "node scripts/pilot.mjs dev",
@@ -32,7 +32,9 @@
     "test:api": "node --env-file-if-exists=.env.local --test --test-timeout=30000 apps/api/test/*.test.js",
     "test:mobile": "npm run test --workspace @duit/mobile",
     "test:web": "node scripts/verify-pilot-web.mjs",
-    "release:apk": "node scripts/release-pilot-android.mjs"
+    "release:apk": "node scripts/release-pilot-android.mjs",
+    "test:tooling": "node --test scripts/test/*.test.mjs",
+    "verify:cloud": "node scripts/verify-cloud.mjs"
   },
   "packageManager": "npm@10.9.2",
   "overrides": {

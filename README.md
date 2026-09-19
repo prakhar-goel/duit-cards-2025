@@ -4,6 +4,10 @@ Latest design review: **Person → Card → Business**, a visual card wallet and
 
 DUIT helps people share a useful business profile, remember where and why they met, and follow through. This repository contains the new pilot. The restored original app and its supplied archive remain separate in `../misc/duit-cards`.
 
+## Develop from a phone or laptop
+
+See [mobile and cloud development](docs/MOBILE_CLOUD_DEVELOPMENT.md) for Codex cloud setup, laptop/phone branch handoff, and GitHub-hosted signed APK builds. The existing Render test server works independently of the laptop.
+
 ## Run it
 
 Use Node.js **22.12+**, npm and a running local PostgreSQL server.
