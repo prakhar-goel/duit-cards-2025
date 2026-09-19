@@ -50,3 +50,10 @@ export function certificateDigest(output, expected) {
   }
   return digest;
 }
+
+export function androidBuildTools(sdk) {
+  // Match the version installed by the workflow instead of a runner's newer preview SDK.
+  const dir = path.join(sdk, 'build-tools', '35.0.0');
+  if (!fs.existsSync(dir)) throw new Error('Install Android build-tools;35.0.0 before building or releasing.');
+  return name => path.join(dir, name);
+}
