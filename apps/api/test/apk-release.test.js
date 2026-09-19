@@ -1,0 +1,48 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createApkReleaseReader } from '../src/apk-release.js';
+const base = 'https://github.com/prakhar-goel/duit-cards-2025/releases/download/';
+const channel = `${base}staging-latest/DUIT-2026-Pilot.apk`;
+const sha = 'a'.repeat(64);
+function fixture(version = '4.6.1') {
+  return {
+    manifest: { version, sha256: sha, builtAt: '2026-09-18T15:57:14Z', url: `${base}v${version}-staging/DUIT-2026-Pilot.apk` },
+    release: { tag_name: `v${version}-staging`, draft: false, published_at: '2026-09-18T16:11:23Z', assets: [{ name: 'DUIT-2026-Pilot.apk', digest: `sha256:${sha}` }] },
+  };
+}
+test('release details use original publication time, cache concurrent reads, then follow a new APK', async () => {
+  let clock = 0, calls = 0, data = fixture();
+  const read = createApkReleaseReader({ now: () => clock, fetchJson: async url => { calls++; return url.endsWith('android-build.json') ? data.manifest : data.release; } });
+  const [a, b] = await Promise.all([read(channel), read(channel)]);
+  assert.deepEqual(a, { version: '4.6.1', releasedAt: '2026-09-18T16:11:23.000Z' });
+  assert.deepEqual(a, b);
+  assert.equal(calls, 2);
+  clock = 300001;
+  data = fixture('4.6.2');
+  assert.equal((await read(channel)).version, '4.6.2');
+  assert.equal(calls, 4);
+});
+test('mismatched, draft and malformed release metadata never becomes a displayed version', async () => {
+  for (const alter of [
+    d => { d.release.assets[0].digest = 'sha256:wrong'; },
+    d => { d.release.draft = true; },
+    d => { d.release.published_at = 'not a date'; },
+    d => { d.manifest.url = `${base}v4.6.0-staging/DUIT-2026-Pilot.apk`; },
+  ]) {
+    const data = fixture(); alter(data);
+    const read = createApkReleaseReader({ fetchJson: async url => url.endsWith('android-build.json') ? data.manifest : data.release });
+    await assert.rejects(read(channel));
+  }
+});
+test('metadata outage recovers and untrusted URLs are rejected before fetching', async () => {
+  let calls = 0, clock = 0, offline = true;
+  const data = fixture();
+  const read = createApkReleaseReader({ now: () => clock, fetchJson: async url => { calls++; if (offline) throw Error('Offline'); return url.endsWith('android-build.json') ? data.manifest : data.release; } });
+  await assert.rejects(read('https://attacker.test/DUIT-2026-Pilot.apk'));
+  assert.equal(calls, 0);
+  await assert.rejects(read(channel));
+  await assert.rejects(read(channel));
+  assert.equal(calls, 1);
+  offline = false; clock = 30001;
+  assert.equal((await read(channel)).version, '4.6.1');
+});

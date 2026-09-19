@@ -58,3 +58,5 @@ A Render restart or code redeploy preserves PostgreSQL data and uploads. Roll ba
 ## Cloud Android builds
 
 The `Android staging APK` GitHub Actions workflow builds the existing signed app on Linux, without the Mac or EAS. See [mobile/cloud setup and handoff](MOBILE_CLOUD_DEVELOPMENT.md). Configure its restricted `android-staging` environment before the first build. Build-only downloads do not change the shared release; publishing requires a new version. Local `release:apk` remains available and now requires matching clean source provenance.
+
+The download page shows the APK version and original GitHub publication time in IST. `/downloads/release.json` reads the current channel manifest and verifies it against the matching versioned APK's checksum before returning those two public fields. It caches successful lookups for five minutes. A temporary metadata outage does not disable the APK download. Website redeploys do not change the displayed APK release time.
