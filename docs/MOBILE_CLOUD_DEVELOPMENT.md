@@ -10,12 +10,14 @@ change its visibility. Do not commit credentials, real account data, uploads,
 
 ## One-time Codex cloud setup
 
-Configured environment: **DUIT — cloud development**
+Configured environment: **prakhar-goel/duit-cards-2025**, owned by the intended
+ChatGPT Pro account. Sign in to that same account on both devices.
 
-https://chatgpt.com/codex/cloud/settings/environment/6aae123771c081919861dab327d63a9a
+https://chatgpt.com/codex/cloud/settings/environment/6aae227c65cc81918f371168903af48c
 
-The GitHub connector is authorized for this repository only, and the
-`android-staging` secrets are configured with a branch policy allowing only `main`.
+The GitHub connector must have access to this repository. Its installation scope
+is managed separately in GitHub; the environment selects this one repository.
+The `android-staging` secrets have a branch policy allowing only `main`.
 
 For recreation, at https://chatgpt.com/codex/cloud/settings/environments, connect the confirmed GitHub
 repository with the minimum available repository scope, then create a DUIT
@@ -38,12 +40,18 @@ connects to Neon nor restores, seeds, or modifies the hosted staging data.
 `npm run verify:cloud` runs build safeguards, type checks, mobile/API tests and
 both web builds. No Android SDK or private key is needed in coding tasks.
 
+The cloud image's signed Ubuntu snapshot supplies PostgreSQL. Setup avoids
+refreshing unrelated third-party APT sources when that snapshot is present.
+Package installation has explicit time limits so a network failure stops setup
+instead of appearing to run indefinitely. A timed-out setup is a failure, not a
+successful verification; inspect the package error before retrying.
+
 Do not run `setup:pilot`, `seed:pilot`, `initialize-staging.mjs`, or archive import
 scripts against cloud staging as part of a coding task.
 
 ## Phone workflow (laptop may be off)
 
-1. Open https://chatgpt.com/codex/cloud in Chrome and select **DUIT — cloud development**.
+1. Open https://chatgpt.com/codex/cloud in Chrome and select **prakhar-goel/duit-cards-2025**.
 2. For new work start from current `main`. For unfinished laptop work, explicitly
    select the pushed `codex/...` branch. State the desired behavior and ask Codex
    to preserve the existing product flows and run `npm run verify:cloud`.
