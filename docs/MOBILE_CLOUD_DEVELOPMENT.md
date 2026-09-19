@@ -29,9 +29,13 @@ environment. This requires the owner's authorization of the GitHub connection.
 - Maintenance script: `bash scripts/codex-setup.sh --app-only`.
 - Verification command: `CI=1 EXPO_NO_TELEMETRY=1 npm run verify:cloud:app`.
 - No staging database, production credentials, provider keys, or signing secrets.
-- Agent internet access can remain disabled initially. Setup installs dependencies
-  with network access. If a task needs new packages, configure only the necessary
-  registry access or rebuild the environment after its lockfile change.
+- Agent internet access: On, domain preset None, methods GET/HEAD/OPTIONS only.
+  The owner-approved allowlist is `api.github.com`, `github.com`,
+  `release-assets.githubusercontent.com`, `objects.githubusercontent.com`, and
+  `duit-cards-staging.onrender.com`. No credentials are added to coding tasks.
+  This permits public release/status checks, not terminal publication or merges.
+  Setup installs dependencies with network access. For new packages, rebuild the
+  environment after its lockfile change; do not broaden access without approval.
 
 The standard environment installs locked npm dependencies without system-package
 changes. Maintenance repeats the locked install (using cached packages where

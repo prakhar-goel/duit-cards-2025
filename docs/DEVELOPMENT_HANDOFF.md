@@ -10,8 +10,9 @@ notes between devices; a new conversation does not inherit the old chat.
   after a protected PR merge and successful main CI. No laptop or manual APK
   workflow dispatch is required for normal releases.
 - Automation PR: https://github.com/prakhar-goel/duit-cards-2025/pull/74 (merged).
-- Follow-up branch: `codex/release-channel-recovery`; use current `main` after its
-  PR merges. It adds recovery for partial shared-channel publication, with no
+- Follow-up PR: https://github.com/prakhar-goel/duit-cards-2025/pull/75,
+  branch `codex/release-channel-recovery`; use current `main` after it merges.
+  It adds recovery for partial shared-channel publication, with no
   app behavior or version change.
 - Latest verified APK: **4.6.3 / Android 2026091813**, source
   `782cdeff384aeb45726f9a7651de3adfbfb0a29c`, published September 19, 2026.
@@ -28,6 +29,9 @@ notes between devices; a new conversation does not inherit the old chat.
   4.6.3 APK/manifest, signing provenance, source ancestry and rollback guard without
   modifying a release. Consult the follow-up PR for its final GitHub CI result.
 - Release approval remains the PR merge. No blanket automatic merge is configured.
+- The paid-account cloud environment now has the owner-approved read-only GitHub
+  and DUIT host allowlist documented in MOBILE_CLOUD_DEVELOPMENT.md. The settings
+  were saved and reopened to verify their persistence. No tokens were added.
 - Next developer: start the user's next requested change from current main, or
   resume the explicitly provided open PR branch. For a new APK use
   `npm run release:prepare` once (next patch from this version is 4.6.4), update
