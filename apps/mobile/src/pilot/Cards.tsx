@@ -38,6 +38,7 @@ import { chooseImage } from "./Capture";
 import { AIReview } from "./AI";
 import { ServerSettings } from "./Auth";
 import { ProfileEditor } from "./Profile";
+import { themes, useTheme, type ThemeId } from "./theme";
 import { CardStory, CardArtwork } from "./CardStory";
 const panelLabels = {
   hook: "Your opening line",
@@ -81,6 +82,7 @@ function OwnCardStory({ card }: { card: Card }) {
   return <CardStory card={full} initialPage="Card" />;
 }
 export function MyCardScreen() {
+  const { theme, setTheme } = useTheme();
   const {
     data,
     loading,
@@ -210,6 +212,75 @@ export function MyCardScreen() {
           Your card is public only after you publish it. Meeting notes,
           locations and relationship context stay private.
         </Notice>
+        <View style={{ marginTop: 22, marginBottom: 18 }}>
+          <Label>APPEARANCE</Label>
+          <Body muted style={{ fontSize: 13, marginTop: 7, marginBottom: 12 }}>
+            Preview a visual direction on this device. You can switch back at
+            any time.
+          </Body>
+          {themes.map((option) => {
+            const selected = option.id === theme.id;
+            return (
+              <Pressable
+                key={option.id}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: selected }}
+                accessibilityLabel={`Use ${option.name} theme`}
+                onPress={() => void setTheme(option.id as ThemeId)}
+                style={{
+                  borderWidth: selected ? 2 : 1,
+                  borderColor: selected ? C.teal : C.line,
+                  backgroundColor: C.white,
+                  borderRadius: 14,
+                  padding: 14,
+                  marginBottom: 10,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <View style={{ flexDirection: "row", gap: 4 }}>
+                  {[
+                    option.colors.ink,
+                    option.colors.teal,
+                    option.colors.orange,
+                  ].map((color) => (
+                    <View
+                      key={color}
+                      style={{
+                        width: 13,
+                        height: 34,
+                        borderRadius: 7,
+                        backgroundColor: color,
+                      }}
+                    />
+                  ))}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{ color: C.ink, fontSize: 14, fontWeight: "600" }}
+                  >
+                    {option.name}
+                  </Text>
+                  <Text
+                    style={{
+                      color: C.muted,
+                      fontSize: 11,
+                      lineHeight: 16,
+                      marginTop: 3,
+                    }}
+                  >
+                    {option.description}
+                  </Text>
+                </View>
+                <Icon
+                  name={selected ? "checkmark-circle" : "ellipse-outline"}
+                  color={selected ? C.teal : C.muted}
+                />
+              </Pressable>
+            );
+          })}
+        </View>
         {queue.length > 0 && (
           <Notice>
             {queue.length} capture{queue.length === 1 ? "" : "s"} are saved on

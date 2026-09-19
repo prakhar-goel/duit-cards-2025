@@ -4,6 +4,7 @@ import { usePilot } from "./store";
 import { C, s, Avatar, Pill, Title, Body, Icon } from "./ui";
 import { CardArtwork } from "./CardStory";
 import { dateLabel } from "./domain";
+import { R } from "./theme";
 export function NetworkFeed({
   onPerson,
   onFocus,
@@ -151,7 +152,7 @@ export function NetworkFeed({
               backgroundColor: C.white,
               borderWidth: 1,
               borderColor: C.line,
-              borderRadius: 22,
+              borderRadius: R.card,
               overflow: "hidden",
               marginBottom: 22,
             }}
