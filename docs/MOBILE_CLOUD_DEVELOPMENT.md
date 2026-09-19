@@ -98,7 +98,10 @@ cannot publish. Signing remains in the main-only `android-staging` environment;
 ordinary Codex tasks get no signing keys or personal GitHub tokens. Automatic
 builds retain Maya prefill and publish only to staging, not the Play Store.
 
-Already published versions skip without rebuilding. Documentation changes and
+Already published versions skip without rebuilding only after both the immutable
+release and shared channel assets match. A partial channel publication triggers a
+recovery job that copies verified release assets without rebuilding or accessing
+a signing key. Documentation changes and
 handoff checkpoints therefore do not generate duplicate APKs. A new version must
 increase both version and versionCode. An incomplete existing release fails for
 inspection instead of replacing an immutable published APK. If main advances
@@ -111,7 +114,12 @@ https://github.com/prakhar-goel/duit-cards-2025/actions/workflows/android-stagin
 update the shared channel, or leave it off for a build-only artifact (ZIP,
 seven-day retention). An immutable APK with different bytes requires a new
 version rather than a replacement. Do not call a release complete until the
-workflow succeeds and the intended versioned asset exists.
+workflow succeeds and the intended versioned asset exists. If that immutable APK
+already exists but the shared page is stale because publication failed, select
+**Recover channel** (`recover_channel`) in Run workflow. It verifies the existing
+APK/manifest checksums, signing identity provenance, source ancestry and version
+before repairing the shared channel. It refuses rollbacks and different APKs
+with the same versionCode.
 
 Render hosts the download page and API; GitHub Releases hosts the APK. Source
 changes do not update already installed apps. Render can cache release details
@@ -154,6 +162,10 @@ device, but will not sign or release until it is ready, checked and merged.
 Before leaving the laptop, finish a coherent commit and push the focused branch.
 Do not assume unsaved/uncommitted work has reached GitHub. Keep any unfinished
 notes in the PR description or a committed task-specific document.
+
+In the desktop Codex app, use the **duit-cards-2025** project at
+`/Volumes/UserData/prakhargoel/Development/duit/duit-cards-2025`. The
+**duit-cards-2018** project is a separate restoration and is not this cloud repo.
 
 On return, first inspect local changes:
 

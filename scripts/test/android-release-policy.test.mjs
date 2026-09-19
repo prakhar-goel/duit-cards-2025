@@ -26,9 +26,20 @@ test('signing requires exact successful CI provenance', () => {
   }
 });
 const input = { version: '4.6.3', versionCode: 13, gradle: 'versionName "4.6.3"\nversionCode 13', previous: { version: '4.6.2', versionCode: 12 } };
+const existing = { draft: false, assets: ['DUIT-2026-4.6.3.apk', 'DUIT-2026-Pilot.apk', 'android-build.json'].map(name => ({ name, size: 10, digest: `sha256:${'a'.repeat(64)}` })) };
 test('new aligned increasing versions publish; existing verified versions skip', () => {
   assert.equal(automaticReleaseDecision(input).build, true);
-  assert.equal(automaticReleaseDecision({ ...input, existing: { draft: false, assets: [{ name: 'DUIT-2026-4.6.3.apk', size: 10, digest: `sha256:${'a'.repeat(64)}` }] } }).build, false);
+  const result = automaticReleaseDecision({ ...input, existing, channel: existing });
+  assert.equal(result.build, false);
+  assert.equal(result.repair, false);
+});
+test('partial channel publication is recovered without rebuilding the immutable APK', () => {
+  for (const channel of [undefined, { draft: true, assets: existing.assets }, { draft: false, assets: existing.assets.slice(0, 2) },
+    { draft: false, assets: existing.assets.map(item => ({ ...item, digest: `sha256:${'b'.repeat(64)}` })) }]) {
+    const result = automaticReleaseDecision({ ...input, existing, channel });
+    assert.equal(result.build, false);
+    assert.equal(result.repair, true);
+  }
 });
 test('incomplete, mismatched and rollback releases fail closed', () => {
   for (const change of [{ existing: { draft: true } }, { existing: { assets: [] } },

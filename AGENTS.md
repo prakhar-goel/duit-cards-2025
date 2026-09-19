@@ -53,7 +53,8 @@
   to make devices agree. Desktop conversations do not automatically follow Git.
 - Signed APKs are built with `Android staging APK` from protected main after its
   Pilot CI succeeds. A new version automatically builds and publishes; already
-  published versions skip. Use `npm run release:prepare` once per requested new
+  published versions skip only when the shared channel matches; partial channel
+  publication is recovered from verified immutable assets without rebuilding. Use `npm run release:prepare` once per requested new
   APK to increment aligned app.json/Android versions on the feature branch. Do not
   bump versions for handoff-only or documentation-only commits. PR checks and
   branch publication alone do not release; merging is the approval boundary.

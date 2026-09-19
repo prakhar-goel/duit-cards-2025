@@ -6,20 +6,35 @@ notes between devices; a new conversation does not inherit the old chat.
 
 ## Current milestone
 
-- Objective: phone-only development with automatic signed APK publication after
-  a versioned change merges and main CI passes, plus reliable cloud/desktop handoff.
-- Working branch: `codex/automatic-apk-delivery` (use `main` after this PR merges).
-- Previous published APK: 4.6.2, source `9808b718e3ba2440a4341349569f57223f18ee1d`.
+- Objective completed: phone-only changes can produce a signed APK automatically
+  after a protected PR merge and successful main CI. No laptop or manual APK
+  workflow dispatch is required for normal releases.
+- Automation PR: https://github.com/prakhar-goel/duit-cards-2025/pull/74 (merged).
+- Follow-up branch: `codex/release-channel-recovery`; use current `main` after its
+  PR merges. It adds recovery for partial shared-channel publication, with no
+  app behavior or version change.
+- Latest verified APK: **4.6.3 / Android 2026091813**, source
+  `782cdeff384aeb45726f9a7651de3adfbfb0a29c`, published September 19, 2026.
+- Automatic run (event `workflow_run`, successful):
+  https://github.com/prakhar-goel/duit-cards-2025/actions/runs/35431410263
+- Download:
+  https://github.com/prakhar-goel/duit-cards-2025/releases/download/v4.6.3-staging/DUIT-2026-4.6.3.apk
+- Render release metadata independently confirmed 4.6.3. Actual Samsung installation
+  and device interaction testing remain with the tester.
 - Product behavior: Instagram-inspired theme is the default. DUIT Original remains
   selectable in My Card → Settings → Appearance. Theme changes preserve app state.
-- This milestone adds release automation and handoff tooling; no new product screens.
-- Prepared release: 4.6.3 / Android 2026091813, for end-to-end automation validation.
-  Publication is pending PR merge and CI; this version is not yet claimed released.
-- Local validation: 10 tooling tests passed; workflow YAML parsed; manual and
-  automatic preflight passed against actual GitHub main CI/release metadata using
-  read-only API calls. Version preparation and the handoff command were exercised.
-- Next: finish PR checks/review, merge, verify automatic workflow_run publication,
-  then record the successful release/run links here.
+- Validation: initial PR/main CI passed. Recovery follow-up has 13 passing tooling
+  tests and parsed workflow YAML; recovery dry-run downloaded and checked the real
+  4.6.3 APK/manifest, signing provenance, source ancestry and rollback guard without
+  modifying a release. Consult the follow-up PR for its final GitHub CI result.
+- Release approval remains the PR merge. No blanket automatic merge is configured.
+- Next developer: start the user's next requested change from current main, or
+  resume the explicitly provided open PR branch. For a new APK use
+  `npm run release:prepare` once (next patch from this version is 4.6.4), update
+  these notes and create/update the PR. Do not reuse an outdated cloud snapshot.
+- Desktop project: **duit-cards-2025** at
+  `/Volumes/UserData/prakhargoel/Development/duit/duit-cards-2025`.
+  The separate **duit-cards-2018** restoration is not this repository.
 
 ## Working rules for both devices
 

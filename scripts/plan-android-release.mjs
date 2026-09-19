@@ -29,7 +29,7 @@ export function verifyReleaseCi(run, sha) {
   }
 }
 
-export function automaticReleaseDecision({ version, versionCode, gradle, existing, previous }) {
+export function automaticReleaseDecision({ version, versionCode, gradle, existing, channel, previous }) {
   if (!/^\d+\.\d+\.\d+$/.test(version || '') || !Number.isSafeInteger(versionCode) || versionCode <= 0 || versionCode > 2100000000) {
     throw Error('Invalid Android release version.');
   }
@@ -43,7 +43,19 @@ export function automaticReleaseDecision({ version, versionCode, gradle, existin
     if (existing.draft || !asset?.size || !/^sha256:[a-f0-9]{64}$/.test(asset.digest || '')) {
       throw Error('This version has an incomplete release; inspect it before retrying.');
     }
-    return { build: false, reason: `${version} is already published; no new version was requested.` };
+    const names = [fileName, 'DUIT-2026-Pilot.apk', 'android-build.json'];
+    if (names.some(name => !/^sha256:[a-f0-9]{64}$/.test(existing.assets?.find(item => item.name === name)?.digest || '')) ||
+        existing.assets.find(item => item.name === 'DUIT-2026-Pilot.apk')?.digest !== asset.digest) {
+      throw Error('Published release is missing recovery assets; inspect it before retrying.');
+    }
+    const synchronized = channel && !channel.draft && names.every(name => {
+      const expected = existing.assets.find(item => item.name === name);
+      const actual = channel.assets?.find(item => item.name === name);
+      return actual?.digest === expected.digest && actual?.size === expected.size;
+    });
+    return { build: false, repair: !synchronized, reason: synchronized
+      ? `${version} and the staging channel are already published; no new version was requested.`
+      : `Recover the staging channel from verified ${version} assets without rebuilding or signing.` };
   }
   if (previous) {
     if (!/^\d+\.\d+\.\d+$/.test(previous.version || '') || !Number.isSafeInteger(previous.versionCode)) throw Error('Invalid previous release manifest.');
@@ -80,20 +92,23 @@ async function main() {
     const latest = runs.workflow_runs.sort((a, b) => b.id - a.id)[0];
     verifyReleaseCi(latest, sha);
     decision = { build: true, reason: 'Manual build from verified main.' };
-    if (eventName === 'workflow_run') {
+    const recover = event.inputs?.recover_channel === 'true' || event.inputs?.recover_channel === true;
+    if (eventName === 'workflow_run' || recover) {
       const config = JSON.parse(fs.readFileSync('apps/mobile/app.json', 'utf8')).expo;
       const existing = await api(`releases/tags/v${config.version}-staging`, true);
+      if (recover && !existing) throw Error('No published version exists to recover; request a normal build instead.');
       let previous;
       if (!existing) {
         const response = await fetch(`https://github.com/${repository}/releases/download/staging-latest/android-build.json`, { signal: AbortSignal.timeout(30000) });
         if (!response.ok) throw Error(`Cannot verify previous staging version: HTTP ${response.status}.`);
         previous = await response.json();
       }
+      const channel = existing ? await api('releases/tags/staging-latest', true) : undefined;
       decision = automaticReleaseDecision({ version: config.version, versionCode: config.android.versionCode,
-        gradle: fs.readFileSync('apps/mobile/android/app/build.gradle', 'utf8'), existing, previous });
+        gradle: fs.readFileSync('apps/mobile/android/app/build.gradle', 'utf8'), existing, channel, previous });
     }
   }
-  fs.appendFileSync(process.env.GITHUB_OUTPUT, `sha=${sha}\nbuild=${decision.build}\n`);
+  fs.appendFileSync(process.env.GITHUB_OUTPUT, `sha=${sha}\nbuild=${decision.build}\nrepair=${decision.repair === true}\n`);
   fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## Android release preflight\n\n${decision.reason}\n\nSource: \`${sha}\`\n`);
   console.log(decision.reason);
 }
