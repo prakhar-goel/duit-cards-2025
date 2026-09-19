@@ -3,7 +3,7 @@
     "name": "DUIT 2026",
     "slug": "duit-cards-2025",
     "scheme": "duitpilot",
-    "version": "4.6.1",
+    "version": "4.6.3",
     "orientation": "portrait",
     "icon": "./assets/pilot-icon.png",
     "userInterfaceStyle": "light",
@@ -25,7 +25,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "io.duit.ecards.pilot",
-      "versionCode": 2026091811,
+      "versionCode": 2026091813,
       "allowBackup": false,
       "softwareKeyboardLayoutMode": "resize"
     },

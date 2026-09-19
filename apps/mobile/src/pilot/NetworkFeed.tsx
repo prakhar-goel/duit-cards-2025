@@ -4,6 +4,7 @@ import { usePilot } from "./store";
 import { C, s, Avatar, Pill, Title, Body, Icon } from "./ui";
 import { CardArtwork } from "./CardStory";
 import { dateLabel } from "./domain";
+import { R } from "./theme";
 export function NetworkFeed({
   onPerson,
   onFocus,
@@ -96,11 +97,11 @@ export function NetworkFeed({
       windowSize={5}
       updateCellsBatchingPeriod={40}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={s.page}
+      contentContainerStyle={[s.page, { paddingHorizontal: R.feedGutter }]}
       refreshing={refreshing}
       onRefresh={onRefresh}
       ListHeaderComponent={
-        <View>
+        <View style={{ paddingHorizontal: R.feedHeaderGutter }}>
           {header}
           <View style={{ marginTop: 20 }}>
             <View style={s.row}>
@@ -149,11 +150,11 @@ export function NetworkFeed({
             key={p.id}
             style={{
               backgroundColor: C.white,
-              borderWidth: 1,
+              borderWidth: R.feedBorder,
               borderColor: C.line,
-              borderRadius: 22,
+              borderRadius: R.card,
               overflow: "hidden",
-              marginBottom: 22,
+              marginBottom: R.feedSpacing,
             }}
           >
             <View
