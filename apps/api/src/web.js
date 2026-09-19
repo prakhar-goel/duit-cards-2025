@@ -63,7 +63,8 @@ export function webRouter() {
     if (!process.env.PILOT_APK_URL) fail(404, 'No published APK release is configured', 'APK_UNAVAILABLE');
     try {
       res.json(await readApkRelease(process.env.PILOT_APK_URL));
-    } catch {
+    } catch (error) {
+      console.warn('APK release metadata unavailable:', error.message);
       fail(503, 'Release details are temporarily unavailable', 'APK_METADATA_UNAVAILABLE');
     }
   }));

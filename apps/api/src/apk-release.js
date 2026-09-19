@@ -5,7 +5,7 @@ const releaseRoot = `https://github.com/${repository}/releases/download/`;
 // within GitHub's anonymous API allowance, including simultaneous page loads.
 export function createApkReleaseReader({ fetchJson = async url => {
   const response = await fetch(url, { signal: AbortSignal.timeout(8000), headers: { Accept: 'application/json' } });
-  if (!response.ok) throw new Error('Release metadata is unavailable');
+  if (!response.ok) throw new Error(`Release metadata request failed (HTTP ${response.status})`);
   return response.json();
 }, now = Date.now } = {}) {
   let cached;
@@ -26,6 +26,13 @@ export function createApkReleaseReader({ fetchJson = async url => {
       const legacyUrl = `${releaseRoot}${tag}/DUIT-2026-Pilot.apk`;
       const versionedUrl = `${releaseRoot}${tag}/${fileName}`;
       if (![legacyUrl, versionedUrl].includes(manifest.url)) throw new Error('APK release does not match its version');
+      // Current publishers verify the asset and stamp its original publication
+      // time into the public manifest. Avoid anonymous GitHub API requests on
+      // shared hosting; older manifests still use the compatibility lookup.
+      if (manifest.releasedAt !== undefined) {
+        if (manifest.fileName !== fileName || manifest.url !== versionedUrl || typeof manifest.releasedAt !== 'string' || !Number.isFinite(Date.parse(manifest.releasedAt))) throw new Error('Invalid published release metadata');
+        return { version: manifest.version, releasedAt: new Date(manifest.releasedAt).toISOString(), fileName, downloadUrl: versionedUrl };
+      }
       const release = await fetchJson(`https://api.github.com/repos/${repository}/releases/tags/${tag}`);
       const asset = release.assets?.find(item => item.name === fileName) || release.assets?.find(item => item.name === 'DUIT-2026-Pilot.apk');
       if (release.draft || release.tag_name !== tag || asset?.digest !== `sha256:${manifest.sha256}` || !release.published_at || !Number.isFinite(Date.parse(release.published_at))) {

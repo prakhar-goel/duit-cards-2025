@@ -65,3 +65,24 @@ test('a versioned asset with a different checksum cannot be served even if the l
   const read = createApkReleaseReader({ fetchJson: async url => url.endsWith('android-build.json') ? data.manifest : data.release });
   await assert.rejects(read(channel));
 });
+
+test('publisher-stamped manifests serve filename and original release time without anonymous API calls', async () => {
+  const data = fixture();
+  Object.assign(data.manifest, { fileName: 'DUIT-2026-4.6.1.apk', url: `${base}v4.6.1-staging/DUIT-2026-4.6.1.apk`, releasedAt: data.release.published_at });
+  let calls = 0;
+  const read = createApkReleaseReader({ fetchJson: async url => {
+    calls++;
+    if (!url.endsWith('android-build.json')) throw Error('GitHub API unavailable');
+    return data.manifest;
+  } });
+  const result = await read(channel);
+  assert.equal(calls, 1);
+  assert.equal(result.fileName, 'DUIT-2026-4.6.1.apk');
+  assert.equal(result.releasedAt, '2026-09-18T16:11:23.000Z');
+});
+test('invalid publisher timestamp or filename is rejected', async () => {
+  const data = fixture();
+  Object.assign(data.manifest, { fileName: 'DUIT-2026-4.6.1.apk', url: `${base}v4.6.1-staging/DUIT-2026-4.6.1.apk`, releasedAt: 'invalid' });
+  const read = createApkReleaseReader({ fetchJson: async () => data.manifest });
+  await assert.rejects(read(channel));
+});
