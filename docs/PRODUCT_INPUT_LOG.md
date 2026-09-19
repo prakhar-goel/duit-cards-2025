@@ -301,3 +301,13 @@ Ensure that the render website for download apk, shows the apk version number an
 ## 2026-09-19T11:13:02+05:30
 
 the apk file should also contain the version number for quick identification. Also, in all future releases
+
+
+## 2026-09-19T12:58:02+05:30
+
+Can you explain me these arrows like the upward trend on meera joshi card and 2 people icon on meera lal card. What do they even mean and what is the logic?
+
+
+## 2026-09-19T13:03:04+05:30
+
+Can you study instagram's interface. The colour combinations, themes, fonts etc and give me another apk (downloadable from render) with that theme enabled? Do it in a way that I am able to revert to the current theme. So create some sort of a toggle system in the app. I might add more such theme variations during development, before finalizing the final look and feel of the app. So start with instagram like theme and then allow room for more variations.
