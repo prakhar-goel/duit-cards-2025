@@ -24,3 +24,17 @@
 - Whenever a commit is created, push it to the current remote branch in the same workflow.
 - Do not leave a successful local commit unpushed unless pushing is blocked or the user explicitly asks not to push; report either exception clearly.
 - Merge through a pull request after required checks pass, then delete the short-lived branch.
+
+## Laptop and mobile cloud development
+
+- Read `docs/MOBILE_CLOUD_DEVELOPMENT.md` when working from Codex cloud or handing
+  work between devices. Use `npm run verify:cloud` in the prepared cloud environment.
+- Cloud tasks use a disposable local test database, never the hosted staging
+  database or historical archive. Do not run staging initializers or seeders.
+- Keep work on one focused branch, push coherent changes for handoff, and fetch
+  before resuming on another device. Never discard uncommitted work or force-push
+  to make devices agree. Desktop conversations do not automatically follow Git.
+- Signed APKs are built with `Android staging APK` from protected main after its
+  Pilot CI succeeds. Keep app.json and Android versions aligned; increment the
+  version and versionCode for a new published release. Never generate a replacement
+  signing key or give signing credentials to ordinary cloud tasks.

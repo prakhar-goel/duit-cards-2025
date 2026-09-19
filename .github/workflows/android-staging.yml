@@ -1,0 +1,143 @@
+name: Android staging APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish a new version and update the staging download (requires a version bump)
+        type: boolean
+        default: false
+      prefill:
+        description: Include the existing shared Maya tester login
+        type: boolean
+        default: true
+
+concurrency:
+  group: android-staging-delivery
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  EXPO_NO_TELEMETRY: "1"
+  CI: "true"
+
+jobs:
+  verify-source:
+    name: Verify main passed CI
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      sha: ${{ steps.source.outputs.sha }}
+    steps:
+      - name: Check successful Pilot CI for this exact commit
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          result=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$SOURCE_SHA&branch=main&event=push&per_page=10" --jq '.workflow_runs | sort_by(.id) | last | .conclusion')
+          if [ "$result" != success ]; then
+            echo 'Pilot CI must pass on this exact main commit before building. Wait for CI, then run this workflow again.' >&2
+            exit 1
+          fi
+          echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build signed Samsung APK
+    needs: verify-source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: android-staging
+    permissions:
+      contents: write
+    env:
+      EXPO_PUBLIC_API_URL: https://duit-cards-staging.onrender.com/api/v1
+      DUIT_DEMO_PREFILL: ${{ inputs.prefill && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Refuse a moved main branch
+        env:
+          SOURCE_SHA: ${{ needs.verify-source.outputs.sha }}
+        run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - name: Install Android tooling
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'ndk;27.1.12297006' 'cmake;3.22.1'
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Check build safeguards
+        run: npm run test:tooling
+      - name: Restore existing signing identity
+        env:
+          DUIT_KEYSTORE_BASE64: ${{ secrets.DUIT_KEYSTORE_BASE64 }}
+          DUIT_STORE_PASSWORD: ${{ secrets.DUIT_STORE_PASSWORD }}
+          DUIT_KEY_PASSWORD: ${{ secrets.DUIT_KEY_PASSWORD }}
+          DUIT_SIGNING_CERT_SHA256: ${{ secrets.DUIT_SIGNING_CERT_SHA256 }}
+        run: node scripts/restore-cloud-signing.mjs
+      - name: Build and verify APK
+        env:
+          DUIT_SIGNING_CERT_SHA256: ${{ secrets.DUIT_SIGNING_CERT_SHA256 }}
+          DUIT_DEMO_EMAIL: ${{ secrets.DUIT_DEMO_EMAIL }}
+          DUIT_DEMO_PASSWORD: ${{ secrets.DUIT_DEMO_PASSWORD }}
+        run: npm run build:apk
+      - name: Prepare named download and build provenance
+        env:
+          PREFILL: ${{ inputs.prefill }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/cloud-download
+          if [ "$PREFILL" = true ]; then
+            cp artifacts/DUIT-2026-Private.apk artifacts/cloud-download/DUIT-2026-Pilot.apk
+            cp artifacts/android-build-private.json artifacts/cloud-download/android-build.json
+          else
+            cp artifacts/DUIT-2026-Pilot.apk artifacts/cloud-download/DUIT-2026-Pilot.apk
+            cp artifacts/android-build.json artifacts/cloud-download/android-build.json
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DUIT-Android-${{ github.sha }}
+          path: artifacts/cloud-download/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Publish verified version to staging channel
+        if: inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: npm run release:apk -- --existing
+      - name: Delivery summary
+        env:
+          PUBLISH: ${{ inputs.publish }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          {
+            echo '## Verified DUIT APK'
+            echo "Source commit: $SOURCE_SHA"
+            echo 'Download the DUIT-Android artifact below, extract the ZIP, and install DUIT-2026-Pilot.apk on your Samsung.'
+            echo 'It uses the existing signing identity and the hosted staging server; the laptop can be off.'
+            if [ "$PUBLISH" = true ]; then
+              echo 'Published: https://duit-cards-staging.onrender.com/download'
+            else
+              echo 'Build only: the existing staging-latest release was not changed.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Remove runner signing files
+        if: always()
+        run: rm -rf .local/signing

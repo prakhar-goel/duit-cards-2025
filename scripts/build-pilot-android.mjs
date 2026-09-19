@@ -4,73 +4,14 @@ import os from "node:os";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { spawn, execFileSync } from "node:child_process";
+import { androidTools, requireExistingSigning, demoCredentials, certificateDigest } from "./android-build-config.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const android = path.join(root, "apps/mobile/android");
 const signing = path.join(root, ".local/signing");
 fs.mkdirSync(signing, { recursive: true, mode: 0o700 });
-const javaHome =
-  process.env.JAVA_HOME ||
-  (fs.existsSync(
-    "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
-  )
-    ? "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
-    : execFileSync("/usr/libexec/java_home", ["-v", "17"], {
-        encoding: "utf8",
-      }).trim());
-const sdk =
-  process.env.ANDROID_HOME ||
-  process.env.ANDROID_SDK_ROOT ||
-  path.join(os.homedir(), "Library/Android/sdk");
-if (!fs.existsSync(sdk))
-  throw new Error(
-    "Install the Android SDK or set ANDROID_HOME before building.",
-  );
-const props = path.join(signing, "pilot.properties");
-if (!fs.existsSync(props)) {
-  const password = crypto.randomBytes(24).toString("hex");
-  const key = path.join(signing, "duit-pilot.jks");
-  if (fs.existsSync(key))
-    throw new Error(
-      "A pilot signing key exists without its properties. Restore its saved password; do not replace this identity.",
-    );
-  execFileSync(
-    path.join(javaHome, "bin/keytool"),
-    [
-      "-genkeypair",
-      "-keystore",
-      key,
-      "-alias",
-      "duitpilot",
-      "-storepass:env",
-      "DUIT_SIGNING_STORE_PASSWORD",
-      "-keypass:env",
-      "DUIT_SIGNING_KEY_PASSWORD",
-      "-keyalg",
-      "RSA",
-      "-keysize",
-      "3072",
-      "-validity",
-      "10000",
-      "-dname",
-      "CN=DUIT Private Pilot, OU=Local Development, O=DUIT, C=IN",
-    ],
-    {
-      env: {
-        ...process.env,
-        DUIT_SIGNING_STORE_PASSWORD: password,
-        DUIT_SIGNING_KEY_PASSWORD: password,
-      },
-      stdio: "inherit",
-    },
-  );
-  fs.writeFileSync(
-    props,
-    `storeFile=${key}\nstorePassword=${password}\nkeyAlias=duitpilot\nkeyPassword=${password}\n`,
-    { mode: 0o600 },
-  );
-  fs.chmodSync(key, 0o600);
-}
+const { javaHome, sdk } = androidTools();
+requireExistingSigning(signing);
 fs.writeFileSync(path.join(android, "local.properties"), `sdk.dir=${sdk}\n`);
 const lan = Object.entries(os.networkInterfaces())
   .filter(([name]) => !/^(utun|lo|bridge|awdl|llw)/.test(name))
@@ -80,13 +21,7 @@ const apiUrl =
   process.env.EXPO_PUBLIC_API_URL || `http://${lan || "10.0.2.2"}:48152/api/v1`;
 // The user requested one-tap entry in this private demo APK. Never embed an
 // operator account or commit its password. Other builds can opt out explicitly.
-const credentialsFile = path.join(root, ".local/credentials.json");
-const demoAccount =
-  process.env.DUIT_DEMO_PREFILL !== "false" && fs.existsSync(credentialsFile)
-    ? JSON.parse(fs.readFileSync(credentialsFile, "utf8")).accounts?.find(
-        (account) => account.email === "maya@northstar.example",
-      )
-    : undefined;
+const demoAccount = demoCredentials(root);
 const env = {
   ...process.env,
   JAVA_HOME: javaHome,
@@ -108,8 +43,11 @@ const args = [
   ":app:assembleRelease",
   "-PreactNativeArchitectures=arm64-v8a",
   "--console=plain",
+  ...(process.env.CI ? ["--no-daemon", "--max-workers=2"] : []),
 ];
-const child = spawn("./gradlew", args, {
+const sourceCommit = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+const sourceDirty = Boolean(execFileSync("git", ["status", "--porcelain"], { cwd: root, encoding: "utf8" }).trim());
+const child = spawn("bash", ["./gradlew", ...args], {
   cwd: android,
   env,
   stdio: ["inherit", "pipe", "pipe"],
@@ -144,13 +82,22 @@ const toolVersion = fs
   .readdirSync(path.join(sdk, "build-tools"))
   .filter((v) => /^\d/.test(v))
   .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))[0];
-execFileSync(
+const signingOutput = execFileSync(
   path.join(sdk, "build-tools", toolVersion, "apksigner"),
-  ["verify", apk],
-  { env, stdio: "inherit" },
+  ["verify", "--print-certs", apk], { env, encoding: "utf8" },
 );
+const signingCertificateSha256 = certificateDigest(signingOutput, process.env.DUIT_SIGNING_CERT_SHA256);
+const badging = execFileSync(path.join(sdk, "build-tools", toolVersion, "aapt"), ["dump", "badging", apk], { env, encoding: "utf8" });
+const appConfig = JSON.parse(fs.readFileSync(path.join(root, 'apps/mobile/app.json'), 'utf8')).expo;
+const packageName = badging.match(/^package: name='([^']+)'/m)?.[1];
+const version = badging.match(/versionName='([^']+)'/)?.[1];
+const versionCode = Number(badging.match(/versionCode='([^']+)'/)?.[1]);
+if (packageName !== 'io.duit.ecards.pilot' || version !== appConfig.version || versionCode !== appConfig.android.versionCode) {
+  throw new Error('APK package/version differs from app.json. Keep Android and Expo versions in sync.');
+}
 const metadata = {
   builtAt: new Date().toISOString(),
+  sourceCommit, sourceDirty, version, versionCode, signingCertificateSha256,
   prefilledLogin: Boolean(demoAccount),
   package: "io.duit.ecards.pilot",
   architecture: "arm64-v8a",

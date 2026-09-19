@@ -47,3 +47,7 @@ If instability appears after rollout:
 1. Disable workflow files by renaming with `.disabled` suffix or reverting the commit.
 2. Re-enable only `ci.yml` first.
 3. Re-enable `release.yml` after confirming secret setup and successful dry run.
+
+## Current staging delivery
+
+Use `.github/workflows/android-staging.yml` for the signed Samsung staging APK. The EAS workflow above is a separate legacy option. See [cloud development](MOBILE_CLOUD_DEVELOPMENT.md) for signing environment secrets, exact-main CI checks, build-only artifacts, publishing, and device handoff. Pilot CI also exercises disposable Linux cloud setup and build safeguards.

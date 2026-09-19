@@ -4,6 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { androidTools, certificateDigest } from './android-build-config.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repo = 'prakhar-goel/duit-cards-2025';
@@ -38,17 +39,19 @@ const digest = crypto.createHash('sha256').update(fs.readFileSync(apk)).digest('
 if (digest !== metadata.sha256 || fs.statSync(apk).size !== metadata.bytes) throw new Error('APK does not match verified build metadata.');
 if (metadata.initialApiUrl !== `${origin}/api/v1`) throw new Error('Only the isolated staging server can be published here.');
 if (metadata.prefilledLogin !== prefill) throw new Error('APK login mode does not match requested release mode.');
-const sdk = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || path.join(os.homedir(), 'Library/Android/sdk');
+const { sdk, javaHome } = androidTools();
 const tools = fs.readdirSync(path.join(sdk, 'build-tools')).filter(v => /^\d/.test(v)).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))[0];
 const tool = name => path.join(sdk, 'build-tools', tools, name);
-const java = process.env.JAVA_HOME || '/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home';
-run(tool('apksigner'), ['verify', apk], { env: { ...process.env, JAVA_HOME: java } });
+const signingDigest = certificateDigest(run(tool('apksigner'), ['verify', '--print-certs', apk], { env: { ...process.env, JAVA_HOME: javaHome } }), metadata.signingCertificateSha256);
+if (!metadata.signingCertificateSha256 || !signingDigest) throw new Error('Rebuild with signing provenance before publishing.');
+if (metadata.sourceDirty || metadata.sourceCommit !== run('git', ['rev-parse', 'HEAD']).trim()) throw new Error('Rebuild the APK from this clean commit before publishing.');
 const info = run(tool('aapt'), ['dump', 'badging', apk]);
 const packageName = info.match(/^package: name='([^']+)'/m)?.[1];
 const version = info.match(/versionName='([^']+)'/)?.[1];
 const code = info.match(/versionCode='([^']+)'/)?.[1];
-const expectedVersion = JSON.parse(fs.readFileSync(path.join(root, 'apps/mobile/app.json'), 'utf8')).expo.version;
-if (packageName !== 'io.duit.ecards.pilot' || !/^\d+\.\d+\.\d+$/.test(version || '') || version !== expectedVersion) {
+const expectedConfig = JSON.parse(fs.readFileSync(path.join(root, 'apps/mobile/app.json'), 'utf8')).expo;
+const expectedVersion = expectedConfig.version;
+if (packageName !== 'io.duit.ecards.pilot' || !/^\d+\.\d+\.\d+$/.test(version || '') || version !== expectedVersion || Number(code) !== expectedConfig.android.versionCode) {
   throw new Error('APK package/version does not match this checkout.');
 }
 const tag = `v${version}-staging`;
