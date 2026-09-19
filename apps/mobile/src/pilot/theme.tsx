@@ -101,7 +101,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    void AsyncStorage.getItem(STORAGE_KEY).then((saved) => {
+    void AsyncStorage.getItem(STORAGE_KEY).catch(() => null).then((saved) => {
       if (!active) return;
       const id = themes.some((theme) => theme.id === saved)
         ? (saved as ThemeId)
@@ -128,7 +128,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   if (!ready) return null;
   return (
     <ThemeContext.Provider value={value}>
-      <React.Fragment key={themeId}>{children}</React.Fragment>
+      {children}
     </ThemeContext.Provider>
   );
 }

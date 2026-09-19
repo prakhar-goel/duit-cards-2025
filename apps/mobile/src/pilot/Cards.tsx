@@ -226,7 +226,11 @@ export function MyCardScreen() {
                 accessibilityRole="radio"
                 accessibilityState={{ checked: selected }}
                 accessibilityLabel={`Use ${option.name} theme`}
-                onPress={() => void setTheme(option.id as ThemeId)}
+                onPress={() => {
+                  void setTheme(option.id as ThemeId).catch(() =>
+                    notify("Theme applied, but could not be saved for next time."),
+                  );
+                }}
                 style={{
                   borderWidth: selected ? 2 : 1,
                   borderColor: selected ? C.teal : C.line,

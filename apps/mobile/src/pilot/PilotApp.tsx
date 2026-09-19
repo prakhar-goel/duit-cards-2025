@@ -37,7 +37,7 @@ import {
 } from "./ui";
 import { get, post } from "./api";
 import type { Person, Tab, Card } from "./types";
-import { ThemeProvider } from "./theme";
+import { ThemeProvider, useTheme } from "./theme";
 const tabs: { name: Tab; icon: React.ComponentProps<typeof Icon>["name"] }[] = [
   { name: "Today", icon: "grid-outline" },
   { name: "People", icon: "people-outline" },
@@ -46,6 +46,8 @@ const tabs: { name: Tab; icon: React.ComponentProps<typeof Icon>["name"] }[] = [
   { name: "My Card", icon: "id-card-outline" },
 ];
 function Main() {
+  // Re-render themed screens without remounting navigation or the account store.
+  useTheme();
   const store = usePilot();
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>("Today");
