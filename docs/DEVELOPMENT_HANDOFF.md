@@ -10,7 +10,9 @@ notes between devices; a new conversation does not inherit the old chat.
   People/Share/My Card navigation, remembered WhatsApp exchanges, meeting filters,
   enquiry inbox, and a versioned staging APK.
 - Branch: `codex/phone-onboarding-card-exchange`, based on main `8ef4584`.
-  PR has not yet been opened; implementation is being validated before merge.
+  PR: https://github.com/prakhar-goel/duit-cards-2025/pull/77.
+  Commits `44dc642` (API/search) and `e5ca74e` (mobile/release) are pushed.
+  Required Pilot CI, dependency review and both cloud setup checks passed.
 - Version prepared once: **4.6.4 / Android 2026091814**. Local signed ARM64 build
   succeeded with the existing signing identity and Firebase libraries. This is not
   a published release yet. Latest published remains 4.6.3.
@@ -22,17 +24,19 @@ notes between devices; a new conversation does not inherit the old chat.
   existing APK certificate registered, phone enabled, India SMS allowlist and
   effective 20/day verification-SMS quota. User approved narrowing both public
   Firebase keys to authentication services; applied successfully. Gemini key remains
-  separate. Actual SMS delivery/device OTP sign-in still needs a device smoke test.
+  separate. Both client keys returned HTTP 200 from Firebase auth configuration
+  after restriction. Actual SMS delivery/device OTP sign-in still needs a device smoke test.
 - Render service: `srv-damc5v142hec738h1sq0`; stable origin
   https://duit-cards-staging.onrender.com. Firebase project and bounded AI settings
   saved. Owner added separate `OPENAI_API_KEY` and `GOOGLE_GEMINI_AI_API_KEY`.
+  Both variable names were independently verified in Render without reading values.
   Only OpenAI has a feature adapter. No DutyExchange key was uploaded to Render;
   temporary local copies were removed. Never add server secrets to the APK/repo.
 - Application semantics: WhatsApp opens a prepared message; delivery is not known.
   Meeting context goes only to a matching verified phone, private notes stay with
   the sender. Example cards are not invented meetings. Existing email workspaces
   are not automatically claimed by phone-number matching.
-- Next: finish final checks, focused commits/push and PR, wait for Pilot CI, merge,
+- Next: merge PR after final checks,
   verify the automatic Android release and Render download metadata, and smoke-test
   live AI with the new key. Update this handoff with actual PR/release status.
 - Desktop directory: `/Volumes/UserData/prakhargoel/Development/duit/duit-cards-2025`.
