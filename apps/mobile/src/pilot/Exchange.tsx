@@ -38,6 +38,7 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
   const [point, setPoint] = useState<{ latitude: number; longitude: number }>();
   const [occurredAt, setOccurredAt] = useState(new Date().toISOString());
   const [eventName, setEventName] = useState("");
+  const [eventId, setEventId] = useState<string>();
   const [events, setEvents] = useState<EventSuggestion[]>([]);
   const [lead, setLead] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -127,6 +128,7 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
         ...point,
         occurredAt,
         eventName,
+        eventId,
         potentialLead: lead,
       });
       const value = {
@@ -334,7 +336,10 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
           <Field
             label="Event · optional"
             value={eventName}
-            onChangeText={setEventName}
+            onChangeText={(value) => {
+              setEventName(value);
+              setEventId(undefined);
+            }}
             placeholder="The conference or gathering"
           />
           {suggestEvents(events, occurredAt, point)
@@ -347,6 +352,7 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
                   revision.current++;
                   setLocating(false);
                   setEventName(event.name);
+                  setEventId(event.id);
                   setPlace({
                     location: event.venue || "",
                     city: event.city || "",

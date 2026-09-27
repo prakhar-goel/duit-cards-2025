@@ -20,6 +20,7 @@ import {
   C,
   s,
 } from "./ui";
+import { randomId } from "./domain";
 import type { Card, Panel } from "./types";
 const panelTypes = [
   "hook",
@@ -60,6 +61,7 @@ export function QuickCardBuilder({
       ctaLabel: "Let’s talk",
     },
   );
+  const [slugSuffix] = useState(() => randomId());
   const [step, setStep] = useState(0);
   const [brief, setBrief] = useState(card?.bio || "");
   const [panels, setPanels] = useState<Panel[]>(card?.panels || []);
@@ -191,7 +193,7 @@ export function QuickCardBuilder({
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-|-$/g, "") || "card"
-        }-${data.user?.id.slice(0, 8)}`;
+        }-${slugSuffix}`;
       const contact = Object.fromEntries(
         Object.entries(form.contact || {}).filter(([, value]) =>
           Boolean(value),

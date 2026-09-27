@@ -20,7 +20,7 @@ export function sharesRouter() {
       note: text(3000).default(''), location: text(300).default(''), city: text(100).default(''),
       countryCode: text(8).default(''), eventName: text(200).default(''), occurredAt: z.iso.datetime({ offset: true }),
       latitude: z.number().min(-90).max(90).optional(), longitude: z.number().min(-180).max(180).optional(),
-      potentialLead: z.boolean().default(false)
+      potentialLead: z.boolean().default(false), eventId: z.uuid().optional()
     }).parse(req.body);
     const token = createHmac('sha256', process.env.JWT_SECRET).update(`exchange:${req.userId}:${input.clientId}`).digest('hex');
     const result = await transaction(async db => {
@@ -30,13 +30,14 @@ export function sharesRouter() {
       if (prior) return { personId: prior.person_id, encounterId: prior.encounter_id, shareId: prior.id };
       await owned('cards', input.cardId, req.userId, db);
       await publicCardById(input.cardId, db);
+      if (input.eventId) await owned('events', input.eventId, req.userId, db);
       let person = (await db.query('SELECT * FROM people WHERE owner_id=$1 AND phone=$2 ORDER BY created_at LIMIT 1', [req.userId, input.phone])).rows[0];
       if (!person) person = (await db.query(`INSERT INTO people(owner_id,name,phone,city,country_code,tags,client_id)
         VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`, [req.userId, input.name, input.phone, input.city, input.countryCode, input.potentialLead ? ['Potential lead'] : [], input.clientId])).rows[0];
       else if (input.potentialLead) await db.query("UPDATE people SET tags=array(SELECT DISTINCT unnest(tags || ARRAY['Potential lead'])) WHERE id=$1", [person.id]);
-      const meeting = (await db.query(`INSERT INTO encounters(owner_id,person_id,occurred_at,location,city,country_code,event_name,latitude,longitude,original_note,meeting_type,exchange_type,client_id)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'In person','Shared my card',$11) RETURNING id`,
-      [req.userId, person.id, input.occurredAt, input.location, input.city, input.countryCode, input.eventName, input.latitude, input.longitude, input.note, input.clientId])).rows[0];
+      const meeting = (await db.query(`INSERT INTO encounters(owner_id,person_id,occurred_at,location,city,country_code,event_name,latitude,longitude,original_note,meeting_type,exchange_type,client_id,event_id)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'In person','Shared my card',$11,$12) RETURNING id`,
+      [req.userId, person.id, input.occurredAt, input.location, input.city, input.countryCode, input.eventName, input.latitude, input.longitude, input.note, input.clientId, input.eventId || null])).rows[0];
       const context = { occurredAt: input.occurredAt, location: input.location, city: input.city, countryCode: input.countryCode, eventName: input.eventName };
       const share = (await db.query(`INSERT INTO share_links(owner_id,card_id,token_hash,channel,recipient_draft,expires_at,client_id,person_id,encounter_id,meeting_context)
         VALUES($1,$2,$3,'whatsapp',$4,now()+interval '365 days',$5,$6,$7,$8) RETURNING id`,

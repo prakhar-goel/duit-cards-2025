@@ -89,17 +89,23 @@ export function AuthScreen() {
   const [error, setError] = useState("");
   const [settings, setSettings] = useState(false);
   const [remaining, setRemaining] = useState(0);
+  const [verified, setVerified] = useState<{
+    token: string;
+    at: number;
+  } | null>(null);
   const exchanging = useRef(false);
   const requesting = useRef(false);
   const scroll = useRef<ScrollView>(null);
   async function finish(token: string) {
     if (exchanging.current) return;
     exchanging.current = true;
+    setVerified({ token, at: Date.now() });
     setBusy(true);
     try {
       await signInPhone(token);
       await clearPhoneSignIn();
     } catch (e) {
+      if ((e as any)?.status === 401) setVerified(null);
       setError(e instanceof Error ? e.message : "Please try again.");
     } finally {
       exchanging.current = false;
@@ -149,6 +155,7 @@ export function AuthScreen() {
     setBusy(true);
     setError("");
     requesting.current = true;
+    setVerified(null);
     try {
       const confirmation = await sendPhoneCode(phone.replace(/[\s()-]/g, ""));
       setConfirm(() => confirmation);
@@ -165,6 +172,16 @@ export function AuthScreen() {
     }
   }
   async function verify() {
+    if (verified && Date.now() - verified.at < 5 * 60 * 1000) {
+      setError("");
+      await finish(verified.token);
+      return;
+    }
+    if (verified) {
+      setVerified(null);
+      setError("Please request a new code to continue.");
+      return;
+    }
     if (!confirm) return;
     setBusy(true);
     setError("");
@@ -307,7 +324,11 @@ export function AuthScreen() {
                 <Field
                   label="Mobile number with country code"
                   value={phone}
-                  onChangeText={setPhone}
+                  onChangeText={(value) => {
+                    setPhone(value);
+                    setVerified(null);
+                    requesting.current = false;
+                  }}
                   keyboardType="phone-pad"
                   autoComplete="tel"
                   onFocus={reveal}
@@ -331,14 +352,16 @@ export function AuthScreen() {
               <Button
                 busy={busy}
                 disabled={
-                  confirm
-                    ? code.length !== 6
-                    : remaining > 0 ||
-                      !/^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s()-]/g, ""))
+                  verified
+                    ? false
+                    : confirm
+                      ? code.length !== 6
+                      : remaining > 0 ||
+                        !/^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s()-]/g, ""))
                 }
-                onPress={() => void (confirm ? verify() : send())}
+                onPress={() => void (confirm || verified ? verify() : send())}
               >
-                {confirm
+                {confirm || verified
                   ? "Continue"
                   : remaining
                     ? `Send code in ${remaining}s`
@@ -357,6 +380,7 @@ export function AuthScreen() {
                     tone="quiet"
                     onPress={() => {
                       setConfirm(null);
+                      setVerified(null);
                       setError("");
                       requesting.current = false;
                     }}

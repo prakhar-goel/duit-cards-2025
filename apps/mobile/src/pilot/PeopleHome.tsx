@@ -26,6 +26,7 @@ import {
   Notice,
 } from "./ui";
 import { CardStory, CardArtwork } from "./CardStory";
+import { ConnectionHighlights } from "./ConnectionHighlights";
 import { AIReview } from "./AI";
 import type { Card } from "./types";
 
@@ -117,6 +118,9 @@ export function PeopleHome({
       )}
       {offline && <Notice>Showing saved people. Reconnect to refresh.</Notice>}
       {!!error && !offline && <Notice error>{error}</Notice>}
+      {!!data.people.length && !query && !direction && !activeFilters && (
+        <ConnectionHighlights onPerson={onPerson} />
+      )}
       <SearchBox
         value={query}
         onChange={setQuery}

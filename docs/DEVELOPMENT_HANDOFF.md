@@ -36,6 +36,9 @@ notes between devices; a new conversation does not inherit the old chat.
   Meeting context goes only to a matching verified phone, private notes stay with
   the sender. Example cards are not invented meetings. Existing email workspaces
   are not automatically claimed by phone-number matching.
+- Final review fixes: unique links for additional cards; selected event IDs retained
+  with ownership checks; reminders/focus/suggestions retained in People; verified
+  phone tokens can retry a temporary API failure without consuming another SMS.
 - Next: merge PR after final checks,
   verify the automatic Android release and Render download metadata, and smoke-test
   live AI with the new key. Update this handoff with actual PR/release status.
