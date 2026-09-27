@@ -203,7 +203,7 @@ export type QueuedCapture = {
   error?: string;
   personId?: string;
 };
-export type Tab = "Today" | "People" | "Capture" | "Meetings" | "My Card";
+export type Tab = "People" | "Share" | "Capture" | "My Card";
 export const emptySnapshot: Snapshot = {
   user: null,
   people: [],

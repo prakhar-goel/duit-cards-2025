@@ -17,7 +17,7 @@ import { StatusBar } from "expo-status-bar";
 import * as ExpoLinking from "expo-linking";
 import { PilotProvider, usePilot } from "./store";
 import { AuthScreen } from "./Auth";
-import { TodayScreen } from "./Today";
+import { ExchangeScreen } from "./Exchange";
 import { PeopleScreen, PersonDetail } from "./People";
 import { MeetingsScreen } from "./Meetings";
 import { CardStory } from "./CardStory";
@@ -39,10 +39,8 @@ import { get, post } from "./api";
 import type { Person, Tab, Card } from "./types";
 import { ThemeProvider, useTheme } from "./theme";
 const tabs: { name: Tab; icon: React.ComponentProps<typeof Icon>["name"] }[] = [
-  { name: "Today", icon: "grid-outline" },
   { name: "People", icon: "people-outline" },
-  { name: "Capture", icon: "add-outline" },
-  { name: "Meetings", icon: "calendar-outline" },
+  { name: "Share", icon: "share-outline" },
   { name: "My Card", icon: "id-card-outline" },
 ];
 function Main() {
@@ -50,17 +48,18 @@ function Main() {
   useTheme();
   const store = usePilot();
   const insets = useSafeAreaInsets();
-  const [tab, setTab] = useState<Tab>("Today");
+  const [tab, setTab] = useState<Tab>("People");
   const [personId, setPersonId] = useState<string | null>(null);
   const [capture, setCapture] = useState(false);
   const [capturePerson, setCapturePerson] = useState<Person | null>(null);
+  const [shareToken, setShareToken] = useState<string | null>(null);
   const [publicCard, setPublicCard] = useState<Card | null>(null);
   const [linkError, setLinkError] = useState("");
   const url = ExpoLinking.useURL();
   const opacity = useRef(new Animated.Value(1)).current;
   const handled = useRef("");
   useEffect(() => {
-    setTab("Today");
+    setTab("People");
     setPersonId(null);
     setCapture(false);
     setCapturePerson(null);
@@ -69,8 +68,8 @@ function Main() {
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
       () => {
-        if (store.session && tab !== "Today") {
-          setTab("Today");
+        if (store.session && tab !== "People") {
+          setTab("People");
           return true;
         }
         return false;
@@ -88,6 +87,7 @@ function Main() {
     const type = parts[parts.length - 2];
     const id = parts[parts.length - 1];
     if (["card", "c", "share", "s"].includes(type)) {
+      setShareToken(type === "share" || type === "s" ? id : null);
       void get(
         `/public/${type === "share" || type === "s" ? "shares" : "cards"}/${encodeURIComponent(id)}`,
       )
@@ -145,25 +145,11 @@ function Main() {
     >
       <StatusBar style="dark" />
       <Animated.View style={{ flex: 1, opacity }}>
-        {tab === "Today" ? (
-          <TodayScreen
-            onPerson={setPersonId}
-            onPeople={() => navigate("People")}
-            onCapture={() => openCapture()}
-          />
-        ) : tab === "People" ? (
-          <PeopleScreen
-            onPerson={setPersonId}
-            onCapture={() => openCapture()}
-          />
-        ) : tab === "Meetings" ? (
-          <MeetingsScreen
-            onPerson={setPersonId}
-            onCapture={() => openCapture()}
-          />
-        ) : (
-          <MyCardScreen />
-        )}
+        {tab === "People" ? (
+          <PeopleScreen onPerson={setPersonId} onCapture={() => openCapture()} onCreate={() => navigate("My Card")} />
+        ) : tab === "Share" ? (
+          <ExchangeScreen onCreate={() => navigate("My Card")} />
+        ) : <MyCardScreen />}
       </Animated.View>
       <View
         style={{
@@ -198,7 +184,7 @@ function Main() {
                 gap: 5,
               }}
             >
-              {t.name === "Capture" ? (
+              {t.name === "Share" ? (
                 <View
                   style={{
                     width: 51,
@@ -212,7 +198,7 @@ function Main() {
                     borderColor: C.bg,
                   }}
                 >
-                  <Icon name="add" color={C.lime} size={29} />
+                  <Icon name="share-outline" color={C.lime} size={29} />
                 </View>
               ) : (
                 <View
@@ -237,10 +223,10 @@ function Main() {
                   fontSize: 10,
                   fontWeight: tab === t.name ? "700" : "500",
                   color: tab === t.name ? C.teal : C.muted,
-                  marginTop: t.name === "Capture" ? -1 : 0,
+                  marginTop: t.name === "Share" ? -1 : 0,
                 }}
               >
-                {t.name}
+                {t.name}{t.name === "My Card" && store.data.leads.some(l => l.status === "new") ? " •" : ""}
               </Text>
             </Pressable>
           ))}
@@ -306,7 +292,7 @@ function Main() {
           publicCard ? (
             <Button
               onPress={() =>
-                void post(`/cards/${publicCard.id}/save`)
+                void post(shareToken ? `/shares/${encodeURIComponent(shareToken)}/save` : `/cards/${publicCard.id}/save`)
                   .then(async (r) => {
                     setPublicCard(null);
                     await store.refresh();

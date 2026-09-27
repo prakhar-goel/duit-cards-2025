@@ -44,6 +44,7 @@ type Store = {
     name?: string,
     inviteCode?: string,
   ) => Promise<void>;
+  signInPhone: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
   setServer: (url: string) => Promise<void>;
   capture: (
@@ -230,6 +231,17 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
     setCapabilities({});
     setError(null);
     setOffline(false);
+  }
+  async function signInPhone(idToken: string) {
+    const res = await api.post<Session>("/auth/phone", { idToken });
+    await api.saveSession(res);
+    setSession(res);
+    setData(emptySnapshot);
+    setQueue([]);
+    const [cache, outbox] = await Promise.all([AsyncStorage.getItem(cacheKey(res)), AsyncStorage.getItem(queueKey(res))]);
+    if (cache) try { setData(JSON.parse(cache)); } catch {}
+    if (outbox) try { setQueue(JSON.parse(outbox)); } catch {}
+    await refresh();
   }
   async function setServer(url: string) {
     await api.changeServer(url);
@@ -440,7 +452,7 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
         (await api.get(`/ai/jobs/${encodeURIComponent(id)}`)).job,
       assertWorkspace: () => api.assertWorkspace(owner, origin),
       // Image requests have a 180s server timeout; allow media persistence too.
-      timeoutMs: task.endsWith("_cleanup") ? 240000 : 120000,
+      timeoutMs: (task.endsWith("_cleanup") || task === "business_visual") ? 240000 : 120000,
     });
     return job.result;
   }
@@ -458,6 +470,7 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
         server,
         refresh,
         signIn,
+        signInPhone,
         logout,
         setServer,
         capture,

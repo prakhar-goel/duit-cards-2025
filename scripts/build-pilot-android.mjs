@@ -4,7 +4,7 @@ import os from "node:os";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { spawn, execFileSync } from "node:child_process";
-import { androidTools, requireExistingSigning, demoCredentials, certificateDigest, androidBuildTools } from "./android-build-config.mjs";
+import { androidTools, requireExistingSigning, certificateDigest, androidBuildTools } from "./android-build-config.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const android = path.join(root, "apps/mobile/android");
@@ -19,9 +19,8 @@ const lan = Object.entries(os.networkInterfaces())
   .find((n) => n.family === "IPv4" && !n.internal)?.address;
 const apiUrl =
   process.env.EXPO_PUBLIC_API_URL || `http://${lan || "10.0.2.2"}:48152/api/v1`;
-// The user requested one-tap entry in this private demo APK. Never embed an
-// operator account or commit its password. Other builds can opt out explicitly.
-const demoAccount = demoCredentials(root);
+// Phone authentication never embeds a shared account password.
+const demoAccount = null;
 const env = {
   ...process.env,
   JAVA_HOME: javaHome,

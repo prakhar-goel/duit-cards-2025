@@ -101,7 +101,7 @@ export function AIReview({
       footer={
         result && onApply ? (
           <Button busy={applying} onPress={() => void apply()}>
-            {task.includes("cleanup")
+            {(task.includes("cleanup") || task === "business_visual")
               ? "Use this reviewed image"
               : "Use reviewed suggestion"}
           </Button>
@@ -243,7 +243,7 @@ export function AIReview({
                 can change every word.
               </Notice>
             </>
-          ) : task.includes("cleanup") ? (
+          ) : (task.includes("cleanup") || task === "business_visual") ? (
             <>
               {originalImageUrl && (
                 <>

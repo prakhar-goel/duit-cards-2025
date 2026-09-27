@@ -34,6 +34,8 @@ import {
   Divider,
   Empty,
 } from "./ui";
+import { EnquiryInbox } from "./EnquiryInbox";
+import { QuickCardBuilder } from "./QuickCardBuilder";
 import { chooseImage } from "./Capture";
 import { AIReview } from "./AI";
 import { ServerSettings } from "./Auth";
@@ -97,6 +99,7 @@ export function MyCardScreen() {
   const [editing, setEditing] = useState<Card | null | undefined>(undefined);
   const [sharing, setSharing] = useState<Card | null>(null);
   const [settings, setSettings] = useState(false);
+  const [inbox, setInbox] = useState(false);
   const [outbox, setOutbox] = useState(false);
   const [profileEditor, setProfileEditor] = useState(false);
   const [serverSettings, setServerSettings] = useState(false);
@@ -131,6 +134,11 @@ export function MyCardScreen() {
         </Pressable>
       </View>
       <View style={{ height: 14 }} />
+      <Button tone="secondary" icon="mail-unread-outline" onPress={() => setInbox(true)}>
+        Messages{data.leads.filter(l => l.status === 'new').length ? ` · ${data.leads.filter(l => l.status === 'new').length} new` : ''}
+      </Button>
+      <EnquiryInbox visible={inbox} onClose={() => setInbox(false)} />
+
 
       {data.cards.map((card) => (
         <View key={card.id} style={{ marginBottom: 27 }}>
@@ -190,9 +198,7 @@ export function MyCardScreen() {
       >
         Create another card
       </Button>
-      {editing !== undefined && (
-        <CardEditor card={editing} onClose={() => setEditing(undefined)} />
-      )}
+      {editing !== undefined && <QuickCardBuilder card={editing} onClose={() => setEditing(undefined)} /> }
       <ShareCard card={sharing} onClose={() => setSharing(null)} />
       <Sheet
         visible={settings}
@@ -205,7 +211,7 @@ export function MyCardScreen() {
             {name}
           </Title>
           <Body muted style={{ fontSize: 13, marginTop: 7 }}>
-            {data.user?.email}
+            {(data.user as any)?.phone || data.user?.email}
           </Body>
         </View>
         <Notice>
