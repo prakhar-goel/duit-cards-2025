@@ -11,7 +11,8 @@ notes between devices; a new conversation does not inherit the old chat.
   enquiry inbox, and a versioned staging APK.
 - Source PR: https://github.com/prakhar-goel/duit-cards-2025/pull/77, merged into
   main as `a8ca7a5`. The feature branch is retired. Release evidence is recorded on
-  the short-lived `codex/phone-release-handoff` documentation branch.
+  the short-lived `codex/phone-release-handoff` branch (PR #78), which also updates
+  download-page instructions for phone sign-in.
 - **Published: 4.6.4 / Android 2026091814**, signed with the existing identity.
   Android staging APK workflow 36299766159 succeeded. Immutable release:
   https://github.com/prakhar-goel/duit-cards-2025/releases/tag/v4.6.4-staging.
