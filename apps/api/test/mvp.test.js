@@ -1055,6 +1055,11 @@ test('phone accounts and exchanges isolate identities, survive retries and keep 
   assert.equal(recipient.user.phone,phone);
   const again = await request('/auth/phone',{method:'POST',body:{idToken:identityToken}});
   assert.equal(again.body.user.id,recipient.user.id);
+  const recycledToken = crypto.randomBytes(100).toString('hex');
+  phoneIdentities.set(recycledToken, {uid:`different-${suffix}`,phone});
+  const conflict=await request('/auth/phone',{method:'POST',body:{idToken:recycledToken}});
+  assert.equal(conflict.status,409);
+  assert.equal(conflict.body.error.code,'PHONE_IDENTITY_CONFLICT');
   assert.equal((await request('/examples/cards',{token:recipient.accessToken})).status,200);
   const created = await request('/cards',{method:'POST',token:owner.accessToken,body:{title:'Arjun',company:'Studio',slug:`exchange-${suffix}`,contact:{phone:'+919999999999'}}});
   assert.equal(created.status,201,JSON.stringify(created.body));
@@ -1071,6 +1076,8 @@ test('phone accounts and exchanges isolate identities, survive retries and keep 
   assert.equal(first.status,201,JSON.stringify(first.body));
   assert.deepEqual(first.body,retry.body);
   assert.equal(first.body.delivery,'prepared');
+  assert.equal((await request('/exchanges',{method:'POST',token:owner.accessToken,body:{...input,cardId:crypto.randomUUID()}})).status,409);
+  assert.equal((await request('/exchanges',{method:'POST',token:owner.accessToken,body:{...input,phone:'+919888888888'}})).status,409);
   assert.equal((await query('SELECT event_id FROM encounters WHERE id=$1',[first.body.encounterId])).rows[0].event_id, chosenEvent.body.event.id);
   assert.equal((await request(`/events/${chosenEvent.body.event.id}`,{token:owner.accessToken})).body.event.peopleCount,1);
   assert.equal((await query('SELECT count(*)::int AS n FROM encounters WHERE owner_id=$1 AND client_id=$2',[owner.user.id,input.clientId])).rows[0].n,1);

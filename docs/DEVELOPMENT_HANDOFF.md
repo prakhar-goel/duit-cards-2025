@@ -39,6 +39,8 @@ notes between devices; a new conversation does not inherit the old chat.
 - Final review fixes: unique links for additional cards; selected event IDs retained
   with ownership checks; reminders/focus/suggestions retained in People; verified
   phone tokens can retry a temporary API failure without consuming another SMS.
+  Country names are bundled for Hermes; feed matching reuses owner data and ranks
+  partial matches; conflicting exchange retries/phone identities return explicit errors.
 - Next: merge PR after final checks,
   verify the automatic Android release and Render download metadata, and smoke-test
   live AI with the new key. Update this handoff with actual PR/release status.

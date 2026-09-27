@@ -27,7 +27,10 @@ export function sharesRouter() {
       await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`exchange-client:${req.userId}:${input.clientId}`]);
       await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`exchange-phone:${req.userId}:${input.phone}`]);
       const prior = (await db.query('SELECT * FROM share_links WHERE owner_id=$1 AND client_id=$2', [req.userId, input.clientId])).rows[0];
-      if (prior) return { personId: prior.person_id, encounterId: prior.encounter_id, shareId: prior.id };
+      if (prior) {
+        if (prior.card_id !== input.cardId || prior.recipient_draft?.phone !== input.phone) fail(409, 'This exchange was already saved for another card or recipient. Start a new exchange.', 'EXCHANGE_CONFLICT');
+        return { personId: prior.person_id, encounterId: prior.encounter_id, shareId: prior.id };
+      }
       await owned('cards', input.cardId, req.userId, db);
       await publicCardById(input.cardId, db);
       if (input.eventId) await owned('events', input.eventId, req.userId, db);

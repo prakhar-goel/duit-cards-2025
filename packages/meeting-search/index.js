@@ -1,3 +1,4 @@
+import { countryNames } from "./countries.js";
 const months = [
   "january",
   "february",
@@ -26,15 +27,7 @@ export function normalizePlace(s = "") {
     .replace(/bengaluru/g, "bangalore");
 }
 export function countryName(code = "") {
-  try {
-    return (
-      new Intl.DisplayNames(["en"], { type: "region" }).of(
-        code.toUpperCase(),
-      ) || code
-    );
-  } catch {
-    return code;
-  }
+  return countryNames[code.toUpperCase()] || code;
 }
 export function parseMeetingQuery(query, now = new Date()) {
   let rest = normalizePlace(query);

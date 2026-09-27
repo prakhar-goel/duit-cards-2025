@@ -95,9 +95,10 @@ export function authRouter({ verifyPhone = verifyPhoneIdentity } = {}) {
     const { idToken } = z.object({ idToken: z.string().min(100).max(10000) }).parse(req.body);
     const { uid, phone } = await verifyPhone(idToken);
     const result = await transaction(async db => {
-      await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`phone:${uid}`]);
+      await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`phone:${phone}`]);
       let user = (await db.query('SELECT * FROM users WHERE firebase_uid=$1', [uid])).rows[0];
       if (!user) {
+        if ((await db.query('SELECT id FROM users WHERE phone_number=$1', [phone])).rows.length) fail(409, 'This number is linked to an existing DUIT identity. Contact support to recover that account.', 'PHONE_IDENTITY_CONFLICT');
         // Never attach a phone login to an existing account merely because a profile lists that number.
         user = (await db.query(`INSERT INTO users(email,password_hash,display_name,profile,firebase_uid,phone_number,verified_at)
           VALUES($1,$2,'',$3,$4,$5,now()) RETURNING *`,

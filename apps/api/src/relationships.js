@@ -128,25 +128,29 @@ async function getPerson(id, ownerId) {
 }
 const stop = new Set('the a an and or to of in on at for with that this from my me i we who is are was were have has had people someone person find met last week month year near about need want our can you they them their'.split(' '));
 const tokens = value => [...new Set(String(value).toLowerCase().match(/[\p{L}\p{N}]{2,}/gu) || [])].filter(t => !stop.has(t)).slice(0, 16);
-export async function searchOwned(ownerId, input) {
-  const [people, meetings] = await Promise.all([
+async function searchData(ownerId) {
+  return Promise.all([
     query('SELECT * FROM people WHERE owner_id=$1 ORDER BY updated_at DESC LIMIT 5000', [ownerId]),
     query('SELECT * FROM encounters WHERE owner_id=$1 ORDER BY occurred_at DESC LIMIT 20000', [ownerId])
   ]);
-  const parsed = parseMeetingQuery(input.query || '');
+}
+export async function searchOwned(ownerId, input, data) {
+  const [people, meetings] = data || await searchData(ownerId);
+  const parsed = input.feed ? { terms: tokens(input.query) } : parseMeetingQuery(input.query || '');
   const filters = { ...parsed, ...(input.filters || {}), terms: input.semantic ? [] : parsed.terms,
     ...(input.from ? {from:input.from} : {}), ...(input.to ? {before:new Date(new Date(input.to).valueOf()+1).toISOString()} : {}), ...(input.countryCode ? {country:input.countryCode} : {}) };
   const rows = input.eventId ? meetings.rows.filter(e => e.event_id === input.eventId) : meetings.rows;
   let matched = filterPeople(camel(people.rows), camel(rows), filters);
   if (input.eventId) matched = matched.filter(r => r.meeting);
+  const score = r => parsed.terms.length ? parsed.terms.reduce((n, term) => n + Number(JSON.stringify([r.person, r.meeting]).toLowerCase().includes(term)), 0) : 1;
   if (input.semantic && parsed.terms.length) {
-    const score = r => parsed.terms.reduce((n, term) => n + Number(JSON.stringify([r.person, r.meeting]).toLowerCase().includes(term)), 0);
+    if (input.feed) matched = matched.filter(r => score(r) > 0);
     matched.sort((a,b) => score(b)-score(a));
   }
   return matched.slice(0, input.semantic ? 30 : 100).map(({person:p, meeting:e}) => {
     const profile = [p.name,p.company,p.role,p.bio,...p.tags].filter(Boolean).join(' · ');
     const note = e ? [e.occurredAt,e.location,e.city,e.countryCode,e.eventName,e.originalNote,e.recap,e.relevance].filter(Boolean).join(' · ') : '';
-    return { type:'person', id:p.id, title:p.name, subtitle:[p.role,p.company].filter(Boolean).join(' · '), excerpt:(note||profile).slice(0,700), personId:p.id, occurredAt:e?.occurredAt, score:1, person:p,
+    return { type:'person', id:p.id, title:p.name, subtitle:[p.role,p.company].filter(Boolean).join(' · '), excerpt:(note||profile).slice(0,700), personId:p.id, occurredAt:e?.occurredAt, score:score({person:p,meeting:e}), person:p,
       evidence:[{sourceType:'person',sourceId:p.id,text:profile.slice(0,700)},...(e ? [{sourceType:'encounter',sourceId:e.id,text:note.slice(0,1200)}] : [])] };
   });
 }
@@ -166,10 +170,11 @@ export async function feedFor(ownerId) {
     commitment: camel(row)
   }));
   const seen = new Set();
+  const candidates = needs.length ? await searchData(ownerId) : null;
   for (const need of needs) {
     for (const result of (await searchOwned(ownerId, {
-      query: need.text
-    })).slice(0, 4)) {
+      query: need.text, semantic:true, feed:true
+    }, candidates)).slice(0, 4)) {
       if (seen.has(result.id)) continue;
       seen.add(result.id);
       items.push({
