@@ -9,13 +9,17 @@ notes between devices; a new conversation does not inherit the old chat.
 - Objective: intro and Firebase phone login, guided AI card creation/editing,
   People/Share/My Card navigation, remembered WhatsApp exchanges, meeting filters,
   enquiry inbox, and a versioned staging APK.
-- Branch: `codex/phone-onboarding-card-exchange`, based on main `8ef4584`.
-  PR: https://github.com/prakhar-goel/duit-cards-2025/pull/77.
-  Commits `44dc642` (API/search) and `e5ca74e` (mobile/release) are pushed.
-  Required Pilot CI, dependency review and both cloud setup checks passed.
-- Version prepared once: **4.6.4 / Android 2026091814**. Local signed ARM64 build
-  succeeded with the existing signing identity and Firebase libraries. This is not
-  a published release yet. Latest published remains 4.6.3.
+- Source PR: https://github.com/prakhar-goel/duit-cards-2025/pull/77, merged into
+  main as `a8ca7a5`. The feature branch is retired. Release evidence is recorded on
+  the short-lived `codex/phone-release-handoff` documentation branch.
+- **Published: 4.6.4 / Android 2026091814**, signed with the existing identity.
+  Android staging APK workflow 36299766159 succeeded. Immutable release:
+  https://github.com/prakhar-goel/duit-cards-2025/releases/tag/v4.6.4-staging.
+  File: `DUIT-2026-4.6.4.apk`, 49,359,817 bytes; SHA-256
+  `7adf4604d50c26f699929cd9101926c98ad451cffcbf5d1320ee5da7bd08d792`.
+  Published 2026-09-27T06:29:18Z (11:59:18 Asia/Kolkata).
+  Render `/downloads/release.json` independently returned the matching version,
+  filename, release timestamp and immutable GitHub download URL.
 - Validation: 45 API checks passed against `duit_2026_pilot_test` only; 37 mobile
   tests passed; tooling/type checks and mobile/public web builds passed. Intro and
   phone-entry screens were checked in Chrome at 412×915. Final editor changes
@@ -28,7 +32,8 @@ notes between devices; a new conversation does not inherit the old chat.
   after restriction. Actual SMS delivery/device OTP sign-in still needs a device smoke test.
 - Render service: `srv-damc5v142hec738h1sq0`; stable origin
   https://duit-cards-staging.onrender.com. Firebase project and bounded AI settings
-  saved. Owner added separate `OPENAI_API_KEY` and `GOOGLE_GEMINI_AI_API_KEY`.
+  deployed on `a8ca7a5`; phone capabilities and AI enabled were verified live.
+  Owner added separate `OPENAI_API_KEY` and `GOOGLE_GEMINI_AI_API_KEY`.
   Both variable names were independently verified in Render without reading values.
   Only OpenAI has a feature adapter. No DutyExchange key was uploaded to Render;
   temporary local copies were removed. Never add server secrets to the APK/repo.
@@ -41,9 +46,17 @@ notes between devices; a new conversation does not inherit the old chat.
   phone tokens can retry a temporary API failure without consuming another SMS.
   Country names are bundled for Hermes; feed matching reuses owner data and ranks
   partial matches; conflicting exchange retries/phone identities return explicit errors.
-- Next: merge PR after final checks,
-  verify the automatic Android release and Render download metadata, and smoke-test
-  live AI with the new key. Update this handoff with actual PR/release status.
+- Live AI checks: profile draft produced six panels; OCR extracted the sample
+  name/company/role/phone/email/website; business visual and visiting-card cleanup
+  both succeeded. Total recorded usage: $0.036331, remaining $4.963669. Nothing was
+  applied to a published card. Cleanup retained the sample logo/text but changed
+  aspect ratio; originals and review controls remain essential. Gemini is stored
+  but has no feature adapter and incurred no calls.
+- Next: install from https://duit-cards-staging.onrender.com/download and test a
+  real Indian phone OTP, GPS, and WhatsApp handoff on the Samsung. No connected
+  Android device was available; actual carrier delivery/native interactions are
+  not claimed as tested. Website URLs inform profile drafts; website crawling is
+  not implemented. Improve image cleanup aspect-ratio preservation next.
 - Desktop directory: `/Volumes/UserData/prakhargoel/Development/duit/duit-cards-2025`.
   The separate legacy restoration is not this repository.
 
