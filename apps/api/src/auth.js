@@ -1,6 +1,8 @@
+import firebaseClient from '../../mobile/firebase-config.json' with { type: 'json' };
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { verifyPhoneIdentity } from './firebase.js';
 import { z } from 'zod';
 import { query, transaction } from './db.js';
 import { wrap, email, text, httpUrl, hash, secretToken, fail, rateLimit, camel, audit } from './common.js';
@@ -9,6 +11,7 @@ if (!jwtSecret || jwtSecret.length < 32) throw new Error('JWT_SECRET must be set
 export const userDto = row => ({
   id: row.id,
   email: row.email,
+  phone: row.phone_number,
   displayName: row.display_name,
   role: row.role,
   status: row.status,
@@ -76,15 +79,35 @@ export const profileSchema = z.object({
   offers: z.array(text(250)).max(12),
   needs: z.array(text(250)).max(12)
 }).partial();
-export function authRouter() {
+export function authRouter({ verifyPhone = verifyPhoneIdentity } = {}) {
   const router = Router();
   const limiter = rateLimit({
     max: 20,
     windowMs: 15 * 60 * 1000
   });
   router.get('/auth/capabilities', (_req, res) => res.json({
+    phoneEnabled: Boolean(process.env.FIREBASE_PROJECT_ID),
+    firebase: process.env.FIREBASE_PROJECT_ID === firebaseClient.projectId ? firebaseClient : null,
     inviteRequired: Boolean(process.env.PILOT_INVITE_CODE),
     verificationDelivery: process.env.LOCAL_OUTBOX === 'true' ? 'local_outbox' : 'unconfigured'
+  }));
+  router.post('/auth/phone', rateLimit({ max: 20, windowMs: 15 * 60 * 1000 }), wrap(async (req, res) => {
+    const { idToken } = z.object({ idToken: z.string().min(100).max(10000) }).parse(req.body);
+    const { uid, phone } = await verifyPhone(idToken);
+    const result = await transaction(async db => {
+      await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`phone:${phone}`]);
+      let user = (await db.query('SELECT * FROM users WHERE firebase_uid=$1', [uid])).rows[0];
+      if (!user) {
+        if ((await db.query('SELECT id FROM users WHERE phone_number=$1', [phone])).rows.length) fail(409, 'This number is linked to an existing DUIT identity. Contact support to recover that account.', 'PHONE_IDENTITY_CONFLICT');
+        // Never attach a phone login to an existing account merely because a profile lists that number.
+        user = (await db.query(`INSERT INTO users(email,password_hash,display_name,profile,firebase_uid,phone_number,verified_at)
+          VALUES($1,$2,'',$3,$4,$5,now()) RETURNING *`,
+        [`${hash(uid)}@phone.duit.invalid`, await bcrypt.hash(secretToken(), 12), { phone }, uid, phone])).rows[0];
+      }
+      if (user.status !== 'active') fail(403, 'This account is unavailable.', 'ACCOUNT_UNAVAILABLE');
+      return session(db, user);
+    });
+    res.json(result);
   }));
   router.post('/auth/signup', limiter, wrap(async (req, res) => {
     const input = z.object({

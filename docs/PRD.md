@@ -445,3 +445,45 @@ The app presents cards and people naturally, without prototype labels in product
 Today is a visual business feed, with Grow, Improve and Network views. Its suggestions come from the signed-in person's saved needs, offers and meeting evidence. It should help someone sell, find a useful supplier, save money or improve how their business works. It must not imply an actual buying commitment merely because details match. My Card has one dedicated destination in the bottom navigation.
 
 Meeting context is central: editable timestamp; venue, street or building; city; country; GPS coordinates; and event name/ID. The device's reverse-geocoding service fills location fields after permission, and saved events are suggested by date and distance. A selected event supplies its venue coordinates, explicitly distinguished from current GPS. Back unwinds the current detail, editor or meeting form and preserves the underlying card or event group.
+
+## Phone onboarding and remembered card exchanges — September 2026
+
+The app starts with an introduction and Firebase phone-number verification. The same
+flow creates a new account or signs into an existing verified phone identity. It
+never links an old workspace using an unverified phone in an old profile. Email
+login stays available to existing administration clients; new mobile builds contain
+no shared tester password.
+
+The three primary destinations are **People, Share, My Card**. People combines the
+previous Today and People views. It identifies received/shared exchanges and shows
+the meeting date, venue/street, city, country and event. Calendar ranges, direction,
+event, country and potential-lead filters operate on the same encounter. Natural
+language handles common calendar/place searches locally; AI can explain relevant
+connections using only the signed-in owner's saved evidence. New accounts see
+published example cards separately from actual connections.
+
+Share asks for a recipient name and WhatsApp number, with an optional conversation
+note and lead marker. The time is prefilled; GPS fills place/city/country when
+permission is granted, with manual correction and event suggestions. A transaction
+saves the person and encounter and creates the share link before opening a prepared
+WhatsApp message. The user presses Send in WhatsApp; DUIT cannot claim delivery.
+Retries reuse the same encounter. Only the verified intended recipient can receive
+the sender's meeting context when saving that link. Forwarded links expose only
+the public card, never private notes or precise coordinates.
+
+My Card contains incoming enquiries and their new count. Its guided editor starts
+with the person, accepts a visiting-card photo and website/contact facts, and offers
+reviewable OCR, profile writing, portrait/card cleanup and business-image generation.
+The owner reviews suggestions before publishing. Originals remain stored; image
+cleanup must preserve existing identity, lettering, logo and layout, and still needs
+visual comparison because generation cannot guarantee pixel-perfect preservation.
+A reverse side shares the visiting-card slide; up to four business images/videos
+follow. Website URLs are retained as contact facts, not automatically crawled.
+
+Initial operation: Firebase phone SMS is limited to India and 20/day. OpenAI uses a
+separate server key supplied by the owner. The shared application ledger admits at
+most $5 total, $0.50 per rolling day, $0.10 reserved per job, 50 daily requests, 20 per
+user daily, three per minute and one concurrent job. Image allowance is a reserved
+estimate, not a provider-enforced price cap; usage is reconciled and ambiguous calls
+are not retried automatically. The separate Gemini key is stored for later use;
+there is no Gemini feature adapter in this release.

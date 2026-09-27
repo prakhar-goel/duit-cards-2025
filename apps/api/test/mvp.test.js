@@ -36,6 +36,7 @@ const {
   createApp
 } = await import('../src/app.js');
 let server, base;
+const phoneIdentities = new Map();
 const ids = [];
 const suffix = crypto.randomUUID().slice(0, 8);
 async function request(route, {
@@ -90,7 +91,11 @@ const panels = () => ['hook', 'relevance', 'offer', 'outcome', 'proof', 'cta'].m
 }));
 test.before(async () => {
   await migrate();
-  server = createApp().listen(0, '127.0.0.1');
+  server = createApp({ verifyPhone: async token => {
+    const identity = phoneIdentities.get(token);
+    if (!identity) throw Object.assign(new Error('Invalid phone identity'), {status:401});
+    return identity;
+  }}).listen(0, '127.0.0.1');
   await new Promise(r => server.once('listening', r));
   base = `http://127.0.0.1:${server.address().port}/api/v1`;
 });
@@ -1026,4 +1031,71 @@ test('private pilot end-to-end: two accounts, public card, verified claim and re
       token: refreshed.body.accessToken
     })).status, 401);
   });
+});
+
+test('phone accounts and exchanges isolate identities, survive retries and keep meeting context private', async () => {
+  // A fresh app gives this scenario its own IP rate-limit window.
+  server.closeAllConnections();
+  await new Promise(resolve => server.close(resolve));
+  server = createApp({ verifyPhone: async token => { const identity = phoneIdentities.get(token); if (!identity) throw Object.assign(new Error('Invalid phone identity'), {status:401}); return identity; } }).listen(0, '127.0.0.1');
+  await new Promise(resolve => server.once('listening',resolve));
+  base = `http://127.0.0.1:${server.address().port}/api/v1`;
+  const owner = await signup('phone-owner');
+  const phone = '+919' + String(crypto.randomInt(100000000, 999999999));
+  await query('UPDATE users SET profile=$1 WHERE id=$2', [{phone},owner.user.id]);
+  const identityToken = crypto.randomBytes(100).toString('hex');
+  phoneIdentities.set(identityToken, {uid:`firebase-${suffix}`,phone});
+  const invalid = await request('/auth/phone',{method:'POST',body:{idToken:'x'.repeat(110)}});
+  assert.equal(invalid.status,401);
+  const signed = await request('/auth/phone',{method:'POST',body:{idToken:identityToken}});
+  assert.equal(signed.status,200,JSON.stringify(signed.body));
+  ids.push(signed.body.user.id);
+  const recipient = signed.body;
+  assert.notEqual(recipient.user.id,owner.user.id,'A profile phone is not proof of ownership');
+  assert.equal(recipient.user.phone,phone);
+  const again = await request('/auth/phone',{method:'POST',body:{idToken:identityToken}});
+  assert.equal(again.body.user.id,recipient.user.id);
+  const recycledToken = crypto.randomBytes(100).toString('hex');
+  phoneIdentities.set(recycledToken, {uid:`different-${suffix}`,phone});
+  const conflict=await request('/auth/phone',{method:'POST',body:{idToken:recycledToken}});
+  assert.equal(conflict.status,409);
+  assert.equal(conflict.body.error.code,'PHONE_IDENTITY_CONFLICT');
+  assert.equal((await request('/examples/cards',{token:recipient.accessToken})).status,200);
+  const created = await request('/cards',{method:'POST',token:owner.accessToken,body:{title:'Arjun',company:'Studio',slug:`exchange-${suffix}`,contact:{phone:'+919999999999'}}});
+  assert.equal(created.status,201,JSON.stringify(created.body));
+  const cardId=created.body.card.id;
+  await request(`/cards/${cardId}/panels`,{method:'POST',token:owner.accessToken,body:{panels:panels()}});
+  assert.equal((await request(`/cards/${cardId}/publish`,{method:'POST',token:owner.accessToken})).status,200);
+  const chosenEvent = await request('/events', {method:'POST', token:owner.accessToken, body:{name:'Startup Summit',city:'Gurugram',countryCode:'IN'}});
+  assert.equal(chosenEvent.status,201);
+  const foreignEvent = await request('/events', {method:'POST', token:recipient.accessToken, body:{name:'Private event'}});
+  const input={cardId,eventId:chosenEvent.body.event.id,clientId:`capture-${suffix}-exchange`,name:'Mira',phone,note:'Private pricing discussion',location:'Hall 2',city:'Gurugram',countryCode:'IN',eventName:'Startup Summit',occurredAt:'2026-09-27T09:00:00Z',latitude:28.4,longitude:77.1,potentialLead:true};
+  assert.equal((await request('/exchanges',{method:'POST',token:recipient.accessToken,body:input})).status,404);
+  assert.equal((await request('/exchanges',{method:'POST',token:owner.accessToken,body:{...input,eventId:foreignEvent.body.event.id}})).status,404);
+  const [first,retry]=await Promise.all([1,2].map(()=>request('/exchanges',{method:'POST',token:owner.accessToken,body:input})));
+  assert.equal(first.status,201,JSON.stringify(first.body));
+  assert.deepEqual(first.body,retry.body);
+  assert.equal(first.body.delivery,'prepared');
+  assert.equal((await request('/exchanges',{method:'POST',token:owner.accessToken,body:{...input,cardId:crypto.randomUUID()}})).status,409);
+  assert.equal((await request('/exchanges',{method:'POST',token:owner.accessToken,body:{...input,phone:'+919888888888'}})).status,409);
+  assert.equal((await query('SELECT event_id FROM encounters WHERE id=$1',[first.body.encounterId])).rows[0].event_id, chosenEvent.body.event.id);
+  assert.equal((await request(`/events/${chosenEvent.body.event.id}`,{token:owner.accessToken})).body.event.peopleCount,1);
+  assert.equal((await query('SELECT count(*)::int AS n FROM encounters WHERE owner_id=$1 AND client_id=$2',[owner.user.id,input.clientId])).rows[0].n,1);
+  const token=new URL(first.body.url).pathname.split('/').pop();
+  const publicShare=await request(`/public/shares/${token}`);
+  assert.equal(publicShare.body.claimAvailable,false);
+  assert.equal(JSON.stringify(publicShare.body).includes('Hall 2'),false);
+  assert.equal(JSON.stringify(publicShare.body).includes('Private pricing'),false);
+  const received=await request(`/shares/${token}/save`,{method:'POST',token:recipient.accessToken});
+  assert.equal(received.status,200,JSON.stringify(received.body));
+  await request(`/shares/${token}/save`,{method:'POST',token:recipient.accessToken});
+  const meetings=(await query('SELECT * FROM encounters WHERE owner_id=$1',[recipient.user.id])).rows;
+  assert.equal(meetings.length,1); assert.equal(meetings[0].location,'Hall 2');
+  assert.equal(meetings[0].original_note,''); assert.equal(meetings[0].latitude,null);
+  const forward=await signup('forwarded');
+  await request(`/shares/${token}/save`,{method:'POST',token:forward.accessToken});
+  const forwardedMeeting=(await query('SELECT * FROM encounters WHERE owner_id=$1',[forward.user.id])).rows[0];
+  assert.equal(forwardedMeeting.location,''); assert.equal(forwardedMeeting.meeting_type,'Card saved');
+  await query("UPDATE users SET status='suspended' WHERE id=$1",[recipient.user.id]);
+  assert.equal((await request('/auth/phone',{method:'POST',body:{idToken:identityToken}})).status,403);
 });

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { createHmac } from 'node:crypto';
 import { z } from 'zod';
 import { query, transaction } from './db.js';
 import { auth, profileSchema } from './auth.js';
@@ -13,6 +14,57 @@ async function lookup(token, db = {
 }
 export function sharesRouter() {
   const router = Router();
+  router.post('/exchanges', auth, wrap(async (req, res) => {
+    const input = z.object({
+      cardId: z.uuid(), clientId: text(120).min(8), name: text(120).min(2), phone: z.string().regex(/^\+[1-9]\d{7,14}$/),
+      note: text(3000).default(''), location: text(300).default(''), city: text(100).default(''),
+      countryCode: text(8).default(''), eventName: text(200).default(''), occurredAt: z.iso.datetime({ offset: true }),
+      latitude: z.number().min(-90).max(90).optional(), longitude: z.number().min(-180).max(180).optional(),
+      potentialLead: z.boolean().default(false), eventId: z.uuid().optional()
+    }).parse(req.body);
+    const token = createHmac('sha256', process.env.JWT_SECRET).update(`exchange:${req.userId}:${input.clientId}`).digest('hex');
+    const result = await transaction(async db => {
+      await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`exchange-client:${req.userId}:${input.clientId}`]);
+      await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`exchange-phone:${req.userId}:${input.phone}`]);
+      const prior = (await db.query('SELECT * FROM share_links WHERE owner_id=$1 AND client_id=$2', [req.userId, input.clientId])).rows[0];
+      if (prior) {
+        if (prior.card_id !== input.cardId || prior.recipient_draft?.phone !== input.phone) fail(409, 'This exchange was already saved for another card or recipient. Start a new exchange.', 'EXCHANGE_CONFLICT');
+        return { personId: prior.person_id, encounterId: prior.encounter_id, shareId: prior.id };
+      }
+      await owned('cards', input.cardId, req.userId, db);
+      await publicCardById(input.cardId, db);
+      if (input.eventId) await owned('events', input.eventId, req.userId, db);
+      let person = (await db.query('SELECT * FROM people WHERE owner_id=$1 AND phone=$2 ORDER BY created_at LIMIT 1', [req.userId, input.phone])).rows[0];
+      if (!person) person = (await db.query(`INSERT INTO people(owner_id,name,phone,city,country_code,tags,client_id)
+        VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`, [req.userId, input.name, input.phone, input.city, input.countryCode, input.potentialLead ? ['Potential lead'] : [], input.clientId])).rows[0];
+      else if (input.potentialLead) await db.query("UPDATE people SET tags=array(SELECT DISTINCT unnest(tags || ARRAY['Potential lead'])) WHERE id=$1", [person.id]);
+      const meeting = (await db.query(`INSERT INTO encounters(owner_id,person_id,occurred_at,location,city,country_code,event_name,latitude,longitude,original_note,meeting_type,exchange_type,client_id,event_id)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'In person','Shared my card',$11,$12) RETURNING id`,
+      [req.userId, person.id, input.occurredAt, input.location, input.city, input.countryCode, input.eventName, input.latitude, input.longitude, input.note, input.clientId, input.eventId || null])).rows[0];
+      const context = { occurredAt: input.occurredAt, location: input.location, city: input.city, countryCode: input.countryCode, eventName: input.eventName };
+      const share = (await db.query(`INSERT INTO share_links(owner_id,card_id,token_hash,channel,recipient_draft,expires_at,client_id,person_id,encounter_id,meeting_context)
+        VALUES($1,$2,$3,'whatsapp',$4,now()+interval '365 days',$5,$6,$7,$8) RETURNING id`,
+      [req.userId, input.cardId, hash(token), { name: input.name, phone: input.phone }, input.clientId, person.id, meeting.id, context])).rows[0];
+      return { personId: person.id, encounterId: meeting.id, shareId: share.id };
+    });
+    // Creating this record means a message is ready. WhatsApp does not report delivery to this app.
+    res.status(201).json({ ...result, url: `${publicOrigin()}/s/${token}`, delivery: 'prepared' });
+  }));
+  router.post('/shares/:token/save', auth, wrap(async (req, res) => {
+    const share = await lookup(req.params.token);
+    if (share.owner_id === req.userId) fail(400, 'This is your own card.');
+    const result = await transaction(async db => {
+      const person = await saveCard(req.userId, share.card_id, db);
+      // Only the verified recipient gets the sender-provided place/time. Forwarded links reveal no meeting context.
+      const matched = req.user.phone_number && req.user.phone_number === share.recipient_draft?.phone;
+      const c = matched ? share.meeting_context || {} : {};
+      await db.query(`INSERT INTO encounters(owner_id,person_id,occurred_at,location,city,country_code,event_name,meeting_type,exchange_type,client_id)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,'Received their card',$9) ON CONFLICT(owner_id,client_id) DO NOTHING`,
+      [req.userId, person.id, c.occurredAt || new Date().toISOString(), c.location || '', c.city || '', c.countryCode || '', c.eventName || '', matched ? 'In person' : 'Card saved', `share:${share.id}`]);
+      return person;
+    });
+    res.json({ person: result });
+  }));
   router.post('/cards/:id/shares', auth, wrap(async (req, res) => {
     await owned('cards', req.params.id, req.userId);
     await publicCardById(req.params.id);
@@ -20,7 +72,7 @@ export function sharesRouter() {
       channel: z.enum(['whatsapp', 'qr', 'link']).default('link'),
       recipientDraft: z.object({
         name: text(120).min(2),
-        email,
+        email: email.optional(),
         phone: text(40).optional(),
         company: text(160).optional(),
         role: text(120).optional()
@@ -39,7 +91,7 @@ export function sharesRouter() {
     const published = await publicCardById(share.card_id);
     res.json({
       card: presentPublicCard(published.snapshot, req),
-      claimAvailable: Boolean(share.recipient_draft && !share.claimed_at)
+      claimAvailable: Boolean(share.recipient_email && !share.claimed_at)
     });
   }));
   const limiter = rateLimit({

@@ -15,10 +15,6 @@ on:
         description: Publish a new version and update the staging download (requires a version bump)
         type: boolean
         default: false
-      prefill:
-        description: Include the existing shared Maya tester login
-        type: boolean
-        default: true
 
 concurrency:
   group: android-staging-delivery
@@ -102,7 +98,7 @@ jobs:
       contents: write
     env:
       EXPO_PUBLIC_API_URL: https://duit-cards-staging.onrender.com/api/v1
-      DUIT_DEMO_PREFILL: ${{ (github.event_name == 'workflow_run' || inputs.prefill) && 'true' || 'false' }}
+      DUIT_DEMO_PREFILL: "false"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -141,8 +137,6 @@ jobs:
       - name: Build and verify APK
         env:
           DUIT_SIGNING_CERT_SHA256: ${{ secrets.DUIT_SIGNING_CERT_SHA256 }}
-          DUIT_DEMO_EMAIL: ${{ secrets.DUIT_DEMO_EMAIL }}
-          DUIT_DEMO_PASSWORD: ${{ secrets.DUIT_DEMO_PASSWORD }}
         run: npm run build:apk
       - name: Prepare named download and build provenance
         env:

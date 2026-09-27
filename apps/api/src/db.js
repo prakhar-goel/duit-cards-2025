@@ -173,5 +173,13 @@ export async function migrate() {
       await db.query('CREATE TABLE media_blobs (media_id UUID PRIMARY KEY REFERENCES media_assets(id) ON DELETE CASCADE, bytes BYTEA NOT NULL)');
       await db.query("INSERT INTO schema_migrations(version) VALUES('2026-durable-staging-media-v5')");
     }
+    if (!(await db.query("SELECT 1 FROM schema_migrations WHERE version='2026-phone-exchanges-v6'")).rowCount) {
+      await db.query(`ALTER TABLE users ADD COLUMN firebase_uid TEXT UNIQUE, ADD COLUMN phone_number TEXT UNIQUE;
+        ALTER TABLE share_links ADD COLUMN client_id TEXT, ADD COLUMN person_id UUID REFERENCES people(id) ON DELETE SET NULL,
+          ADD COLUMN encounter_id UUID REFERENCES encounters(id) ON DELETE SET NULL, ADD COLUMN meeting_context JSONB,
+          ADD CONSTRAINT share_links_owner_client_unique UNIQUE(owner_id,client_id);
+        CREATE INDEX people_owner_phone_idx ON people(owner_id,phone);
+        INSERT INTO schema_migrations(version) VALUES('2026-phone-exchanges-v6');`);
+    }
   });
 }

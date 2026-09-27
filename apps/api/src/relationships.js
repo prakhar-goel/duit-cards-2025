@@ -1,3 +1,4 @@
+import { parseMeetingQuery, filterPeople } from '../../../packages/meeting-search/index.js';
 import { Router } from 'express';
 import { z } from 'zod';
 import { query, transaction } from './db.js';
@@ -127,43 +128,31 @@ async function getPerson(id, ownerId) {
 }
 const stop = new Set('the a an and or to of in on at for with that this from my me i we who is are was were have has had people someone person find met last week month year near about need want our can you they them their'.split(' '));
 const tokens = value => [...new Set(String(value).toLowerCase().match(/[\p{L}\p{N}]{2,}/gu) || [])].filter(t => !stop.has(t)).slice(0, 16);
-export async function searchOwned(ownerId, input) {
-  const candidates = (await query(`SELECT p.*, e.id AS encounter_id,e.original_note,e.recap,e.relevance,e.occurred_at,e.event_name,e.location FROM people p LEFT JOIN encounters e ON e.person_id=p.id WHERE p.owner_id=$1 AND ($2::timestamptz IS NULL OR e.occurred_at >= $2) AND ($3::timestamptz IS NULL OR e.occurred_at <= $3) AND ($4::uuid IS NULL OR e.event_id=$4) AND ($5::text IS NULL OR lower(p.country_code)=lower($5)) ORDER BY p.updated_at DESC LIMIT 2000`, [ownerId, input.from || null, input.to || null, input.eventId || null, input.countryCode || null])).rows;
-  const terms = tokens(input.query);
-  const matches = new Map();
-  for (const row of candidates) {
-    const profile = [row.name, row.company, row.role, row.bio, ...row.tags, row.city, row.country_code].filter(Boolean).join(' · ');
-    const note = [row.original_note, row.recap, row.relevance, row.event_name, row.location].filter(Boolean).join(' · ');
-    const hay = (profile + ' ' + note).toLowerCase();
-    const found = terms.filter(t => hay.includes(t));
-    if (!found.length && terms.length) continue;
-    const evidence = [];
-    if (terms.some(t => profile.toLowerCase().includes(t)) || !terms.length) evidence.push({
-      sourceType: 'person',
-      sourceId: row.id,
-      text: profile.slice(0, 500)
-    });
-    if (row.encounter_id && terms.some(t => note.toLowerCase().includes(t))) evidence.push({
-      sourceType: 'encounter',
-      sourceId: row.encounter_id,
-      text: note.slice(0, 700)
-    });
-    const score = found.length / Math.max(terms.length, 1);
-    const result = {
-      type: 'person',
-      id: row.id,
-      title: row.name,
-      subtitle: [row.role, row.company].filter(Boolean).join(' · '),
-      excerpt: (note || row.bio || profile).slice(0, 350),
-      personId: row.id,
-      occurredAt: row.occurred_at,
-      score,
-      evidence,
-      person: camel(Object.fromEntries(Object.entries(row).filter(([key]) => !['encounter_id', 'original_note', 'recap', 'relevance', 'occurred_at', 'event_name', 'location'].includes(key))))
-    };
-    if (!matches.has(row.id) || matches.get(row.id).score < score) matches.set(row.id, result);
+async function searchData(ownerId) {
+  return Promise.all([
+    query('SELECT * FROM people WHERE owner_id=$1 ORDER BY updated_at DESC LIMIT 5000', [ownerId]),
+    query('SELECT * FROM encounters WHERE owner_id=$1 ORDER BY occurred_at DESC LIMIT 20000', [ownerId])
+  ]);
+}
+export async function searchOwned(ownerId, input, data) {
+  const [people, meetings] = data || await searchData(ownerId);
+  const parsed = input.feed ? { terms: tokens(input.query) } : parseMeetingQuery(input.query || '');
+  const filters = { ...parsed, ...(input.filters || {}), terms: input.semantic ? [] : parsed.terms,
+    ...(input.from ? {from:input.from} : {}), ...(input.to ? {before:new Date(new Date(input.to).valueOf()+1).toISOString()} : {}), ...(input.countryCode ? {country:input.countryCode} : {}) };
+  const rows = input.eventId ? meetings.rows.filter(e => e.event_id === input.eventId) : meetings.rows;
+  let matched = filterPeople(camel(people.rows), camel(rows), filters);
+  if (input.eventId) matched = matched.filter(r => r.meeting);
+  const score = r => parsed.terms.length ? parsed.terms.reduce((n, term) => n + Number(JSON.stringify([r.person, r.meeting]).toLowerCase().includes(term)), 0) : 1;
+  if (input.semantic && parsed.terms.length) {
+    if (input.feed) matched = matched.filter(r => score(r) > 0);
+    matched.sort((a,b) => score(b)-score(a));
   }
-  return [...matches.values()].sort((a, b) => b.score - a.score).slice(0, 50);
+  return matched.slice(0, input.semantic ? 30 : 100).map(({person:p, meeting:e}) => {
+    const profile = [p.name,p.company,p.role,p.bio,...p.tags].filter(Boolean).join(' · ');
+    const note = e ? [e.occurredAt,e.location,e.city,e.countryCode,e.eventName,e.originalNote,e.recap,e.relevance].filter(Boolean).join(' · ') : '';
+    return { type:'person', id:p.id, title:p.name, subtitle:[p.role,p.company].filter(Boolean).join(' · '), excerpt:(note||profile).slice(0,700), personId:p.id, occurredAt:e?.occurredAt, score:score({person:p,meeting:e}), person:p,
+      evidence:[{sourceType:'person',sourceId:p.id,text:profile.slice(0,700)},...(e ? [{sourceType:'encounter',sourceId:e.id,text:note.slice(0,1200)}] : [])] };
+  });
 }
 export async function feedFor(ownerId) {
   const commitments = (await query("SELECT c.*,p.name AS person_name,p.company FROM commitments c JOIN people p ON p.id=c.person_id WHERE c.owner_id=$1 AND c.status='open' ORDER BY c.due_at NULLS LAST,c.created_at DESC LIMIT 12", [ownerId])).rows;
@@ -181,10 +170,11 @@ export async function feedFor(ownerId) {
     commitment: camel(row)
   }));
   const seen = new Set();
+  const candidates = needs.length ? await searchData(ownerId) : null;
   for (const need of needs) {
     for (const result of (await searchOwned(ownerId, {
-      query: need.text
-    })).slice(0, 4)) {
+      query: need.text, semantic:true, feed:true
+    }, candidates)).slice(0, 4)) {
       if (seen.has(result.id)) continue;
       seen.add(result.id);
       items.push({

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "101035881110",
+    "project_id": "duit-cards-2025",
+    "storage_bucket": "duit-cards-2025.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:101035881110:android:4690723cbd43d4492788b7",
+        "android_client_info": {
+          "package_name": "io.duit.ecards.pilot"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDO1zyVifVBeyIaF6DH0iNVl3mX8UEPgcM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

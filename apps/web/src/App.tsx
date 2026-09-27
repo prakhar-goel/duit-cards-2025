@@ -644,8 +644,8 @@ function PublicCard({
         <Logo />
         <span className="story-nav-caption">A proper introduction.</span>
         <div className="story-nav-actions">
-          <a href="/download" className="story-get-app">
-            Get DUIT <ArrowUpRight size={13} />
+          <a href={shareToken ? `duitpilot://share/${encodeURIComponent(shareToken)}` : `duitpilot://card/${encodeURIComponent(c.slug)}`} className="story-get-app">
+            Open in DUIT <ArrowUpRight size={13} />
           </a>
           <button
             className="story-share-button"
@@ -657,6 +657,7 @@ function PublicCard({
           </button>
         </div>
       </nav>
+      <a href="/download" className="story-invitation">New to DUIT? Get the app to keep this card and the memory of your meeting.</a>
       {claimAvailable && (
         <div className="story-invitation">
           <span>An introduction, just for you.</span>
