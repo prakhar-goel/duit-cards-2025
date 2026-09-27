@@ -399,10 +399,11 @@ function DownloadPage() {
         <div className="callout">
           <LockKeyhole size={19} />
           <div>
-            <strong>For invited testers</strong>
+            <strong>Sign in with your phone</strong>
             <p>
-              You’ll need your pilot account and server address. Your private
-              meeting notes stay with your account.
+              Open the app and verify your Indian mobile number with an SMS code.
+              The server is already connected. Your private meeting notes stay
+              with your account.
             </p>
           </div>
         </div>
