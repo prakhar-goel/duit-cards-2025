@@ -6,39 +6,37 @@ notes between devices; a new conversation does not inherit the old chat.
 
 ## Current milestone
 
-- Objective completed: phone-only changes can produce a signed APK automatically
-  after a protected PR merge and successful main CI. No laptop or manual APK
-  workflow dispatch is required for normal releases.
-- Automation PR: https://github.com/prakhar-goel/duit-cards-2025/pull/74 (merged).
-- Follow-up PR: https://github.com/prakhar-goel/duit-cards-2025/pull/75,
-  branch `codex/release-channel-recovery`; use current `main` after it merges.
-  It adds recovery for partial shared-channel publication, with no
-  app behavior or version change.
-- Latest verified APK: **4.6.3 / Android 2026091813**, source
-  `782cdeff384aeb45726f9a7651de3adfbfb0a29c`, published September 19, 2026.
-- Automatic run (event `workflow_run`, successful):
-  https://github.com/prakhar-goel/duit-cards-2025/actions/runs/35431410263
-- Download:
-  https://github.com/prakhar-goel/duit-cards-2025/releases/download/v4.6.3-staging/DUIT-2026-4.6.3.apk
-- Render release metadata independently confirmed 4.6.3. Actual Samsung installation
-  and device interaction testing remain with the tester.
-- Product behavior: Instagram-inspired theme is the default. DUIT Original remains
-  selectable in My Card → Settings → Appearance. Theme changes preserve app state.
-- Validation: initial PR/main CI passed. Recovery follow-up has 13 passing tooling
-  tests and parsed workflow YAML; recovery dry-run downloaded and checked the real
-  4.6.3 APK/manifest, signing provenance, source ancestry and rollback guard without
-  modifying a release. Consult the follow-up PR for its final GitHub CI result.
-- Release approval remains the PR merge. No blanket automatic merge is configured.
-- The paid-account cloud environment now has the owner-approved read-only GitHub
-  and DUIT host allowlist documented in MOBILE_CLOUD_DEVELOPMENT.md. The settings
-  were saved and reopened to verify their persistence. No tokens were added.
-- Next developer: start the user's next requested change from current main, or
-  resume the explicitly provided open PR branch. For a new APK use
-  `npm run release:prepare` once (next patch from this version is 4.6.4), update
-  these notes and create/update the PR. Do not reuse an outdated cloud snapshot.
-- Desktop project: **duit-cards-2025** at
-  `/Volumes/UserData/prakhargoel/Development/duit/duit-cards-2025`.
-  The separate **duit-cards-2018** restoration is not this repository.
+- Objective: intro and Firebase phone login, guided AI card creation/editing,
+  People/Share/My Card navigation, remembered WhatsApp exchanges, meeting filters,
+  enquiry inbox, and a versioned staging APK.
+- Branch: `codex/phone-onboarding-card-exchange`, based on main `8ef4584`.
+  PR has not yet been opened; implementation is being validated before merge.
+- Version prepared once: **4.6.4 / Android 2026091814**. Local signed ARM64 build
+  succeeded with the existing signing identity and Firebase libraries. This is not
+  a published release yet. Latest published remains 4.6.3.
+- Validation: 45 API checks passed against `duit_2026_pilot_test` only; 37 mobile
+  tests passed; tooling/type checks and mobile/public web builds passed. Intro and
+  phone-entry screens were checked in Chrome at 412×915. Final editor changes
+  preserve video uploads and reverse-side card images; type checks passed.
+- Firebase: project `duit-cards-2025` (101035881110), native/web clients configured,
+  existing APK certificate registered, phone enabled, India SMS allowlist and
+  effective 20/day verification-SMS quota. User approved narrowing both public
+  Firebase keys to authentication services; applied successfully. Gemini key remains
+  separate. Actual SMS delivery/device OTP sign-in still needs a device smoke test.
+- Render service: `srv-damc5v142hec738h1sq0`; stable origin
+  https://duit-cards-staging.onrender.com. Firebase project and bounded AI settings
+  saved. Owner added separate `OPENAI_API_KEY` and `GOOGLE_GEMINI_AI_API_KEY`.
+  Only OpenAI has a feature adapter. No DutyExchange key was uploaded to Render;
+  temporary local copies were removed. Never add server secrets to the APK/repo.
+- Application semantics: WhatsApp opens a prepared message; delivery is not known.
+  Meeting context goes only to a matching verified phone, private notes stay with
+  the sender. Example cards are not invented meetings. Existing email workspaces
+  are not automatically claimed by phone-number matching.
+- Next: finish final checks, focused commits/push and PR, wait for Pilot CI, merge,
+  verify the automatic Android release and Render download metadata, and smoke-test
+  live AI with the new key. Update this handoff with actual PR/release status.
+- Desktop directory: `/Volumes/UserData/prakhargoel/Development/duit/duit-cards-2025`.
+  The separate legacy restoration is not this repository.
 
 ## Working rules for both devices
 

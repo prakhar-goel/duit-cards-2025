@@ -121,6 +121,13 @@ function publicMediaUrl(url) {
 }
 export function cardsRouter() {
   const router = Router();
+  router.get('/examples/cards', auth, wrap(async (req, res) => {
+    // A read-only gallery, not fabricated relationships copied into new accounts.
+    const rows = (await query(`SELECT v.snapshot FROM cards c JOIN card_versions v ON v.id=c.published_version_id
+      WHERE c.is_published AND c.data_origin='fictional_demo' AND c.image_url IS NOT NULL AND c.business_card_url IS NOT NULL
+      ORDER BY c.created_at,c.id LIMIT 12`)).rows;
+    res.json({ cards: rows.map(r => presentPublicCard(r.snapshot, req)) });
+  }));
   router.get('/cards', auth, wrap(async (req, res) => {
     const {
       limit,

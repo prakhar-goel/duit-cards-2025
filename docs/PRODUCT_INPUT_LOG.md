@@ -317,3 +317,28 @@ Can you study instagram's interface. The colour combinations, themes, fonts etc 
 
 I want that cloud codex should be able to release the apk, just like you were able to. Is it even possible safely?
 Setup things in such a way that I may continue development from codex app, after cloud codex finish and vice versa. Understand the core problem - I am on the move, without my laptop for next few days, only with my mobile and with sporadic/intermittent access to my laptop.
+
+
+## 2026-09-27T10:43:40+05:30
+
+Here is what you need to do:
+
+- Create an intro screen leading up to signup
+- Integrate firebase login system. Start with only mobile based signup and login.
+- As a user, allow me to create my card. You may ask me some basic details, my website, my visiting card photo etc and using AI, suggest me my profile. Same pattern - my photo, my business card, and few images reflecting my business etc. Use AI keys from dutyexchange project, use same keys. You have gemini and openai, both of them available. The user should feel "wow" at his profile. Even if he shares the poto of his visiting card, you have to cleanup his visiting card image in such a way that it looks professionally created. Ensure that company logos, typography etc are retained. At the beginning, when a new user logs in, show him some sample cards, so that it doesnt feel empty and gives him a hang of the platform. Remove buttons and text like "enquiries", "Good for business". Incoming Enquiries should be shown in my profile with appropriate notifications if needed.
+- Focus on the card sharing mechanism. The "timestamp" and the "geographic" location of the card exchange is very important. The midlle button on the bottom nav bar should be share. Here I should be able to take a person's name and contact number, some brief details - and my card's link along with a messgase "Hi xyz, my name is abc, we met at so and so location. We discussed about so and so (if its captured). I do so and so/I have a business about so and so". This message should be triggered to be sent via whatsapp to the other person on their whatsapp. Enable this simple sharing
+- Merger Today and people button. I should simply be shown the people I have met with, clearly showing incoming cards, or people with whom I have shareed my cards. Timestamp and location of meeting should be clearly visible. I should also be able to filter based on tmestamps - People I met last week, in jan 2026 etc. In brazil, in gurgaon, in startup event last week, potential leads met in xyz event etc. These kinds of filters. Enable AI too in these kind of queries.
+- Allow me to update my card using AI
+- Update everything and create the apk link, updated on the website.
+
+You may check the previous app too. Some of these features were implemented there.
+
+
+## 2026-09-27T11:14:06+05:30
+
+Can I create another openai key for DUIT?
+
+
+## 2026-09-27T11:27:26+05:30
+
+restrict it and continue

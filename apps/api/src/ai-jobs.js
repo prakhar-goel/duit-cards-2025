@@ -39,7 +39,7 @@ async function settle(id, ownerId, reserve, response, error) {
           filename: `ai-review-${id}-${index}.png`,
           mimeType: image.mimeType,
           data: image.base64,
-          purpose: response.task === 'portrait_cleanup' ? 'portrait' : 'business_card'
+          purpose: response.task === 'portrait_cleanup' ? 'portrait' : response.task === 'business_visual' ? 'cover' : 'business_card'
         });
         images.push(mediaDto(row));
       }
@@ -135,7 +135,9 @@ export function aiRouter() {
     if (request.task === 'network_search') {
       const queryText = z.string().trim().min(2).max(500).parse(input.query);
       const results = await searchOwned(req.userId, {
-        query: queryText
+        query: queryText,
+        semantic: true,
+        filters: z.object({ from: z.iso.datetime().optional(), before: z.iso.datetime().optional(), country:z.string().max(100).optional(), place:z.string().max(200).optional(), event:z.string().max(200).optional(), direction:z.enum(['incoming','outgoing','']).optional(), leadOnly:z.boolean().optional() }).parse(input.filters || {})
       });
       input = {
         query: queryText,

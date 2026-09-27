@@ -24,7 +24,7 @@ test('provider is unavailable without key, enable flag and explicit approved bud
 });
 
 test('exports a fixed allowlist and refuses unknown models or tasks', () => {
-  assert.equal(TASKS.length, 8);
+  assert.equal(TASKS.length, 9);
   assert.throws(() => estimateCost({ task: 'send_message' }), expectCode('unsupported_ai_task'));
   assert.throws(() => estimateCost(followup, { env: { ...env, DUIT_AI_TEXT_MODEL: 'arbitrary-model' } }), expectCode('provider_unavailable'));
 });
@@ -208,4 +208,20 @@ test('broken response streams and invalid upstream objects preserve uncertain ch
   await assert.rejects(runAi(reserved(followup), { env, fetchImpl: async () => new Response(broken) }), expectCode('ai_request_interrupted', e => assert.equal(e.chargeMayHaveOccurred, true)));
   await assert.rejects(runAi(reserved(followup), { env, fetchImpl: async () => new Response('null') }), expectCode('invalid_ai_response', e => assert.equal(e.chargeMayHaveOccurred, true)));
   await assert.rejects(runAi(reserved(followup), { env, fetchImpl: async () => new Response('bad gateway', { status: 502 }) }), expectCode('invalid_ai_response', e => assert.equal(e.chargeMayHaveOccurred, true)));
+});
+
+test('business visuals use generation, explicit allowance, and a reviewed image without inventing facts', async () => {
+  const config = { ...env, DUIT_AI_IMAGE_ENABLED: 'true', DUIT_AI_IMAGE_RESERVE_USD: '0.1' };
+  const request = reserved({ task:'business_visual', input:{brief:'Warm coffee counter with a ceramic cup'} }, config);
+  const output = await runAi(request, { env:config, fetchImpl: async (url, options) => {
+    assert.equal(url, 'https://api.openai.com/v1/images/generations');
+    const body = JSON.parse(options.body);
+    assert.equal(body.n, 1); assert.equal(body.quality, 'medium');
+    assert.match(body.prompt, /coffee counter/);
+    return new Response(JSON.stringify({data:[{b64_json:png.toString('base64')}]}));
+  }});
+  assert.equal(output.requiresReview, true);
+  assert.equal(output.result.images.length, 1);
+  assert.deepEqual(output.result.sourceMediaIds, []);
+  assert.equal(output.usage.costUsd, 0.1);
 });
