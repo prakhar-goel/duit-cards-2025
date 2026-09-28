@@ -1066,6 +1066,13 @@ test('phone accounts and exchanges isolate identities, survive retries and keep 
   const cardId=created.body.card.id;
   await request(`/cards/${cardId}/panels`,{method:'POST',token:owner.accessToken,body:{panels:panels()}});
   assert.equal((await request(`/cards/${cardId}/publish`,{method:'POST',token:owner.accessToken})).status,200);
+  const wallet = await request('/wallet/cards', {token:owner.accessToken});
+  assert.equal(wallet.status,200);
+  assert.equal(wallet.body.cards.find(c => c.id === cardId).panels.length,6);
+  assert.equal((await request('/wallet/cards', {token:recipient.accessToken})).body.cards.some(c => c.id === cardId),false);
+  assert.equal((await request('/wallet/cards')).status,401);
+  assert.equal((await request('/locations?q=Delhi')).status,401);
+  assert.equal((await request('/locations?latitude=999&longitude=77', {token:owner.accessToken})).status,400);
   const chosenEvent = await request('/events', {method:'POST', token:owner.accessToken, body:{name:'Startup Summit',city:'Gurugram',countryCode:'IN'}});
   assert.equal(chosenEvent.status,201);
   const foreignEvent = await request('/events', {method:'POST', token:recipient.accessToken, body:{name:'Private event'}});

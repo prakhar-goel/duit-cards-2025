@@ -144,12 +144,49 @@ function Main() {
       style={{ flex: 1, backgroundColor: C.bg }}
     >
       <StatusBar style="dark" />
+      {(store.offline ||
+        store.pendingExchanges.length > 0 ||
+        store.mediaProgress.total > store.mediaProgress.done) && (
+        <View
+          accessibilityLiveRegion="polite"
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            paddingVertical: 5,
+            backgroundColor: C.soft,
+          }}
+        >
+          <Icon
+            name={store.offline ? "cloud-offline-outline" : "sync-outline"}
+            size={13}
+          />
+          <Text style={{ color: C.teal, fontSize: 12 }}>
+            {store.offline
+              ? "Offline · saved cards available"
+              : store.pendingExchanges.some((e) => e.error)
+                ? "An exchange needs attention in People"
+                : store.pendingExchanges.length
+                  ? `${store.pendingExchanges.length} meeting(s) waiting to sync`
+                  : store.mediaProgress.finished
+                    ? `${store.mediaProgress.total - store.mediaProgress.done} media files waiting to download`
+                    : `Saving card media · ${store.mediaProgress.done}/${store.mediaProgress.total}`}
+          </Text>
+        </View>
+      )}
       <Animated.View style={{ flex: 1, opacity }}>
         {tab === "People" ? (
-          <PeopleScreen onPerson={setPersonId} onCapture={() => openCapture()} onCreate={() => navigate("My Card")} />
+          <PeopleScreen
+            onPerson={setPersonId}
+            onCapture={() => openCapture()}
+            onCreate={() => navigate("My Card")}
+          />
         ) : tab === "Share" ? (
           <ExchangeScreen onCreate={() => navigate("My Card")} />
-        ) : <MyCardScreen />}
+        ) : (
+          <MyCardScreen />
+        )}
       </Animated.View>
       <View
         style={{
@@ -226,7 +263,11 @@ function Main() {
                   marginTop: t.name === "Share" ? -1 : 0,
                 }}
               >
-                {t.name}{t.name === "My Card" && store.data.leads.some(l => l.status === "new") ? " •" : ""}
+                {t.name}
+                {t.name === "My Card" &&
+                store.data.leads.some((l) => l.status === "new")
+                  ? " •"
+                  : ""}
               </Text>
             </Pressable>
           ))}
@@ -292,7 +333,11 @@ function Main() {
           publicCard ? (
             <Button
               onPress={() =>
-                void post(shareToken ? `/shares/${encodeURIComponent(shareToken)}/save` : `/cards/${publicCard.id}/save`)
+                void post(
+                  shareToken
+                    ? `/shares/${encodeURIComponent(shareToken)}/save`
+                    : `/cards/${publicCard.id}/save`,
+                )
                   .then(async (r) => {
                     setPublicCard(null);
                     await store.refresh();

@@ -45,7 +45,16 @@ export function PeopleHome({
   onCapture: () => void;
   onCreate: () => void;
 }) {
-  const { data, loading, refresh, offline, error } = usePilot();
+  const {
+    data,
+    loading,
+    refresh,
+    offline,
+    error,
+    pendingExchanges,
+    exchange,
+    notify,
+  } = usePilot();
   const [query, setQuery] = useState("");
   const [direction, setDirection] = useState("");
   const [dates, setDates] = useState("");
@@ -57,7 +66,7 @@ export function PeopleHome({
   const [leadOnly, setLeadOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [ask, setAsk] = useState(false);
-  const [examples, setExamples] = useState<Card[]>([]);
+  const examples = data.examples || [];
   const [example, setExample] = useState<Card | null>(null);
   const filters = useMemo(
     () => ({
@@ -84,12 +93,6 @@ export function PeopleHome({
     () => filterPeople(data.people, data.encounters, filters),
     [data.people, data.encounters, filters],
   );
-  useEffect(() => {
-    if (!data.people.length)
-      void get("/examples/cards")
-        .then((r) => setExamples(r.cards || []))
-        .catch(() => {});
-  }, [data.people.length]);
   const countries = [
     ...new Set(data.encounters.map((e) => e.countryCode).filter(Boolean)),
   ] as string[];
@@ -116,8 +119,93 @@ export function PeopleHome({
           </Button>
         </View>
       )}
-      {offline && <Notice>Showing saved people. Reconnect to refresh.</Notice>}
+      {pendingExchanges.map((item) => (
+        <View key={item.clientId} style={[s.card, { marginBottom: 10 }]}>
+          <Body>{item.name}</Body>
+          <Body muted>
+            {item.error || "Meeting saved on this phone · waiting to sync"}
+          </Body>
+          <Text style={s.hint}>
+            {[item.location, item.city, dateLabel(item.occurredAt, true)]
+              .filter(Boolean)
+              .join(" · ")}
+          </Text>
+          {item.error && (
+            <Button
+              small
+              tone="quiet"
+              onPress={() =>
+                void exchange({ ...item, error: undefined }).catch((e) =>
+                  notify(e.message),
+                )
+              }
+            >
+              Retry sync
+            </Button>
+          )}
+        </View>
+      ))}
       {!!error && !offline && <Notice error>{error}</Notice>}
+      {!query && !direction && !activeFilters && examples.length > 0 && (
+        <>
+          <Title size={23} style={{ marginTop: 16 }}>
+            A few introductions.
+          </Title>
+          <Body muted style={{ marginTop: 8, marginBottom: 18 }}>
+            Explore a few beautiful cards. Keep building your own circle below.
+          </Body>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 14 }}
+          >
+            {examples.slice(0, 8).map((c) => (
+              <Pressable
+                key={c.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${c.title}'s card`}
+                onPress={() => setExample(c)}
+                style={[
+                  s.card,
+                  {
+                    width: 282,
+                    marginBottom: 20,
+                    padding: 0,
+                    overflow: "hidden",
+                  },
+                ]}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: 16,
+                  }}
+                >
+                  <Avatar name={c.title} url={c.imageUrl} size={48} />
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{ color: C.ink, fontSize: 17, fontWeight: "700" }}
+                    >
+                      {c.title}
+                    </Text>
+                    <Body muted>{c.company}</Body>
+                  </View>
+                </View>
+                <CardArtwork
+                  uri={c.businessCardUrl}
+                  name={c.title}
+                  company={c.company}
+                  role={c.role}
+                  height={180}
+                />
+                <Body style={{ padding: 16 }}>{c.subtitle}</Body>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </>
+      )}
       {!!data.people.length && !query && !direction && !activeFilters && (
         <ConnectionHighlights onPerson={onPerson} />
       )}
@@ -172,56 +260,6 @@ export function PeopleHome({
             ).toISOString(),
           )}
         </Text>
-      )}
-      {!data.people.length && examples.length > 0 && (
-        <>
-          <Title size={23} style={{ marginTop: 16 }}>
-            A few introductions.
-          </Title>
-          <Body muted style={{ marginTop: 8, marginBottom: 18 }}>
-            Explore what a card can do. Your own connections will appear here
-            when you share or save one.
-          </Body>
-          {examples.slice(0, 6).map((c) => (
-            <Pressable
-              key={c.id}
-              accessibilityRole="button"
-              accessibilityLabel={`Open ${c.title}'s card`}
-              onPress={() => setExample(c)}
-              style={[
-                s.card,
-                { marginBottom: 20, padding: 0, overflow: "hidden" },
-              ]}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: 16,
-                }}
-              >
-                <Avatar name={c.title} url={c.imageUrl} size={48} />
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{ color: C.ink, fontSize: 17, fontWeight: "700" }}
-                  >
-                    {c.title}
-                  </Text>
-                  <Body muted>{c.company}</Body>
-                </View>
-              </View>
-              <CardArtwork
-                uri={c.businessCardUrl}
-                name={c.title}
-                company={c.company}
-                role={c.role}
-                height={180}
-              />
-              <Body style={{ padding: 16 }}>{c.subtitle}</Body>
-            </Pressable>
-          ))}
-        </>
       )}
     </>
   );

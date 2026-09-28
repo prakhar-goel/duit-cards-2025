@@ -487,3 +487,32 @@ user daily, three per minute and one concurrent job. Image allowance is a reserv
 estimate, not a provider-enforced price cap; usage is reconciled and ambiguous calls
 are not retried automatically. The separate Gemini key is stored for later use;
 there is no Gemini feature adapter in this release.
+
+### Offline wallet and sharing review — 2026-09-28
+
+This iteration is for browser review before Android packaging. It supersedes the
+separate city/country inputs and event-selected GPS replacement described above.
+
+- Keep a server/account-scoped offline copy of the user's connections, complete
+  card galleries, meeting history and images/videos. Warm media in the background,
+  show download progress or unavailable items, and show a small offline indicator.
+  Reconnect and foregrounding trigger synchronization without another login.
+- Persist capture and card-exchange jobs before network submission. Replay with
+  the same idempotency key; preserve failures for review. Never send WhatsApp
+  messages automatically. Offline messages use the existing public card URL;
+  the personal invitation URL can only be created with the server online.
+- Sharing requests foreground location permission, shows coordinates and accuracy,
+  reverse-geocodes the point, and offers editable place search. A selected search
+  result fills venue/city/country together; separate city/country controls disappear.
+  Permission denial, timeouts and failed address lookup have visible recovery text.
+- Photon/OpenStreetMap supplies geocoding for this preview, through an authenticated,
+  bounded, cached server proxy. Public service availability and address completeness
+  are not guaranteed. No paid maps API is enabled by this iteration.
+- Auto-suggest a known DUIT event only while it is active and within 2 km. Keep the
+  event editable/removable and do not overwrite the measured location when tagging
+  it. There is no connected worldwide live-event catalogue yet.
+- Offer discussion topics plus an optional note, an editable WhatsApp message and
+  a specific explanation for missing required recipient details. Preserve message
+  edits when creating the personal invitation link.
+- Keep the curated published card gallery visible for new and existing accounts;
+  never turn these examples into fabricated exchanges in the user's network.

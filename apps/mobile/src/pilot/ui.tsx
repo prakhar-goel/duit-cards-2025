@@ -1,3 +1,4 @@
+import { offlineMedia, optimizedMedia, workspaceKey } from "./offline";
 import React, {
   createContext,
   useContext,
@@ -125,50 +126,26 @@ export function CircleButton({
     </Pressable>
   );
 }
-function useImageSource(value?: string | null, thumbnail = false) {
-  let assetPath = value || "";
-  try {
-    assetPath = new URL(value || "").pathname;
-  } catch {}
-  const optimized = (
-    mediaManifest as Record<string, { image: string; thumb: string }>
-  )[assetPath];
-  const uri = mediaUrl(
-    optimized ? optimized[thumbnail ? "thumb" : "image"] : value,
-  );
-  const headers = mediaHeaders(uri);
-  const token = headers?.Authorization;
-  const [resolved, setResolved] = useState<string | undefined>(undefined);
+export function useImageSource(value?: string | null, thumbnail = false) {
+  const uri = optimizedMedia(value, thumbnail);
+  const scope = workspaceKey();
+  const [resolved, setResolved] = useState<string>();
   useEffect(() => {
-    if (Platform.OS !== "web" || !token) {
-      setResolved(uri);
-      return;
-    }
     let active = true;
-    let objectUrl: string | undefined;
-    const controller = new AbortController();
     setResolved(undefined);
-    void fetch(uri!, {
-      headers: { Authorization: token },
-      signal: controller.signal,
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Image unavailable");
-        return res.blob();
-      })
-      .then((blob) => {
-        objectUrl = URL.createObjectURL(blob);
-        if (active) setResolved(objectUrl);
-        else URL.revokeObjectURL(objectUrl);
-      })
-      .catch(() => {});
+    if (uri)
+      void offlineMedia(uri)
+        .then((value) => {
+          if (active) setResolved(value);
+        })
+        .catch(() => {
+          if (active) setResolved(uri);
+        });
     return () => {
       active = false;
-      controller.abort();
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [uri, token]);
-  return Platform.OS === "web" ? resolved : uri;
+  }, [uri, scope]);
+  return resolved;
 }
 export function Avatar({
   name,

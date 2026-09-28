@@ -27,6 +27,17 @@ describe("in-flight workspace isolation", () => {
     await saveSession(session("maya"));
   });
   afterEach(() => vi.unstubAllGlobals());
+  it("keeps a cached session when refresh fails because the phone is offline", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(new Response("{}", { status: 401 }))
+        .mockRejectedValueOnce(new TypeError("Offline")),
+    );
+    await expect(request("/people")).rejects.toMatchObject({ status: 0 });
+    expect((await import("./api")).getSession()?.user.id).toBe("maya");
+  });
   it("does not deliver an earlier user's response into the newly selected account", async () => {
     let respond!: (r: Response) => void;
     vi.stubGlobal(

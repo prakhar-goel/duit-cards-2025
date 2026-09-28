@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Linking, ScrollView } from "react-native";
+import { View, Text, Linking, ScrollView, Pressable } from "react-native";
 import * as Location from "expo-location";
 import * as Clipboard from "expo-clipboard";
 import { usePilot } from "./store";
-import { get, post, shareUrl, getServer } from "./api";
+import { get, shareUrl, getServer } from "./api";
 import { randomId } from "./domain";
 import {
   Page,
@@ -17,142 +17,278 @@ import {
   Pill,
   Avatar,
   Label,
+  Icon,
 } from "./ui";
 import { DateTimeField } from "./DateTimeField";
-import { suggestEvents, type EventSuggestion } from "./meetingContext";
-import { introductionMessage, normalisePhone } from "./exchangeMessage";
+import { nearbyEvents } from "./meetingContext";
+import {
+  introductionMessage,
+  normalisePhone,
+  shareDisabledReason,
+} from "./exchangeMessage";
 
+type Place = {
+  location: string;
+  city: string;
+  countryCode: string;
+  label?: string;
+  latitude?: number;
+  longitude?: number;
+};
+const topics = [
+  "Business introduction",
+  "Buying a product or service",
+  "Selling my product or service",
+  "Working together",
+  "A follow-up meeting",
+  "Something else",
+];
+function within<T>(work: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  return Promise.race([
+    work,
+    new Promise<T>((_, reject) => {
+      timer = setTimeout(
+        () =>
+          reject(
+            new Error(
+              "GPS is taking too long. Try again outdoors, or search for the place below.",
+            ),
+          ),
+        ms,
+      );
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
 export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
-  const { data, refresh, notify } = usePilot();
+  const { data, notify, offline, exchange } = usePilot();
   const cards = data.cards.filter((c) => c.isPublished);
   const [cardId, setCardId] = useState(cards[0]?.id || "");
   const card = cards.find((c) => c.id === cardId) || cards[0];
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("+91");
-  const [note, setNote] = useState("");
-  const [place, setPlace] = useState({
+  const [name, setName] = useState(""),
+    [phone, setPhone] = useState("+91");
+  const [topic, setTopic] = useState(""),
+    [note, setNote] = useState(""),
+    [topicsOpen, setTopicsOpen] = useState(false);
+  const [place, setPlace] = useState<Place>({
     location: "",
     city: "",
     countryCode: "",
   });
   const [point, setPoint] = useState<{ latitude: number; longitude: number }>();
+  const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [locationText, setLocationText] = useState(""),
+    [searchQuery, setSearchQuery] = useState("");
+  const [results, setResults] = useState<Place[]>([]),
+    [searching, setSearching] = useState(false),
+    [locationHint, setLocationHint] = useState("");
   const [occurredAt, setOccurredAt] = useState(new Date().toISOString());
-  const [eventName, setEventName] = useState("");
-  const [eventId, setEventId] = useState<string>();
-  const [events, setEvents] = useState<EventSuggestion[]>([]);
-  const [lead, setLead] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [locating, setLocating] = useState(false);
-  const [error, setError] = useState("");
+  const [eventName, setEventName] = useState(""),
+    [eventId, setEventId] = useState<string>();
+  const [lead, setLead] = useState(false),
+    [busy, setBusy] = useState(false),
+    [locating, setLocating] = useState(false),
+    [error, setError] = useState("");
+  const [editedMessage, setEditedMessage] = useState<string | null>(null);
   const [prepared, setPrepared] = useState<{
-    url: string;
     message: string;
     phone: string;
+    queued: boolean;
   } | null>(null);
-  const clientId = useRef(randomId());
-  const revision = useRef(0);
+  const clientId = useRef(randomId()),
+    revision = useRef(0),
+    eventTouched = useRef(false);
+  const nearby = nearbyEvents(data.events || [], occurredAt, point);
   useEffect(() => {
-    void get("/events")
-      .then((r) => setEvents(r.events || []))
-      .catch(() => {});
-    void Location.getForegroundPermissionsAsync().then((p) => {
-      if (p.granted) void locate(false);
-    });
+    void locate();
     return () => {
       revision.current++;
     };
   }, []);
-  async function locate(request = true) {
+  useEffect(() => {
+    if (!eventTouched.current && nearby.length) {
+      setEventName(nearby[0].event.name);
+      setEventId(nearby[0].event.id);
+    } else if (!eventTouched.current) {
+      setEventName("");
+      setEventId(undefined);
+    }
+  }, [nearby.map((e) => e.event.id).join(",")]);
+  useEffect(() => {
+    let active = true;
+    if (searchQuery.trim().length < 3 || offline) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const timer = setTimeout(() => {
+      const focus = point
+        ? `&latitude=${point.latitude}&longitude=${point.longitude}`
+        : "";
+      void get(`/locations?q=${encodeURIComponent(searchQuery.trim())}${focus}`)
+        .then((r) => {
+          if (!active) return;
+          setResults(r.places || []);
+          setLocationHint(
+            r.places?.length
+              ? "Choose the place you met."
+              : "No matches. You can keep the place you typed.",
+          );
+        })
+        .catch(() => {
+          if (active)
+            setLocationHint(
+              "Search is unavailable. You can keep the place you typed.",
+            );
+        })
+        .finally(() => {
+          if (active) setSearching(false);
+        });
+    }, 550);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, offline]);
+  function choosePlace(value: Place) {
+    revision.current++;
+    setLocating(false);
+    setPlace(value);
+    setLocationText(
+      value.label ||
+        [value.location, value.city, value.countryCode]
+          .filter(Boolean)
+          .join(", "),
+    );
+    setPoint(
+      value.latitude != null && value.longitude != null
+        ? { latitude: value.latitude, longitude: value.longitude }
+        : undefined,
+    );
+    setAccuracy(null);
+    setSearchQuery("");
+    setResults([]);
+    setLocationHint("Map location selected.");
+    eventTouched.current = false;
+  }
+  async function locate() {
     const current = ++revision.current;
     setLocating(true);
+    setLocationHint("Finding where you are…");
     try {
-      const permission = request
-        ? await Location.requestForegroundPermissionsAsync()
-        : await Location.getForegroundPermissionsAsync();
+      const permission = await within(
+        Location.requestForegroundPermissionsAsync(),
+        20000,
+      );
       if (!permission.granted)
-        throw new Error("You can enter where you met below.");
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      if (revision.current !== current) return;
-      setPoint({
+        throw new Error(
+          "Location permission is off. Enable it in browser or phone settings, or search for your meeting place.",
+        );
+      const position = await within(
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
+        15000,
+      );
+      if (current !== revision.current) return;
+      const coordinates = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
-      });
-      const [address] = await Location.reverseGeocodeAsync(position.coords);
-      if (revision.current !== current) return;
-      if (address)
-        setPlace({
-          location: [
-            ...new Set([address.name, address.street].filter(Boolean)),
-          ].join(", "),
-          city: address.city || address.subregion || "",
-          countryCode: address.isoCountryCode || "",
-        });
+      };
+      setPoint(coordinates);
+      setAccuracy(position.coords.accuracy);
+      eventTouched.current = false;
+      setPlace({ location: "", city: "", countryCode: "" });
+      setLocationText("");
+      setSearchQuery("");
+      setLocationHint("GPS captured. Finding the address…");
+      try {
+        const r = await get(
+          `/locations?latitude=${coordinates.latitude}&longitude=${coordinates.longitude}`,
+        );
+        if (current !== revision.current) return;
+        if (r.places?.[0]) {
+          const address = r.places[0];
+          setPlace({
+            location: address.location,
+            city: address.city,
+            countryCode: address.countryCode,
+          });
+          setLocationText(address.label);
+          setLocationHint("GPS captured · address from OpenStreetMap");
+        } else setLocationHint("GPS captured. Add a place name if you like.");
+      } catch {
+        if (current === revision.current)
+          setLocationHint(
+            "GPS captured. Address lookup needs a connection; your coordinates will still be saved.",
+          );
+      }
     } catch (e) {
-      if (revision.current === current)
-        setError(
-          e instanceof Error ? e.message : "Enter your meeting place below.",
+      if (current === revision.current)
+        setLocationHint(
+          e instanceof Error ? e.message : "Search for where you met below.",
         );
     } finally {
-      if (revision.current === current) setLocating(false);
+      if (current === revision.current) setLocating(false);
     }
   }
-  const message = introductionMessage({
+  const publicUrl = card
+    ? shareUrl(card.publicUrl || `${getServer()}/c/${card.slug}`)
+    : "";
+  const discussion = [topic === "Something else" ? "" : topic, note.trim()]
+    .filter(Boolean)
+    .join(" — ");
+  const generated = introductionMessage({
     recipient: name,
     sender: card?.title || "",
     business: card?.subtitle || card?.company || "",
-    note,
-    place: [eventName, place.location, place.city].filter(Boolean).join(", "),
-    url: card
-      ? shareUrl(card.publicUrl || `${getServer()}/c/${card.slug}`)
-      : "",
+    note: discussion,
+    place:
+      [eventName, place.location, place.city].filter(Boolean).join(", ") ||
+      (point
+        ? `${point.latitude.toFixed(5)}, ${point.longitude.toFixed(5)}`
+        : ""),
+    url: publicUrl,
   });
+  const message = editedMessage ?? generated;
+  const disabledReason = shareDisabledReason(name, phone, message);
   async function openWhatsApp(value: { message: string; phone: string }) {
     await Linking.openURL(
       `https://wa.me/${value.phone.replace(/\D/g, "")}?text=${encodeURIComponent(value.message)}`,
     );
   }
   async function prepare() {
-    if (!card || busy) return;
+    if (!card || busy || disabledReason) return;
     setBusy(true);
     setError("");
     try {
-      const res = await post("/exchanges", {
+      const result = await exchange({
         clientId: clientId.current,
         cardId: card.id,
         name: name.trim(),
         phone: normalisePhone(phone),
-        note,
-        ...place,
+        note: discussion,
+        location: place.location,
+        city: place.city,
+        countryCode: place.countryCode,
         ...point,
         occurredAt,
         eventName,
         eventId,
         potentialLead: lead,
       });
+      // Keep every user edit. Only swap the existing card URL for its personal invitation URL.
       const value = {
-        url: res.url,
         phone: normalisePhone(phone),
-        message: introductionMessage({
-          recipient: name,
-          sender: card.title,
-          business: card.subtitle || card.company || "",
-          note,
-          place: [eventName, place.location, place.city]
-            .filter(Boolean)
-            .join(", "),
-          url: res.url,
-        }),
+        message: result.url ? message.replace(publicUrl, result.url) : message,
+        queued: result.queued,
       };
       setPrepared(value);
-      void refresh();
       await openWhatsApp(value);
     } catch (e) {
       setError(
         e instanceof Error
           ? e.message
-          : "Could not open WhatsApp. You can copy the message instead.",
+          : "Could not open WhatsApp. Copy the message instead.",
       );
     } finally {
       setBusy(false);
@@ -162,18 +298,21 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
     setName("");
     setPhone("+91");
     setNote("");
+    setTopic("");
     setLead(false);
     setPrepared(null);
     setError("");
+    setEditedMessage(null);
     setOccurredAt(new Date().toISOString());
     clientId.current = randomId();
+    void locate();
   }
   if (!card)
     return (
       <Page>
         <Title>Start with your card.</Title>
         <Body muted style={{ marginVertical: 22 }}>
-          Create your introduction, then share it with the next person you meet.
+          Create and publish your card before sharing it with someone you meet.
         </Body>
         <Button onPress={onCreate}>Create my card</Button>
       </Page>
@@ -210,7 +349,10 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
               key={c.id}
               active={c.id === card.id}
               onPress={() => {
-                if (!prepared) setCardId(c.id);
+                if (!prepared) {
+                  setCardId(c.id);
+                  setEditedMessage(null);
+                }
               }}
             >
               {c.company || c.title}
@@ -222,7 +364,10 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
         <>
           <Title size={25}>Your message is ready.</Title>
           <Body muted style={{ marginVertical: 14 }}>
-            The meeting is saved. Tap Send in WhatsApp to deliver your card.
+            {prepared.queued
+              ? "Meeting saved on this phone. It will sync when you reconnect."
+              : "The meeting is saved."}{" "}
+            Tap Send in WhatsApp to deliver your card.
           </Body>
           <View style={[s.card, { marginBottom: 18 }]}>
             <Body>{prepared.message}</Body>
@@ -267,12 +412,43 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
             keyboardType="phone-pad"
             placeholder="Include country code"
           />
+          <Label>WHAT DID YOU DISCUSS?</Label>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Choose discussion topic"
+            accessibilityState={{ expanded: topicsOpen }}
+            onPress={() => setTopicsOpen(!topicsOpen)}
+            style={[
+              s.card,
+              s.row,
+              { marginTop: 10, marginBottom: 12, padding: 16 },
+            ]}
+          >
+            <Body>{topic || "Choose a topic · optional"}</Body>
+            <Icon name={topicsOpen ? "chevron-up" : "chevron-down"} size={18} />
+          </Pressable>
+          {topicsOpen && (
+            <View style={[s.card, { padding: 8, marginBottom: 14 }]}>
+              {["", ...topics].map((t) => (
+                <Pressable
+                  key={t}
+                  accessibilityRole="button"
+                  onPress={() => {
+                    setTopic(t);
+                    setTopicsOpen(false);
+                  }}
+                  style={{ padding: 13 }}
+                >
+                  <Body>{t || "No topic"}</Body>
+                </Pressable>
+              ))}
+            </View>
+          )}
           <Field
-            label="What did you discuss?"
+            label="Add a detail · optional"
             value={note}
             onChangeText={setNote}
-            multiline
-            placeholder="A few words will do"
+            placeholder="e.g. Send the packaging catalogue"
           />
           <Pill
             active={lead}
@@ -297,89 +473,144 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
             </Button>
           </View>
           <Field
-            label="Building / street / place"
-            value={place.location}
+            label="Meeting place"
+            multiline
+            style={{ minHeight: 76 }}
+            value={locationText}
             onChangeText={(v) => {
               revision.current++;
               setLocating(false);
               setPoint(undefined);
-              setPlace((p) => ({ ...p, location: v }));
+              setAccuracy(null);
+              setLocationText(v);
+              setSearchQuery(v);
+              setPlace({ location: v, city: "", countryCode: "" });
+              setResults([]);
+              setLocationHint(
+                offline
+                  ? "Offline · typed place will be saved."
+                  : "Type at least 3 letters to search.",
+              );
+              eventTouched.current = false;
             }}
-            placeholder="Café, office or venue"
+            placeholder="Search a building, café, venue or street"
           />
-          <View style={{ flexDirection: "row", gap: 12 }}>
-            <Field
-              style={{ flex: 2 }}
-              label="City"
-              value={place.city}
-              onChangeText={(city) => {
-                revision.current++;
-                setPoint(undefined);
-                setPlace((p) => ({ ...p, city }));
+          {!!locationHint && (
+            <Text style={[s.hint, { marginBottom: 8 }]}>{locationHint}</Text>
+          )}
+          {point && (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                marginBottom: 12,
               }}
-            />
-            <Field
-              style={{ flex: 1 }}
-              label="Country"
-              value={place.countryCode}
-              onChangeText={(countryCode) => {
-                revision.current++;
-                setPoint(undefined);
-                setPlace((p) => ({
-                  ...p,
-                  countryCode: countryCode.toUpperCase(),
-                }));
-              }}
-              placeholder="IN"
-            />
-          </View>
+            >
+              <Icon name="location-outline" size={15} />
+              <Text style={{ color: C.teal, fontSize: 12 }}>
+                {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}
+                {accuracy != null
+                  ? ` · accuracy ±${Math.round(accuracy)} m`
+                  : ""}
+              </Text>
+            </View>
+          )}
+          {searching && <Text style={s.hint}>Finding places…</Text>}
+          {results.map((r, i) => (
+            <Pressable
+              key={`${r.latitude}:${r.longitude}:${i}`}
+              accessibilityRole="button"
+              onPress={() => choosePlace(r)}
+              style={{ padding: 14, borderBottomWidth: 1, borderColor: C.line }}
+            >
+              <Body>{r.location}</Body>
+              <Body muted>
+                {[r.city, r.countryCode].filter(Boolean).join(", ")}
+              </Body>
+            </Pressable>
+          ))}
+          <Text
+            onPress={() =>
+              void Linking.openURL("https://www.openstreetmap.org/copyright")
+            }
+            style={[s.hint, { marginBottom: 22 }]}
+          >
+            © OpenStreetMap contributors · Photon
+          </Text>
           <Field
             label="Event · optional"
             value={eventName}
-            onChangeText={(value) => {
-              setEventName(value);
+            onChangeText={(v) => {
+              eventTouched.current = true;
+              setEventName(v);
               setEventId(undefined);
             }}
-            placeholder="The conference or gathering"
+            placeholder="Add a conference or gathering"
           />
-          {suggestEvents(events, occurredAt, point)
-            .filter((e) => e.current || (e.nearby != null && e.nearby < 25))
+          {!!eventName && (
+            <Button
+              small
+              tone="quiet"
+              onPress={() => {
+                eventTouched.current = true;
+                setEventName("");
+                setEventId(undefined);
+              }}
+            >
+              Remove event
+            </Button>
+          )}
+          {!eventTouched.current && !!eventName && (
+            <Text style={s.hint}>
+              Nearby event from your DUIT events · check before sharing
+            </Text>
+          )}
+          {nearby
+            .filter((e) => e.event.id !== eventId)
             .map(({ event }) => (
               <Pill
                 key={event.id}
-                active={eventName === event.name}
                 onPress={() => {
-                  revision.current++;
-                  setLocating(false);
+                  eventTouched.current = true;
                   setEventName(event.name);
                   setEventId(event.id);
-                  setPlace({
-                    location: event.venue || "",
-                    city: event.city || "",
-                    countryCode: event.countryCode || "",
-                  });
-                  setPoint(
-                    event.latitude != null && event.longitude != null
-                      ? { latitude: event.latitude, longitude: event.longitude }
-                      : undefined,
-                  );
                 }}
               >
                 {event.name}
               </Pill>
             ))}
           <View style={{ marginTop: 22 }}>
-            <Label>MESSAGE PREVIEW</Label>
+            <Field
+              label="Your WhatsApp message · editable"
+              style={{ minHeight: 200 }}
+              value={message}
+              onChangeText={setEditedMessage}
+              multiline
+            />
           </View>
-          <View style={[s.card, { marginTop: 12, marginBottom: 20 }]}>
-            <Body>{message}</Body>
-          </View>
+          {editedMessage !== null && (
+            <Button small tone="quiet" onPress={() => setEditedMessage(null)}>
+              Use suggested message
+            </Button>
+          )}
+          {offline && (
+            <Text style={[s.hint, { marginBottom: 12 }]}>
+              Offline · your meeting will be saved here, then synced. WhatsApp
+              needs a connection to deliver.
+            </Text>
+          )}
+          {!!disabledReason && (
+            <Text
+              accessibilityLiveRegion="polite"
+              style={[s.hint, { marginBottom: 12 }]}
+            >
+              {disabledReason}
+            </Text>
+          )}
           <Button
             busy={busy}
-            disabled={
-              name.trim().length < 2 ||
-              !/^\+[1-9]\d{7,14}$/.test(normalisePhone(phone))
-            }
+            disabled={Boolean(disabledReason)}
             icon="logo-whatsapp"
             onPress={() => void prepare()}
           >

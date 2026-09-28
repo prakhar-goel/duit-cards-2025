@@ -95,7 +95,7 @@ export function PersonRow({
     </Pressable>
   );
 }
-export { PeopleHome as PeopleScreen } from './PeopleHome';
+export { PeopleHome as PeopleScreen } from "./PeopleHome";
 export function PersonDetail({
   suspended = false,
   id,
@@ -107,7 +107,7 @@ export function PersonDetail({
   onClose: () => void;
   onCapture: (person: Person) => void;
 }) {
-  const { data, refresh, notify } = usePilot();
+  const { data, refresh, notify, offline } = usePilot();
   const [detail, setDetail] = useState<{
     person: Person;
     encounters: Encounter[];
@@ -127,14 +127,23 @@ export function PersonDetail({
   const [addingReminder, setAddingReminder] = useState(false);
   async function load() {
     if (!id) return;
+    const saved = data.people.find((p) => p.id === id);
+    if (saved)
+      setDetail({
+        person: saved,
+        encounters: data.encounters.filter((e) => e.personId === id),
+        commitments: data.commitments.filter((c) => c.personId === id),
+      });
+    if (offline) return;
     try {
       const result = camel<any>(await get(`/people/${id}`));
       setDetail(result);
       setError("");
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "This person could not be loaded.",
-      );
+      if (!saved)
+        setError(
+          e instanceof Error ? e.message : "This person could not be loaded.",
+        );
     }
   }
   useEffect(() => {
@@ -154,10 +163,14 @@ export function PersonDetail({
   useEffect(() => {
     let active = true;
     const key = `${getServer()}:${p?.cardSlug}`;
-    const cached = publicCardCache.get(key);
+    const saved = data.walletCards?.find((c) => c.slug === p?.cardSlug);
+    const cached = saved
+      ? { card: saved, at: Date.now() }
+      : publicCardCache.get(key);
     setPublishedCard(cached?.card || null);
     setGalleryState(cached || !p?.cardSlug ? "ready" : "loading");
     if (
+      !offline &&
       p?.cardSlug &&
       (!cached || Date.now() - cached.at > 60000 || galleryAttempt)
     )
@@ -176,7 +189,7 @@ export function PersonDetail({
     return () => {
       active = false;
     };
-  }, [p?.cardSlug, galleryAttempt]);
+  }, [p?.cardSlug, galleryAttempt, data.walletCards, offline]);
 
   async function complete(c: Commitment) {
     try {

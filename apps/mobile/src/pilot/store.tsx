@@ -1,3 +1,12 @@
+import { AppState } from "react-native";
+import NetInfo from "@react-native-community/netinfo";
+import {
+  cacheMedia,
+  workspaceKey,
+  readExchanges,
+  updateExchanges,
+  type PendingExchange,
+} from "./offline";
 import React, {
   createContext,
   useContext,
@@ -33,6 +42,11 @@ type Store = {
   data: Snapshot;
   loading: boolean;
   offline: boolean;
+  pendingExchanges: PendingExchange[];
+  mediaProgress: { done: number; total: number; finished?: boolean };
+  exchange: (
+    input: PendingExchange,
+  ) => Promise<{ url?: string; queued: boolean }>;
   error: string | null;
   queue: QueuedCapture[];
   capabilities: Capabilities;
@@ -68,7 +82,7 @@ const queueKey = (s: Session, origin = api.getServer()) =>
   `duit:pilot:outbox:${encodeURIComponent(origin)}:${s.user.id}`;
 async function listAll(path: string, key: string) {
   let items: any[] = [];
-  for (let offset = 0; offset < 10000; offset += 200) {
+  for (let offset = 0; ; offset += 200) {
     const res = await api.get<any>(
       `${path}${path.includes("?") ? "&" : "?"}limit=200&offset=${offset}`,
     );
@@ -89,6 +103,16 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
   const [capabilities, setCapabilities] = useState<Capabilities>({});
   const [server, setServerState] = useState(api.getServer());
   const [toast, setToast] = useState<string | null>(null);
+  const [pendingExchanges, setPendingExchanges] = useState<PendingExchange[]>(
+    [],
+  );
+  const [mediaProgress, setMediaProgress] = useState<{
+    done: number;
+    total: number;
+    finished?: boolean;
+  }>({ done: 0, total: 0 });
+  const mediaRun = useRef(0);
+  const refreshing = useRef<string | null>(null);
   const syncing = useRef(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   function notify(message: string) {
@@ -99,6 +123,9 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
   async function refresh() {
     const active = api.getSession();
     if (!active) return;
+    const refreshScope = workspaceKey();
+    if (refreshing.current === refreshScope) return;
+    refreshing.current = refreshScope;
     const origin = api.getServer();
     setLoading(true);
     setError(null);
@@ -113,6 +140,9 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
         needs,
         feed,
         caps,
+        walletCards,
+        examples,
+        events,
       ] = await Promise.all([
         api.get("/me"),
         listAll("/people", "people"),
@@ -121,12 +151,18 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
         listAll("/commitments?status=all", "commitments"),
         listAll("/leads", "leads"),
         api.get("/need-offers"),
-        api.get("/feed"),
-        api.get("/ai/capabilities"),
+        api.get("/feed").catch(() => ({ items: [] })),
+        api.get("/ai/capabilities").catch(() => ({ enabled: false })),
+        listAll("/wallet/cards", "cards"),
+        api.get("/examples/cards"),
+        api.get("/events"),
       ]);
       if (!api.workspaceMatches(active.user.id, origin)) return;
       const snapshot: Snapshot = {
         user: me.user,
+        walletCards,
+        examples: examples.cards || [],
+        events: events.events || [],
         people: people.map(person),
         cards: cards.map(camel),
         encounters: encounters.map(encounter),
@@ -144,6 +180,23 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
         cacheKey(active, origin),
         JSON.stringify(snapshot),
       );
+      const run = ++mediaRun.current;
+      void cacheMedia(snapshot, (done, total) => {
+        if (
+          run === mediaRun.current &&
+          api.workspaceMatches(active.user.id, origin)
+        )
+          setMediaProgress((prev) => ({
+            done: Math.max(prev.total === total ? prev.done : 0, done),
+            total,
+          }));
+      }).then(() => {
+        if (
+          run === mediaRun.current &&
+          api.workspaceMatches(active.user.id, origin)
+        )
+          setMediaProgress((prev) => ({ ...prev, finished: true }));
+      });
     } catch (e) {
       if (!api.workspaceMatches(active.user.id, origin)) return;
       const message =
@@ -155,9 +208,14 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
         setSession(null);
         setData(emptySnapshot);
         setQueue([]);
+        setPendingExchanges([]);
+        setMediaProgress({ done: 0, total: 0 });
       }
     } finally {
-      setLoading(false);
+      if (refreshing.current === refreshScope) {
+        refreshing.current = null;
+        setLoading(false);
+      }
     }
   }
   async function boot() {
@@ -204,6 +262,8 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
     setSession(res);
     setData(emptySnapshot);
     setQueue([]);
+    setPendingExchanges([]);
+    setMediaProgress({ done: 0, total: 0 });
     const [cache, outbox] = await Promise.all([
       AsyncStorage.getItem(cacheKey(res)),
       AsyncStorage.getItem(queueKey(res)),
@@ -228,6 +288,8 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     setData(emptySnapshot);
     setQueue([]);
+    setPendingExchanges([]);
+    setMediaProgress({ done: 0, total: 0 });
     setCapabilities({});
     setError(null);
     setOffline(false);
@@ -238,9 +300,20 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
     setSession(res);
     setData(emptySnapshot);
     setQueue([]);
-    const [cache, outbox] = await Promise.all([AsyncStorage.getItem(cacheKey(res)), AsyncStorage.getItem(queueKey(res))]);
-    if (cache) try { setData(JSON.parse(cache)); } catch {}
-    if (outbox) try { setQueue(JSON.parse(outbox)); } catch {}
+    setPendingExchanges([]);
+    setMediaProgress({ done: 0, total: 0 });
+    const [cache, outbox] = await Promise.all([
+      AsyncStorage.getItem(cacheKey(res)),
+      AsyncStorage.getItem(queueKey(res)),
+    ]);
+    if (cache)
+      try {
+        setData(JSON.parse(cache));
+      } catch {}
+    if (outbox)
+      try {
+        setQueue(JSON.parse(outbox));
+      } catch {}
     await refresh();
   }
   async function setServer(url: string) {
@@ -249,6 +322,8 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     setData(emptySnapshot);
     setQueue([]);
+    setPendingExchanges([]);
+    setMediaProgress({ done: 0, total: 0 });
     setError(null);
     setOffline(false);
   }
@@ -419,18 +494,151 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
           );
         }
       }
-      if (api.workspaceMatches(active.user.id, origin)) await refresh();
+      if (api.workspaceMatches(active.user.id, origin)) {
+        await syncExchanges();
+        await refresh();
+      }
     } finally {
       syncing.current = false;
     }
   }
+  async function exchange(input: PendingExchange) {
+    const owner = api.getSession()?.user.id,
+      origin = api.getServer(),
+      scope = workspaceKey();
+    if (!owner) throw new Error("Please sign in first.");
+    const stored = await updateExchanges(scope, (items) => [
+      ...items.filter((i) => i.clientId !== input.clientId),
+      input,
+    ]);
+    api.assertWorkspace(owner, origin);
+    setPendingExchanges(stored);
+    if (offline) return { queued: true };
+    try {
+      const result = await api.post("/exchanges", input);
+      const remaining = await updateExchanges(scope, (items) =>
+        items.filter((i) => i.clientId !== input.clientId),
+      );
+      api.assertWorkspace(owner, origin);
+      setPendingExchanges(remaining);
+      void refresh();
+      return { queued: false, url: result.url };
+    } catch (e) {
+      api.assertWorkspace(owner, origin);
+      if (e instanceof api.ApiError && (e.status === 0 || e.status >= 500)) {
+        setOffline(true);
+        return { queued: true };
+      }
+      const remaining = await updateExchanges(scope, (items) =>
+        items.map((i) =>
+          i.clientId === input.clientId
+            ? {
+                ...i,
+                error:
+                  e instanceof Error
+                    ? e.message
+                    : "Please review this exchange.",
+              }
+            : i,
+        ),
+      );
+      if (workspaceKey() === scope) setPendingExchanges(remaining);
+      throw e;
+    }
+  }
+  async function syncExchanges() {
+    const owner = api.getSession()?.user.id,
+      origin = api.getServer(),
+      scope = workspaceKey();
+    if (!owner) return;
+    for (const item of await readExchanges(scope)) {
+      api.assertWorkspace(owner, origin);
+      if (item.error) continue;
+      try {
+        // Coordinates captured offline are useful even when address lookup failed.
+        // Resolve them on reconnect without replacing a place the user entered.
+        if (!item.location && item.latitude != null && item.longitude != null) {
+          const lookup = await api.get(`/locations?latitude=${item.latitude}&longitude=${item.longitude}`).catch(() => null);
+          const place = lookup?.places?.[0];
+          if (place) {
+            item.location = place.location; item.city = place.city; item.countryCode = place.countryCode;
+            await updateExchanges(scope, items => items.map(i => i.clientId === item.clientId ? item : i));
+          }
+        }
+        api.assertWorkspace(owner, origin);
+        await api.post("/exchanges", item);
+        const remaining = await updateExchanges(scope, (items) =>
+          items.filter((i) => i.clientId !== item.clientId),
+        );
+        api.assertWorkspace(owner, origin);
+        setPendingExchanges(remaining);
+      } catch (e) {
+        api.assertWorkspace(owner, origin);
+        if (
+          e instanceof api.ApiError &&
+          (e.status === 0 || e.status >= 500 || e.status === 401)
+        )
+          break;
+        const remaining = await updateExchanges(scope, (items) =>
+          items.map((i) =>
+            i.clientId === item.clientId
+              ? {
+                  ...i,
+                  error: e instanceof Error ? e.message : "Could not sync.",
+                }
+              : i,
+          ),
+        );
+        if (workspaceKey() === scope) setPendingExchanges(remaining);
+      }
+    }
+  }
   useEffect(() => {
     if (!session) return;
+    const scope = workspaceKey();
+    void readExchanges(scope).then((items) => {
+      if (scope === workspaceKey()) setPendingExchanges(items);
+    });
+    let checking = false,
+      disposed = false;
+    async function reconnect() {
+      if (checking || disposed || scope !== workspaceKey()) return;
+      checking = true;
+      try {
+        await api.get("/me");
+        if (disposed || scope !== workspaceKey()) return;
+        setOffline(false);
+        await sync();
+      } catch (e) {
+        if (
+          !disposed &&
+          scope === workspaceKey() &&
+          e instanceof api.ApiError &&
+          e.status === 0
+        )
+          setOffline(true);
+      } finally {
+        checking = false;
+      }
+    }
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      if (state.isConnected === false || state.isInternetReachable === false)
+        setOffline(true);
+      else void reconnect();
+    });
+    const appState = AppState.addEventListener("change", (state) => {
+      if (state === "active") void reconnect();
+    });
     const interval = setInterval(() => {
-      if (queue.length) void sync();
+      if (AppState.currentState !== "background") void reconnect();
     }, 30000);
-    return () => clearInterval(interval);
-  }, [session?.user.id, queue.length]);
+    return () => {
+      disposed = true;
+      unsubscribe();
+      appState.remove();
+      clearInterval(interval);
+    };
+  }, [session?.user.id, server]);
   async function ai(
     task: string,
     input: any,
@@ -452,7 +660,10 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
         (await api.get(`/ai/jobs/${encodeURIComponent(id)}`)).job,
       assertWorkspace: () => api.assertWorkspace(owner, origin),
       // Image requests have a 180s server timeout; allow media persistence too.
-      timeoutMs: (task.endsWith("_cleanup") || task === "business_visual") ? 240000 : 120000,
+      timeoutMs:
+        task.endsWith("_cleanup") || task === "business_visual"
+          ? 240000
+          : 120000,
     });
     return job.result;
   }
@@ -464,6 +675,9 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
         data,
         loading,
         offline,
+        pendingExchanges,
+        mediaProgress,
+        exchange,
         error,
         queue,
         capabilities,
