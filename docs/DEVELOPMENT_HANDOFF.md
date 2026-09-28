@@ -4,26 +4,49 @@ Read this at the start of a resumed cloud or desktop task, together with
 `AGENTS.md` and `docs/MOBILE_CLOUD_DEVELOPMENT.md`. GitHub carries code and these
 notes between devices; a new conversation does not inherit the old chat.
 
-## Current milestone — visual card feed and sharing
+## Current milestone — visual feed, Google Maps and Android 4.6.5
 
-- Branch `codex/visual-network-feed`, based on Truecaller PR #82. Exact owner
-  feedback is logged in `a6a4cbc`. Cards/Sent/Share/Meetings/My Card navigation,
-  grouped business images, quieter search, account-derived filters and a searchable
-  country dial-code picker are implemented. Number entry strips non-digits.
-- Added stable short published-card aliases and shorter invitation tokens while
-  preserving old URLs and idempotent legacy retries. Additive v9 migration.
-- Google Maps APIs enabled in `duit-cards-2025`; a dedicated API-restricted server
-  key and public TRUECALLER_CLIENT_ID were saved in Render (save only). Neither
-  has been verified on a new live deployment yet. Truecaller Android credential
-  was created with owner approval and the existing signing certificate.
-- Validation: 55 mobile tests, 55 API tests on the disposable local test DB,
-  workspace type checks and Expo web build passed. Chrome feed inspected at
-  http://localhost:48163/phone. Sent city filtering and country-code search were checked; the phone field retained digits only. Maps concurrency tests also passed.
-- Release version already prepared once: 4.6.5 / 2026091815. Move its change from
-  the Truecaller prerequisite PR into the final visual-feed release PR so merging
-  the prerequisite does not publish an intermediate APK. Do not increment again.
-- Next: integrate merged Truecaller main, complete final CI, merge final PR and verify signed APK plus Render
-  version/date/download metadata. Published APK remains 4.6.4.
+- Objective: simplify the visual relationship feed, separate outgoing shares,
+  shorten card links, add country-code entry and enable Google Maps/Truecaller.
+- Implementation merged through Truecaller PR #82 and visual-feed PR #83.
+  Release source is protected main `ef94f55694ceaf4ddc7cd1bb21e40f00da349cb1`.
+  Owner product wording is preserved in `docs/PRODUCT_INPUT_LOG.md`.
+- Cards/Sent/Share/Meetings/My Card replaces the previous navigation. The feed
+  groups business photos with card artwork and removes introductions/follow-up/
+  focus panels. Sent contains chronological recipient/meeting rows. Filter values
+  come from saved exchanges. New/small accounts retain visual sample cards.
+- Country-code search accepts names and dial codes; the separate phone input
+  retains ASCII digits only. Public card aliases have 12-character path codes;
+  invitation tokens have 16 characters. Old links and retry behavior still work.
+- Google Places (New) and Geocoding enabled in `duit-cards-2025`. Dedicated key is
+  restricted to those APIs and stored only in Render's private environment.
+  Persistent limits: 100 lookups/rolling 24h globally, 50/user, 1,000 total.
+  Live staging search returned Bharat Mandapam and reverse lookup returned
+  Kartavya Path/New Delhi/IN; shortened public-card URL returned HTTP 200.
+- Truecaller Android credential saved with owner approval and existing signing
+  certificate. Android and Render public client IDs match. Console test number,
+  consent details and openid/phone/profile scopes were confirmed. Live server
+  advertises Truecaller. Physical phone consent/cancellation still need testing.
+- Validation: 55 mobile tests, 55 isolated API tests, 13 tooling checks, type
+  checks, public web build and Expo web export passed. PR and protected-main
+  Pilot CI passed. Chrome reviewed feed collages, Sent city filtering, country
+  search, digit-only entry and populated new-user feed. No WhatsApp message sent.
+- Render deployed exact release source successfully at stable URL
+  https://duit-cards-staging.onrender.com. No Mac or tunnel is needed.
+- Android release 4.6.5 / 2026091815 published successfully in trusted workflow
+  36436708222 from the release source above. Immutable release:
+  https://github.com/prakhar-goel/duit-cards-2025/releases/tag/v4.6.5-staging.
+  Render /download and /downloads/release.json both verified version 4.6.5,
+  filename DUIT-2026-4.6.5.apk and release time 28 September 2026, 20:14 IST.
+  APK SHA-256: 49376b13d1827632aa5e423af3d1a36ab0185c7415246f6c004e3bcf75d0c006.
+  Release provenance matches GitHub asset digest, source and existing signing
+  certificate. Documentation handoff is PR #84; no additional version bump.
+- Next: install from https://duit-cards-staging.onrender.com/download over the
+  existing signed app and test native Truecaller, SIM picker and physical GPS.
+  Test mode only permits the Truecaller numbers listed in its console.
+- Local Chrome review: http://localhost:48163/review (Maya or new-user workspace);
+  phone frame http://localhost:48163/phone; DUIT Master http://localhost:48164/master.
+  Local API is 48162. These helpers are loopback-only and are not committed.
 
 ## Previous milestone — Truecaller login and requested Android release
 
