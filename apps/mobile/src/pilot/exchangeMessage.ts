@@ -25,3 +25,15 @@ export function introductionMessage({
     .filter(Boolean)
     .join("\n\n");
 }
+
+export function shareDisabledReason(
+  name: string,
+  phone: string,
+  message: string,
+) {
+  if (name.trim().length < 2) return "Enter their name to share your card.";
+  if (!/^\+[1-9]\d{7,14}$/.test(normalisePhone(phone)))
+    return "Add a valid WhatsApp number with country code, for example +91 98765 43210.";
+  if (!message.trim()) return "Write a message or use the suggested message.";
+  return "";
+}

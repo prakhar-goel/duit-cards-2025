@@ -60,3 +60,29 @@ export function suggestEvents(
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
 }
+
+/** A place alone does not prove attendance. Suggest only current, nearby events. */
+export function nearbyEvents(
+  events: EventSuggestion[],
+  at: string,
+  point?: { latitude: number; longitude: number },
+) {
+  if (!point) return [];
+  return suggestEvents(
+    events.filter((e) => {
+      const start = Date.parse(e.startsAt || ""),
+        end = Date.parse(e.endsAt || e.startsAt || "");
+      const time = Date.parse(at);
+      return (
+        Number.isFinite(start) &&
+        time >= start &&
+        time <= end &&
+        e.latitude != null &&
+        e.longitude != null &&
+        distanceKm(point, { latitude: e.latitude, longitude: e.longitude }) <= 2
+      );
+    }),
+    at,
+    point,
+  );
+}

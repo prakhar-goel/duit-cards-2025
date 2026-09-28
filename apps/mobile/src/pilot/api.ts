@@ -155,8 +155,9 @@ export async function request<T = any>(
       await refreshFlight;
       assertWorkspace(ownerId, origin);
       return request<T>(path, init, false);
-    } catch {
+    } catch (error) {
       assertWorkspace(ownerId, origin);
+      if (error instanceof ApiError && error.status !== 401 && error.status !== 403) throw error;
       throw new ApiError(
         401,
         "Your session has expired. Please sign in again.",

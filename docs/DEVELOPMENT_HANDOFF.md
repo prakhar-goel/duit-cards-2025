@@ -4,7 +4,45 @@ Read this at the start of a resumed cloud or desktop task, together with
 `AGENTS.md` and `docs/MOBILE_CLOUD_DEVELOPMENT.md`. GitHub carries code and these
 notes between devices; a new conversation does not inherit the old chat.
 
-## Current milestone
+## Current milestone — offline wallet and sharing browser review
+
+- Objective: offline card galleries and meeting history, automatic exchange sync,
+  readable/searchable GPS location, nearby saved-event tags, discussion choices,
+  editable WhatsApp message and persistent sample-card gallery.
+- Branch: `codex/offline-location-sharing`; draft PR #79:
+  https://github.com/prakhar-goel/duit-cards-2025/pull/79. No APK requested
+  for this iteration; user explicitly wants Chrome review before packaging.
+- Changes: server/account-scoped snapshot and media storage; idempotent durable
+  exchange outbox; reconnect/foreground sync; offline token-refresh preservation;
+  authenticated wallet snapshot and Photon/OpenStreetMap lookup endpoints; separate
+  media/API request allowances so an offline download cannot exhaust login requests.
+- Chrome review: `http://localhost:48163/review` lets the user open Maya or a new
+  local account. Local-only helper is `.local/preview-review.mjs` (untracked, binds
+  loopback, does not change hosted authentication). The isolated API is port 48162,
+  built web files are `apps/mobile/dist`, compiled with API URL localhost:48162.
+  Existing port 48152 and Render/tunnel settings were not changed.
+- Validation: 44 mobile tests, 46 API tests on `duit_2026_pilot_test`, workspace
+  type checks and Expo web export passed. Chrome checked at 412×915: topic picker,
+  Bharat Mandapam search → coordinates/address → message, editable preview and
+  disabled-button reason. Fresh account shows the curated gallery; Maya retains it
+  alongside 54 connections. With the isolated API stopped and Chrome reloaded,
+  saved photos, Aisha's business carousel and all three meetings remained available.
+- Limits: physical-device GPS and native filesystem/media playback remain device
+  smoke tests before packaging. Current nearby-event suggestions use the user's
+  saved DUIT events, not a global live-events provider. Public Photon has no SLA.
+  Media needs one successful download before it is usable offline; failed items
+  remain visible as waiting to download. Browser shell itself is served locally;
+  this is not a service-worker/PWA offline installation.
+- Offline WhatsApp uses the published public card URL; a personal invitation URL
+  is generated only with network access. A queued meeting is not proof of WhatsApp
+  delivery. No WhatsApp messages were sent during verification.
+- CI follow-up: location-result formatting was separated from the authenticated
+  router so its unit test runs without any local server secret.
+- Release: unchanged at 4.6.4 / 2026091814. No release bump, APK build, merge or
+  Render deployment. Next: user reviews the Chrome screens; then any requested
+  adjustments, Android device checks and the normal protected-main release flow.
+
+## Previous published milestone
 
 - Objective: intro and Firebase phone login, guided AI card creation/editing,
   People/Share/My Card navigation, remembered WhatsApp exchanges, meeting filters,

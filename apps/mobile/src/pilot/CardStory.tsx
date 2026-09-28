@@ -30,6 +30,7 @@ import {
   Notice,
   RemoteImage,
   ParallaxMedia,
+  useImageSource,
   Title,
 } from "./ui";
 import { getServer, mediaUrl, mediaHeaders, shareUrl } from "./api";
@@ -277,7 +278,7 @@ function OriginalCard({
 type StoryPage = "Person" | "Card" | "Business";
 
 function StoryVideo({ uri, poster }: { uri: string; poster?: string | null }) {
-  const url = mediaUrl(uri) || uri;
+  const url = useImageSource(uri) || mediaUrl(uri) || uri;
   const player = useVideoPlayer(
     { uri: url, headers: mediaHeaders(url) },
     (p) => {

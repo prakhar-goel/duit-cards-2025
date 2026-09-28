@@ -128,6 +128,15 @@ export function cardsRouter() {
       ORDER BY c.created_at,c.id LIMIT 12`)).rows;
     res.json({ cards: rows.map(r => presentPublicCard(r.snapshot, req)) });
   }));
+  router.get('/wallet/cards', auth, wrap(async (req, res) => {
+    const { limit, offset } = pagination(req);
+    const rows = (await query(`SELECT v.snapshot, count(*) OVER() AS total FROM cards c
+      JOIN card_versions v ON v.id=c.published_version_id
+      WHERE c.is_published AND (c.owner_id=$1 OR EXISTS
+        (SELECT 1 FROM people p WHERE p.owner_id=$1 AND p.source_card_id=c.id))
+      ORDER BY c.id LIMIT $2 OFFSET $3`, [req.userId, limit, offset])).rows;
+    res.json({ cards: rows.map(r => presentPublicCard(r.snapshot, req)), total: Number(rows[0]?.total || 0) });
+  }));
   router.get('/cards', auth, wrap(async (req, res) => {
     const {
       limit,
@@ -135,7 +144,7 @@ export function cardsRouter() {
     } = pagination(req);
     const rows = await query('SELECT *,count(*) OVER() AS total FROM cards WHERE owner_id=$1 ORDER BY updated_at DESC LIMIT $2 OFFSET $3', [req.userId, limit, offset]);
     res.json({
-      cards: rows.rows.map(r => cardDto(r)),
+      cards: await Promise.all(rows.rows.map(r => fullCard(r))),
       total: Number(rows.rows[0]?.total || 0),
       limit,
       offset

@@ -1,4 +1,5 @@
 import express from 'express';
+import { locationsRouter } from './locations.js';
 import crypto from 'node:crypto';
 import { z } from 'zod';
 import { authRouter } from './auth.js';
@@ -41,13 +42,18 @@ export function createApp({ verifyPhone } = {}) {
     status: 'ok',
     service: 'duit-private-pilot'
   }));
-  app.use(rateLimit({
-    max: 300
-  }));
+  // A wallet may contain hundreds of images. Downloading it must not consume
+  // the JSON/API allowance used for sign-in and saving meetings.
+  const apiLimit = rateLimit({ max: 300 });
+  const mediaLimit = rateLimit({ max: 1000 });
+  app.use((req, res, next) => {
+    const mediaRead = req.method === 'GET' && /^\/(?:demo\/|api\/v1\/(?:public\/)?media\/)/.test(req.path);
+    return (mediaRead ? mediaLimit : apiLimit)(req, res, next);
+  });
   app.use(express.json({
     limit: '18mb'
   }));
-  app.use('/api/v1', authRouter({ verifyPhone }), cardsRouter(), sharesRouter(), mediaRouter(), adminRouter(), aiRouter(), relationshipsRouter());
+  app.use('/api/v1', authRouter({ verifyPhone }), cardsRouter(), sharesRouter(), mediaRouter(), adminRouter(), aiRouter(), relationshipsRouter(), locationsRouter());
   app.use(webRouter());
   app.use((req, res) => res.status(404).json({
     error: {

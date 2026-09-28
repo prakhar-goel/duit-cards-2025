@@ -158,6 +158,9 @@ export type Capabilities = {
 };
 export type Session = { user: User; accessToken: string; refreshToken: string };
 export type Snapshot = {
+  walletCards?: Card[];
+  examples?: Card[];
+  events?: import("./meetingContext").EventSuggestion[];
   user: User | null;
   people: Person[];
   cards: Card[];

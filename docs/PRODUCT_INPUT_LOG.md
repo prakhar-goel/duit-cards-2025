@@ -342,3 +342,15 @@ Can I create another openai key for DUIT?
 ## 2026-09-27T11:27:26+05:30
 
 restrict it and continue
+
+
+## 2026-09-28T16:00:38+05:30
+
+- make the app optimized for offline functioning. Like whatsapp. All my exchanged cards etc should be available. If offline, show a small notification, or an icon somwehere. Update the network when I am online again.
+- The gps capturing is central to our app. Right now, GPS is not being captured and not being shown. During sharing, show me the GPS location derived via my coordinates. Allow me to search in the location box and update the location. ALso, if any prominent event is happening in this location, tag that event too, allowing me to update/remove the event. "What did you discuss" should be a dropdown with some options and and optional way to edit text. Remove City/Country icons. Not needed. Message preview should be editable. Share on whatsapp button is disabled. Show me the reason why is it disabled.
+
+As a new user, I dont see any sample cards. Show me some beautiful sample cards that we created earlier for the previous test account, even if I have exchanged a few cards.
+
+
+
+Dont create the app. Show me the changes on chrome before packing the app
