@@ -140,7 +140,7 @@ test("company onboarding, phone claim, team permissions, card controls and lead 
     invitationCode: invitation.invitationCode,
   });
   assert.equal(r.status, 403);
-  await query("UPDATE users SET phone_number=$2,firebase_uid=$3 WHERE id=$1", [
+  await query("UPDATE users SET phone_number=$2,firebase_uid=$3,verified_at=now() WHERE id=$1", [
     outsider.user.id,
     "+919900001112",
     "outsider-" + suffix,
@@ -149,7 +149,7 @@ test("company onboarding, phone claim, team permissions, card controls and lead 
     invitationCode: invitation.invitationCode,
   });
   assert.equal(r.status, 403);
-  await query("UPDATE users SET phone_number=$2,firebase_uid=$3 WHERE id=$1", [
+  await query("UPDATE users SET phone_number=$2,truecaller_uid=$3,verified_at=now() WHERE id=$1", [
     employee.user.id,
     "+919900001111",
     "employee-" + suffix,

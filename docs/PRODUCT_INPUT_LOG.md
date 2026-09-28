@@ -370,3 +370,22 @@ Again, before packing the app, show me the app via chrome for quick iterations.
 ## 2026-09-28T18:55:41+05:30
 
 Can we Allow login via Truecaller and auto selection of phone number on the phone (in app)?
+
+
+## 2026-09-28T19:33:40+05:30
+
+I have added the truecaller details as you requested.
+
+A few introductions.
+FOLLOW UP
+YOUR FOCUS
+Remove all of these sections
+The search box should be more subtle.&#x20;
+The feed of cards should be done in a better way. Think Linkedin like feed.&#x20;
+In case a card contains business profile, show some glimpses of their business profile images too. Like how facebook shows images bunched together
+I see a lot of repetition of "Received their card" etc. Bad UX. Think of more subtle, non-repeating way to inform me whether I received their card or shared my card. Infact, keep the list of my shares (me sharing my cards to other, separate. Because that information just contains other person's name and phone number, and the location of meeting).
+Use google maps for GPS. Its more dense. Let me now whatever API keys you need.
+Their whatsapp number - separate country code (dropdown, country code should be typable) and then phone number. Dont allow spaces, special chars, alphanumerics in that textbox
+The card link should be tiny. Tiny small url.&#x20;
+In the filters, the filter options should be based on my cards shared so far. Not generic options.&#x20;
+You may add a few more options in the bottom bar

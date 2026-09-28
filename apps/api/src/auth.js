@@ -3,6 +3,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { verifyPhoneIdentity } from './firebase.js';
+import { verifyTruecallerIdentity, truecallerClientId } from './truecaller.js';
 import { z } from 'zod';
 import { query, transaction } from './db.js';
 import { wrap, email, text, httpUrl, hash, secretToken, fail, rateLimit, camel, audit } from './common.js';
@@ -37,6 +38,36 @@ async function session(db, user) {
     accessToken: accessToken(user, row.id),
     refreshToken: refresh
   };
+}
+// Only server-verified provider identities can enter this path. Profile/contact fields
+// are never used for account lookup. Provider UID + phone must continue to agree.
+async function phoneSession({ provider, uid, phone, name = '' }) {
+  if (!uid || !/^\+[1-9]\d{7,14}$/.test(phone)) fail(401, 'Verify your phone number again.', 'INVALID_PHONE_TOKEN');
+  const column = provider === 'firebase' ? 'firebase_uid' : 'truecaller_uid';
+  const other = provider === 'firebase' ? 'truecaller_uid' : 'firebase_uid';
+  return transaction(async db => {
+    await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`phone:${phone}`]);
+    await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`${provider}:${uid}`]);
+    let user = (await db.query(`SELECT * FROM users WHERE ${column}=$1 FOR UPDATE`, [uid])).rows[0];
+    const conflict = () => fail(409, 'This number is linked to an existing DUIT identity. Contact support to recover that account.', 'PHONE_IDENTITY_CONFLICT');
+    if (user && user.phone_number !== phone) conflict();
+    if (!user) {
+      user = (await db.query('SELECT * FROM users WHERE phone_number=$1 FOR UPDATE', [phone])).rows[0];
+      if (user) {
+        // A first login through the other provider may join a verified phone identity.
+        // An already-linked but different provider subject may not take it over.
+        if (user[column] || !user[other] || !user.verified_at) conflict();
+        if (user.status !== 'active') fail(403, 'This account is unavailable.', 'ACCOUNT_UNAVAILABLE');
+        user = (await db.query(`UPDATE users SET ${column}=$1,updated_at=now() WHERE id=$2 RETURNING *`, [uid, user.id])).rows[0];
+      } else {
+        user = (await db.query(`INSERT INTO users(email,password_hash,display_name,profile,${column},phone_number,verified_at)
+          VALUES($1,$2,$3,$4,$5,$6,now()) RETURNING *`,
+          [`${hash(`${provider}:${uid}`)}@phone.duit.invalid`, await bcrypt.hash(secretToken(), 12), name, { phone }, uid, phone])).rows[0];
+      }
+    }
+    if (user.status !== 'active') fail(403, 'This account is unavailable.', 'ACCOUNT_UNAVAILABLE');
+    return session(db, user);
+  });
 }
 export const auth = wrap(async (req, res, next) => {
   const header = req.headers.authorization || '';
@@ -79,7 +110,7 @@ export const profileSchema = z.object({
   offers: z.array(text(250)).max(12),
   needs: z.array(text(250)).max(12)
 }).partial();
-export function authRouter({ verifyPhone = verifyPhoneIdentity } = {}) {
+export function authRouter({ verifyPhone = verifyPhoneIdentity, verifyTruecaller = verifyTruecallerIdentity } = {}) {
   const router = Router();
   const limiter = rateLimit({
     max: 20,
@@ -87,6 +118,7 @@ export function authRouter({ verifyPhone = verifyPhoneIdentity } = {}) {
   });
   router.get('/auth/capabilities', (_req, res) => res.json({
     phoneEnabled: Boolean(process.env.FIREBASE_PROJECT_ID),
+    truecallerClientId: truecallerClientId(),
     firebase: process.env.FIREBASE_PROJECT_ID === firebaseClient.projectId ? firebaseClient : null,
     inviteRequired: Boolean(process.env.PILOT_INVITE_CODE),
     verificationDelivery: process.env.LOCAL_OUTBOX === 'true' ? 'local_outbox' : 'unconfigured'
@@ -94,20 +126,16 @@ export function authRouter({ verifyPhone = verifyPhoneIdentity } = {}) {
   router.post('/auth/phone', rateLimit({ max: 20, windowMs: 15 * 60 * 1000 }), wrap(async (req, res) => {
     const { idToken } = z.object({ idToken: z.string().min(100).max(10000) }).parse(req.body);
     const { uid, phone } = await verifyPhone(idToken);
-    const result = await transaction(async db => {
-      await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`phone:${phone}`]);
-      let user = (await db.query('SELECT * FROM users WHERE firebase_uid=$1', [uid])).rows[0];
-      if (!user) {
-        if ((await db.query('SELECT id FROM users WHERE phone_number=$1', [phone])).rows.length) fail(409, 'This number is linked to an existing DUIT identity. Contact support to recover that account.', 'PHONE_IDENTITY_CONFLICT');
-        // Never attach a phone login to an existing account merely because a profile lists that number.
-        user = (await db.query(`INSERT INTO users(email,password_hash,display_name,profile,firebase_uid,phone_number,verified_at)
-          VALUES($1,$2,'',$3,$4,$5,now()) RETURNING *`,
-        [`${hash(uid)}@phone.duit.invalid`, await bcrypt.hash(secretToken(), 12), { phone }, uid, phone])).rows[0];
-      }
-      if (user.status !== 'active') fail(403, 'This account is unavailable.', 'ACCOUNT_UNAVAILABLE');
-      return session(db, user);
-    });
+    const result = await phoneSession({ provider: 'firebase', uid, phone });
     res.json(result);
+  }));
+  router.post('/auth/truecaller', limiter, wrap(async (req, res) => {
+    const input = z.object({
+      authorizationCode: z.string().min(1).max(4096),
+      codeVerifier: z.string().regex(/^[A-Za-z0-9._~-]{43,128}$/)
+    }).strict().parse(req.body);
+    const identity = await verifyTruecaller(input);
+    res.json(await phoneSession({ provider: 'truecaller', ...identity }));
   }));
   router.post('/auth/signup', limiter, wrap(async (req, res) => {
     const input = z.object({

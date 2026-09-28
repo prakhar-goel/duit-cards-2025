@@ -3,4 +3,5 @@
   <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
   <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
   <string name="expo_system_ui_user_interface_style" translatable="false">light</string>
+  <string name="truecaller_client_id" translatable="false">2ahnirfpx2m6qjxcs6flmaak1lmqlrabhau8x19pfpi</string>
 </resources>

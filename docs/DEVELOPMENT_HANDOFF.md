@@ -4,7 +4,34 @@ Read this at the start of a resumed cloud or desktop task, together with
 `AGENTS.md` and `docs/MOBILE_CLOUD_DEVELOPMENT.md`. GitHub carries code and these
 notes between devices; a new conversation does not inherit the old chat.
 
-## Current milestone — Android phone-number selection
+## Current milestone — Truecaller login and requested Android release
+
+- Objective: connect the owner's newly created Truecaller project and publish an
+  installable APK. The latest request explicitly authorizes packaging, superseding
+  the earlier Chrome-only review phase.
+- Branch: `codex/truecaller-login`; implementation `d7dd8fc`; draft PR #82:
+  https://github.com/prakhar-goel/duit-cards-2025/pull/82. Based on phone-number
+  selection `7993b87` and updated to merged main.
+  Offline PR #79, company PR #80 and phone-number PR #81 were merged
+  after their CI passed (main `ee54bb0`). Chrome review of the local mobile business
+  dashboard and DUIT Master completed successfully now that the Mac is unlocked.
+- Changes: native Truecaller OAuth SDK 3.3.0/PKCE/state checking and OTP fallback;
+  server-side code exchange/verified-phone account mapping; additive v8 provider
+  identity column; company invitation claims accept either verified provider.
+- Validation so far: 51 API and 51 mobile tests passed; type checks, both browser
+  builds and 13 tooling checks passed. Android compileDebugKotlin passed. Test
+  provider responses are mocked; no live Truecaller phone verification claimed.
+- Console setup completed with owner approval: Android credential uses the existing
+  signed APK certificate. Its public client ID is wired into Android and saved
+  in Render. Test consent details are owner-managed. Physical phone login still
+  needs the new APK; Chrome cannot exercise native Truecaller.
+- Version remains 4.6.4 on this prerequisite branch. The already prepared 4.6.5 /
+  2026091815 version is reserved for `codex/visual-network-feed`, so the next APK
+  includes the latest requested feed/sharing work. Do not bump again.
+- Next: merge this prerequisite after CI, integrate into the visual-feed branch,
+  then release that branch through protected main.
+
+## Previous milestone — Android phone-number selection
 
 - Objective: reduce phone-login typing and evaluate optional Truecaller login.
 - Branch: `codex/phone-number-selection`; implementation `74aaddd`; draft PR #81:

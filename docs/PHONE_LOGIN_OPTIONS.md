@@ -21,33 +21,47 @@ in Chrome; it needs a physical Android SIM/device smoke test before release.
 
 Source: https://developer.android.com/identity/phone-number-hint
 
-## Truecaller — activation pending
+## Truecaller OAuth login
 
-Recommended flow: offer Truecaller as an optional fast login on supported devices,
-with the existing phone-number picker and Firebase OTP as fallback. Do not display
-an active Truecaller login button before the provider is configured and tested.
+Android uses Truecaller's OAuth SDK 3.3.0 in a private, non-exported activity.
+The consent flow uses a fresh random state and SHA-256 PKCE challenge each time.
+Only `openid`, `phone` and `profile` are requested. Cancellation, unsupported
+phones, SDK errors and a two-minute timeout return to the Firebase SMS route.
+The Android SIM chooser remains a convenience; it is never proof of identity.
 
-Truecaller requires an OAuth project in its developer console, Android credentials
-for package **io.duit.ecards.pilot** and the existing release signing certificate's
-**SHA-1**. The resulting **Client ID** identifies the app. No replacement signing
-key should be generated. Debug/release identities may require separate entries.
-Truecaller's integration guide also requires submission for review before going live.
+The API exchanges the one-use authorization code and verifier directly with
+Truecaller's fixed non-EU token endpoint, then fetches userinfo. It requires a
+verified E.164 phone and a provider subject. It never accepts client-supplied
+phone/profile/access tokens as identity and never stores provider tokens.
 
-The owner has been asked whether DUIT is already registered. No Truecaller SDK,
-provider keys or authentication endpoint has been enabled in this milestone.
+Identity links are kept in `users.firebase_uid`, `users.truecaller_uid` and the
+unique verified `phone_number`. The first login through the other provider joins
+that verified account; a different already-linked provider subject or changed
+number returns a recovery conflict. Profile contact fields and provider email
+are never used to claim an existing account. Suspended accounts remain blocked.
+Company invitations accept either verified provider, still requiring a matching
+invitation phone and valid unconsumed invitation.
 
-When credentials are ready:
+### Console and server setup
 
-1. Integrate the supported OAuth SDK with PKCE and request-state validation.
-2. Validate the provider response on the server before establishing DUIT identity;
-   never trust a phone number/profile supplied directly by the mobile client.
-3. Preserve one DUIT identity per verified phone and explicitly reconcile the
-   Firebase-backed account/employee-invitation flow. An existing unverified profile
-   phone or email must not silently claim another account.
-4. Handle cancellation, missing Truecaller, unsupported verification and provider
-   failures by offering the existing Firebase OTP path.
-5. Test on the signed Android app and complete Truecaller review before release.
+Project: https://sdk-console-noneu.truecaller.com/dashboard/project/6bea61a1-f27d-436d-8559-47c98002d766
+
+- Android package: `io.duit.ecards.pilot`.
+- Existing release SHA-1: `EF:3A:7D:94:25:01:7B:F5:64:E9:60:B9:73:AD:3F:9E:57:BC:37:EC`.
+- Put the generated public client ID in Android's `truecaller_client_id` string
+  and Render's `TRUECALLER_CLIENT_ID`. It is a public application identifier,
+  not a signing secret. The button appears only when APK and server IDs match.
+- Configure the console consent screen with DUIT's name, developer/support email,
+  homepage and matching scopes. The owner supplies contact details.
+- While the project is in test mode, add each tester's Truecaller number under
+  Test Numbers. Truecaller must be installed and signed in on their device.
+- Actual physical-device success, cancellation and Firebase fallback need a
+  signed-APK smoke test. Complete provider review before production use.
+
+Current configuration status is recorded in `DEVELOPMENT_HANDOFF.md`. Never
+replace the release signing key to resolve an SDK configuration failure.
 
 Sources:
 - https://docs.truecaller.com/truecaller-sdk/android/latest-oauth-sdk-3.3.0/integration-steps
 - https://docs.truecaller.com/truecaller-sdk/android/latest-oauth-sdk-3.3.0/integration-steps/generating-client-id
+- https://docs.truecaller.com/truecaller-sdk/android/latest-oauth-sdk-3.3.0/integration-steps/integrating-with-your-backend/fetching-user-profile

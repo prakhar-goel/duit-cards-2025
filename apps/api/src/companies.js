@@ -392,7 +392,7 @@ export function companiesRouter() {
     "/business/claim",
     wrap(async (req, res) => {
       const token = z.string().min(20).max(100).parse(req.body.invitationCode);
-      if (!req.user.phone_number || !req.user.firebase_uid)
+      if (!req.user.phone_number || !req.user.verified_at || !(req.user.firebase_uid || req.user.truecaller_uid))
         fail(
           403,
           "Sign in with your verified mobile number to accept this invitation",
