@@ -23,6 +23,10 @@ notes between devices; a new conversation does not inherit the old chat.
   tooling); APK metadata/OTA native consistency tests passed. Chrome verified
   both presets populate their correct addresses. Native OTA delivery still awaits
   signed build plus initial EAS update publication and endpoint verification.
+- First signed build 36442409329 failed at Android lint with JVM Metaspace
+  exhaustion (512 MiB). Follow-up PR #86 raises metaspace to 1 GiB and fixes
+  remembered-local-preset selection. No APK was published; keep version 4.6.6.
+  Render b0d6ac3 deployed successfully.
 - Next: merge after required CI, verify signed workflow and Render deployment,
   publish initial OTA, verify /download shows 4.6.6 OTA enabled. Do not bump again.
 
