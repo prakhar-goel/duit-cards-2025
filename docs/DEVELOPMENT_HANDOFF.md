@@ -7,7 +7,8 @@ notes between devices; a new conversation does not inherit the old chat.
 ## Current milestone — Android phone-number selection
 
 - Objective: reduce phone-login typing and evaluate optional Truecaller login.
-- Branch: `codex/phone-number-selection`, based on company-review commit `f4fe442`
+- Branch: `codex/phone-number-selection`; implementation `74aaddd`; draft PR #81:
+  https://github.com/prakhar-goel/duit-cards-2025/pull/81. Based on company-review commit `f4fe442`
   (draft PR #80), which includes offline-review PR #79. Preserve those review
   milestones; none is approved for APK packaging yet.
 - Changes: small Android Google Phone Number Hint bridge using Play services auth
