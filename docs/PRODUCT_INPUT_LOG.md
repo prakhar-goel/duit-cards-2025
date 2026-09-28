@@ -389,3 +389,8 @@ Their whatsapp number - separate country code (dropdown, country code should be 
 The card link should be tiny. Tiny small url.&#x20;
 In the filters, the filter options should be based on my cards shared so far. Not generic options.&#x20;
 You may add a few more options in the bottom bar
+
+
+## 2026-09-28T20:36:43.177137+05:30
+
+ok make another apk, on the same download page, marking it for ota. prefill local and onrender server pages for quick switching

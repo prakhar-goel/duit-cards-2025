@@ -86,3 +86,12 @@ test('invalid publisher timestamp or filename is rejected', async () => {
   const read = createApkReleaseReader({ fetchJson: async () => data.manifest });
   await assert.rejects(read(channel));
 });
+
+test('OTA label follows verified release metadata, never a guessed version threshold', async () => {
+  for (const enabled of [true, false, undefined]) {
+    const data = fixture('4.6.6');
+    Object.assign(data.manifest, { fileName: 'DUIT-2026-4.6.6.apk', url: `${base}v4.6.6-staging/DUIT-2026-4.6.6.apk`, releasedAt: '2026-09-28T16:00:00Z', otaEnabled: enabled });
+    const read = createApkReleaseReader({ fetchJson: async () => data.manifest });
+    assert.equal((await read(channel)).otaEnabled === true, enabled === true);
+  }
+});
