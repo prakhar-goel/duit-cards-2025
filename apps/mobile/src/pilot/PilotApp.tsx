@@ -40,7 +40,9 @@ import type { Person, Tab, Card } from "./types";
 import { ThemeProvider, useTheme } from "./theme";
 const tabs: { name: Tab; icon: React.ComponentProps<typeof Icon>["name"] }[] = [
   { name: "People", icon: "people-outline" },
+  { name: "Sent", icon: "paper-plane-outline" },
   { name: "Share", icon: "share-outline" },
+  { name: "Meetings", icon: "calendar-outline" },
   { name: "My Card", icon: "id-card-outline" },
 ];
 function Main() {
@@ -166,7 +168,7 @@ function Main() {
             {store.offline
               ? "Offline · saved cards available"
               : store.pendingExchanges.some((e) => e.error)
-                ? "An exchange needs attention in People"
+                ? "An exchange needs attention in Sent"
                 : store.pendingExchanges.length
                   ? `${store.pendingExchanges.length} meeting(s) waiting to sync`
                   : store.mediaProgress.finished
@@ -176,11 +178,18 @@ function Main() {
         </View>
       )}
       <Animated.View style={{ flex: 1, opacity }}>
-        {tab === "People" ? (
+        {tab === "People" || tab === "Sent" ? (
           <PeopleScreen
+            key={tab}
+            mode={tab === "Sent" ? "sent" : "cards"}
             onPerson={setPersonId}
             onCapture={() => openCapture()}
             onCreate={() => navigate("My Card")}
+          />
+        ) : tab === "Meetings" ? (
+          <MeetingsScreen
+            onPerson={setPersonId}
+            onCapture={() => openCapture()}
           />
         ) : tab === "Share" ? (
           <ExchangeScreen onCreate={() => navigate("My Card")} />
@@ -208,10 +217,10 @@ function Main() {
         >
           {tabs.map((t) => (
             <Pressable
-              key={t.name}
+              key={t.name === "People" ? "Cards" : t.name}
               accessibilityRole="tab"
               accessibilityState={{ selected: tab === t.name }}
-              accessibilityLabel={t.name}
+              accessibilityLabel={t.name === "People" ? "Cards" : t.name}
               onPress={() => navigate(t.name)}
               style={{
                 flex: 1,
@@ -263,7 +272,7 @@ function Main() {
                   marginTop: t.name === "Share" ? -1 : 0,
                 }}
               >
-                {t.name}
+                {t.name === "People" ? "Cards" : t.name}
                 {t.name === "My Card" &&
                 store.data.leads.some((l) => l.status === "new")
                   ? " •"

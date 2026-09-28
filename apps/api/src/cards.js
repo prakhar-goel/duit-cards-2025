@@ -59,6 +59,7 @@ export function cardDto(row, panels) {
     id: row.id,
     dataOrigin: row.data_origin,
     slug: row.slug,
+    publicUrl: `${publicOrigin()}/c/${row.short_code || row.slug}`,
     title: row.title,
     subtitle: row.subtitle,
     imageUrl: row.image_url,
@@ -100,7 +101,7 @@ export async function fullCard(row, db = {
 export async function publishedCard(slug, db = {
   query
 }) {
-  const row = (await db.query('SELECT c.id,c.owner_id,v.snapshot FROM cards c JOIN card_versions v ON v.id=c.published_version_id WHERE c.slug=$1 AND c.is_published=true', [slug])).rows[0];
+  const row = (await db.query('SELECT c.id,c.owner_id,v.snapshot FROM cards c JOIN card_versions v ON v.id=c.published_version_id WHERE (c.slug=$1 OR c.short_code=$1) AND c.is_published=true', [slug])).rows[0];
   if (!row) fail(404, 'Card not found', 'NOT_FOUND');
   return row;
 }
@@ -238,7 +239,7 @@ export function cardsRouter() {
     });
     res.json({
       card,
-      publicUrl: `${publicOrigin()}/c/${card.slug}`
+      publicUrl: `${publicOrigin()}/c/${card.short_code || card.slug}`
     });
   }));
   router.post('/cards/:id/unpublish', auth, wrap(async (req, res) => {

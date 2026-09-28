@@ -560,3 +560,13 @@ Browser review only; Android packaging waits for the user's design review.
 - Native SIM selection needs a physical Android test. Chrome can review the app
   screen but cannot reproduce the system's SIM selection sheet. No APK release is
   authorized by this feasibility/integration iteration.
+
+### Visual relationship feed and focused sharing — 2026-09-28
+
+This decision replaces the earlier Today/Grow/Improve navigation: Cards is a person-first visual feed, Sent is a separate chronological list of outgoing exchanges, Share stays central, followed by Meetings and My Card. Remove introduction, follow-up and focus sections from the feed. Show visiting-card art with a compact collage of available business images; indicate incoming cards with a quiet icon rather than repeated sentences. Accounts with fewer than five received cards also see a small selection of existing sample cards.
+
+Search is compact. Filter choices and counts derive from the account's saved exchanges: months, places, events, countries and potential leads. Preserve natural-language and AI-assisted queries. Outgoing rows show recipient name/number and meeting context without pretending the recipient has a published card.
+
+WhatsApp entry separates a searchable country-code picker from an ASCII digits-only national number. Published card aliases use a 12-character path code; new recipient invitation links use 16-character tokens. Old links and idempotent exchange retries remain valid. A shorter branded hostname requires a separately configured domain.
+
+Google Places (New) supplies search and Geocoding supplies GPS address lookup through the authenticated backend. The key stays server-side. Persistent admission limits are 100 requests per rolling 24 hours globally, 50 per user, and 1,000 total initially, including failed calls. At the limit, GPS capture and manual meeting entry remain available. Google response lists are not cached.

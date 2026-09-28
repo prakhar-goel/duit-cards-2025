@@ -1,13 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, FlatList, ScrollView } from "react-native";
+import React, { useMemo, useState } from "react";
+import { View, Text, Pressable, FlatList, TextInput } from "react-native";
 import { usePilot } from "./store";
-import { get } from "./api";
 import { dateLabel } from "./domain";
 import {
-  filterPeople,
   parseMeetingQuery,
   exchangeDirection,
-  countryName,
 } from "../../../../packages/meeting-search/index.js";
 import {
   C,
@@ -18,32 +15,31 @@ import {
   Avatar,
   Icon,
   Pill,
-  SearchBox,
   Empty,
   Sheet,
   Button,
-  Field,
   Notice,
+  RemoteImage,
 } from "./ui";
 import { CardStory, CardArtwork } from "./CardStory";
-import { ConnectionHighlights } from "./ConnectionHighlights";
 import { AIReview } from "./AI";
-import type { Card } from "./types";
+import {
+  networkRows,
+  exchangeFilterOptions,
+  meetingPlace,
+} from "./networkFeedData";
+import type { Card, Person, Encounter } from "./types";
 
-function completeDate(value: string) {
-  return (
-    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-    !Number.isNaN(new Date(value + "T00:00:00").valueOf())
-  );
-}
 export function PeopleHome({
   onPerson,
   onCapture,
   onCreate,
+  mode = "cards",
 }: {
   onPerson: (id: string) => void;
   onCapture: () => void;
   onCreate: () => void;
+  mode?: "cards" | "sent";
 }) {
   const {
     data,
@@ -56,438 +52,570 @@ export function PeopleHome({
     notify,
   } = usePilot();
   const [query, setQuery] = useState("");
-  const [direction, setDirection] = useState("");
-  const [dates, setDates] = useState("");
-  const [from, setFrom] = useState("");
-  const [until, setUntil] = useState("");
-  const [place, setPlace] = useState("");
-  const [event, setEvent] = useState("");
-  const [country, setCountry] = useState("");
-  const [leadOnly, setLeadOnly] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [ask, setAsk] = useState(false);
-  const examples = data.examples || [];
+  const [month, setMonth] = useState(""),
+    [place, setPlace] = useState(""),
+    [event, setEvent] = useState(""),
+    [country, setCountry] = useState("");
+  const [leadOnly, setLeadOnly] = useState(false),
+    [filtersOpen, setFiltersOpen] = useState(false),
+    [ask, setAsk] = useState(false);
   const [example, setExample] = useState<Card | null>(null);
+  const baseRows = useMemo(
+    () => networkRows(data.people, data.encounters, mode, { terms: [] }),
+    [data.people, data.encounters, mode],
+  );
+  const scopeIds = new Set(baseRows.map((r) => r.person.id));
+  const scope = data.encounters.filter(
+    (e) =>
+      scopeIds.has(e.personId) &&
+      (mode === "cards" ||
+        ["outgoing", "both"].includes(exchangeDirection(e.exchangeType))),
+  );
+  const options = exchangeFilterOptions(scope);
   const filters = useMemo(
     () => ({
-      ...parseMeetingQuery(query + " " + dates),
-      ...(direction ? { direction } : {}),
-      ...(completeDate(from)
-        ? { from: new Date(from + "T00:00:00").toISOString() }
-        : {}),
-      ...(completeDate(until)
+      ...parseMeetingQuery(query),
+      ...(month
         ? {
+            from: new Date(month + "-01T00:00:00").toISOString(),
             before: new Date(
-              new Date(until + "T00:00:00").valueOf() + 86400000,
+              Number(month.slice(0, 4)),
+              Number(month.slice(5)),
+              1,
             ).toISOString(),
           }
         : {}),
-      place,
-      country,
-      event,
+      ...(place ? { place } : {}),
+      ...(event ? { event } : {}),
+      ...(country ? { country } : {}),
       leadOnly: leadOnly || parseMeetingQuery(query).leadOnly,
     }),
-    [query, dates, direction, from, until, place, country, event, leadOnly],
+    [query, month, place, event, country, leadOnly],
   );
   const rows = useMemo(
-    () => filterPeople(data.people, data.encounters, filters),
-    [data.people, data.encounters, filters],
+    () => networkRows(data.people, data.encounters, mode, filters),
+    [data.people, data.encounters, mode, filters],
   );
-  const countries = [
-    ...new Set(data.encounters.map((e) => e.countryCode).filter(Boolean)),
-  ] as string[];
-  const activeFilters = Boolean(
-    dates || from || until || place || country || event || leadOnly,
+  const active = [month, place, event, country, leadOnly].filter(
+    Boolean,
+  ).length;
+  const cards = useMemo(
+    () =>
+      new Map(
+        [...(data.examples || []), ...(data.walletCards || [])].map((c) => [
+          c.slug,
+          c,
+        ]),
+      ),
+    [data.examples, data.walletCards],
   );
-  const header = (
-    <>
-      <View style={s.row}>
-        <Title>Your people.</Title>
-        <Button small tone="quiet" icon="scan-outline" onPress={onCapture}>
-          Add
-        </Button>
-      </View>
-      <Body muted style={{ marginTop: 8, marginBottom: 20 }}>
-        {data.people.length
-          ? `${data.people.length} connections. Every hello, remembered.`
-          : "Your next connection starts here."}
-      </Body>
-      {!data.cards.length && (
-        <View style={{ marginBottom: 20 }}>
-          <Button onPress={onCreate} icon="id-card-outline">
-            Create my card
-          </Button>
-        </View>
-      )}
-      {pendingExchanges.map((item) => (
-        <View key={item.clientId} style={[s.card, { marginBottom: 10 }]}>
-          <Body>{item.name}</Body>
-          <Body muted>
-            {item.error || "Meeting saved on this phone · waiting to sync"}
-          </Body>
-          <Text style={s.hint}>
-            {[item.location, item.city, dateLabel(item.occurredAt, true)]
-              .filter(Boolean)
-              .join(" · ")}
+  type Row = { person: Person; meeting: Encounter | null; example?: Card };
+  const visible: Row[] =
+    baseRows.length < 5 && mode === "cards" && !query && !active
+      ? [
+          ...rows,
+          ...(data.examples || [])
+            .filter(
+              (c) =>
+                !baseRows.some(
+                  (r) =>
+                    r.person.cardSlug === c.slug || r.person.cardId === c.id,
+                ),
+            )
+            .slice(0, 8)
+            .map((c) => ({
+              person: {
+                id: c.id,
+                name: c.title,
+                company: c.company || "",
+                role: c.role || "",
+                tags: [],
+                photoUrl: c.imageUrl,
+                businessCardUrl: c.businessCardUrl,
+                bio: c.subtitle,
+                cardSlug: c.slug,
+              },
+              meeting: null,
+              example: c,
+            })),
+        ]
+      : rows;
+  const renderItem = ({ item }: { item: Row }) => {
+    const { person: p, meeting } = item;
+    const card =
+      item.example || (p.cardSlug ? cards.get(p.cardSlug) : undefined);
+    const pictures = [
+      ...new Set(
+        (card?.businessMedia || [])
+          .filter((m) => m.type === "image")
+          .map((m) => m.url)
+          .concat(card?.coverUrl ? [card.coverUrl] : []),
+      ),
+    ].filter(
+      (u) => u && u !== p.businessCardUrl && u !== card?.businessCardUrl,
+    );
+    const context = meetingPlace(meeting);
+    const open = () =>
+      item.example ? setExample(item.example) : onPerson(p.id);
+    if (mode === "sent")
+      return (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`View meeting with ${p.name}`}
+          onPress={open}
+          style={({ pressed }) => ({
+            marginHorizontal: 20,
+            paddingVertical: 20,
+            borderBottomWidth: 1,
+            borderColor: C.line,
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <Avatar name={p.name} url={p.photoUrl} size={44} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: C.ink, fontWeight: "700", fontSize: 17 }}>
+                {p.name}
+              </Text>
+              <Text style={{ color: C.muted, fontSize: 14, marginTop: 4 }}>
+                {p.phone || p.company}
+              </Text>
+            </View>
+            <Icon name="arrow-up-right-box-outline" size={17} color={C.muted} />
+          </View>
+          <Text style={{ color: C.muted, fontSize: 12, marginTop: 12 }}>
+            {meeting && dateLabel(meeting.occurredAt, true)}
           </Text>
-          {item.error && (
-            <Button
-              small
-              tone="quiet"
-              onPress={() =>
-                void exchange({ ...item, error: undefined }).catch((e) =>
-                  notify(e.message),
-                )
-              }
+          {!!context && (
+            <Text
+              numberOfLines={2}
+              style={{
+                color: C.ink,
+                fontSize: 13,
+                lineHeight: 19,
+                marginTop: 5,
+              }}
             >
-              Retry sync
-            </Button>
+              {context}
+            </Text>
+          )}
+          {!!meeting?.originalNote && (
+            <Text
+              numberOfLines={2}
+              style={{
+                color: C.muted,
+                fontSize: 13,
+                lineHeight: 19,
+                marginTop: 7,
+              }}
+            >
+              {meeting.originalNote}
+            </Text>
+          )}
+        </Pressable>
+      );
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${p.name}'s card`}
+        onPress={open}
+        style={({ pressed }) => ({
+          backgroundColor: C.white,
+          marginBottom: 12,
+          paddingVertical: 18,
+          opacity: pressed ? 0.85 : 1,
+          borderTopWidth: 1,
+          borderBottomWidth: 1,
+          borderColor: C.line,
+        })}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 12,
+            alignItems: "center",
+            paddingHorizontal: 20,
+          }}
+        >
+          <Avatar name={p.name} url={p.photoUrl || card?.imageUrl} size={48} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 17, fontWeight: "700", color: C.ink }}>
+              {p.name}
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={{ color: C.muted, fontSize: 12, marginTop: 4 }}
+            >
+              {[p.role, p.company].filter(Boolean).join(" · ")}
+            </Text>
+          </View>
+          <Icon
+            name={item.example ? "compass-outline" : "arrow-down-outline"}
+            size={16}
+            color={C.muted}
+          />
+        </View>
+        {!!(card?.subtitle || p.bio) && (
+          <Text
+            numberOfLines={2}
+            style={{
+              paddingHorizontal: 20,
+              marginTop: 14,
+              marginBottom: 14,
+              fontSize: 15,
+              lineHeight: 22,
+              color: C.ink,
+            }}
+          >
+            {card?.subtitle || p.bio}
+          </Text>
+        )}
+        <View style={{ gap: 3, marginTop: card?.subtitle || p.bio ? 0 : 14 }}>
+          <CardArtwork
+            uri={card?.businessCardUrl || p.businessCardUrl}
+            name={p.name}
+            company={p.company}
+            role={p.role}
+            height={215}
+            style={{ borderRadius: 0, borderWidth: 0 }}
+          />
+          {!!pictures.length && (
+            <View style={{ flexDirection: "row", gap: 3, height: 132 }}>
+              {pictures.slice(0, 2).map((url, i) => (
+                <View key={url} style={{ flex: 1 }}>
+                  <RemoteImage
+                    uri={url}
+                    style={{ width: "100%", height: "100%" }}
+                  />
+                  {i === 1 && pictures.length > 2 && (
+                    <View
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        backgroundColor: "#0005",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "white",
+                          fontSize: 26,
+                          fontWeight: "600",
+                        }}
+                      >
+                        +{pictures.length - 2}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
           )}
         </View>
-      ))}
-      {!!error && !offline && <Notice error>{error}</Notice>}
-      {!query && !direction && !activeFilters && examples.length > 0 && (
-        <>
-          <Title size={23} style={{ marginTop: 16 }}>
-            A few introductions.
-          </Title>
-          <Body muted style={{ marginTop: 8, marginBottom: 18 }}>
-            Explore a few beautiful cards. Keep building your own circle below.
-          </Body>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 14 }}
-          >
-            {examples.slice(0, 8).map((c) => (
-              <Pressable
-                key={c.id}
-                accessibilityRole="button"
-                accessibilityLabel={`Open ${c.title}'s card`}
-                onPress={() => setExample(c)}
-                style={[
-                  s.card,
-                  {
-                    width: 282,
-                    marginBottom: 20,
-                    padding: 0,
-                    overflow: "hidden",
-                  },
-                ]}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: 16,
-                  }}
-                >
-                  <Avatar name={c.title} url={c.imageUrl} size={48} />
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{ color: C.ink, fontSize: 17, fontWeight: "700" }}
-                    >
-                      {c.title}
-                    </Text>
-                    <Body muted>{c.company}</Body>
-                  </View>
-                </View>
-                <CardArtwork
-                  uri={c.businessCardUrl}
-                  name={c.title}
-                  company={c.company}
-                  role={c.role}
-                  height={180}
-                />
-                <Body style={{ padding: 16 }}>{c.subtitle}</Body>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </>
-      )}
-      {!!data.people.length && !query && !direction && !activeFilters && (
-        <ConnectionHighlights onPerson={onPerson} />
-      )}
-      <SearchBox
-        value={query}
-        onChange={setQuery}
-        placeholder="Last week in Gurgaon, January 2026, Brazil…"
-        onSubmit={() => {}}
-      />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 8, paddingVertical: 16 }}
-      >
-        <Pill
-          active={activeFilters}
-          icon="options-outline"
-          onPress={() => setFiltersOpen(true)}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            paddingHorizontal: 20,
+            marginTop: 14,
+          }}
         >
-          Filters
-        </Pill>
-        {[
-          ["", "Everyone"],
-          ["incoming", "Received"],
-          ["outgoing", "Shared"],
-        ].map(([value, title]) => (
-          <Pill
-            key={title}
-            active={direction === value}
-            onPress={() => setDirection(value)}
+          <Icon
+            name={meeting ? "location-outline" : "id-card-outline"}
+            size={14}
+            color={C.muted}
+          />
+          <Text
+            numberOfLines={1}
+            style={{ flex: 1, color: C.muted, fontSize: 12 }}
           >
-            {title}
-          </Pill>
-        ))}
-      </ScrollView>
-      {!!query.trim() && (
-        <Button
-          small
-          tone="quiet"
-          icon="sparkles-outline"
-          onPress={() => setAsk(true)}
-        >
-          Ask DUIT
-        </Button>
-      )}
-      {filters.from && (
-        <Text style={[s.hint, { marginBottom: 12 }]}>
-          {dateLabel(filters.from)} –{" "}
-          {dateLabel(
-            new Date(
-              new Date(filters.before || Date.now()).valueOf() - 1,
-            ).toISOString(),
+            {context || p.company}
+          </Text>
+          {meeting && (
+            <Text style={{ fontSize: 12, color: C.muted }}>
+              {dateLabel(meeting.occurredAt)}
+            </Text>
           )}
-        </Text>
-      )}
-    </>
-  );
+          <Icon name="chevron-forward" size={14} color={C.muted} />
+        </View>
+      </Pressable>
+    );
+  };
   return (
     <>
       <FlatList
-        data={rows}
-        keyExtractor={(r) => r.person.id}
-        contentContainerStyle={s.page}
-        ListHeaderComponent={header}
-        initialNumToRender={4}
-        maxToRenderPerBatch={4}
+        key={mode}
+        data={visible}
+        keyExtractor={(r) => (mode === "sent" ? r.meeting!.id : r.person.id)}
+        renderItem={renderItem}
+        initialNumToRender={3}
+        maxToRenderPerBatch={3}
         windowSize={5}
         refreshing={loading}
         onRefresh={() => void refresh()}
-        ListEmptyComponent={
-          data.people.length ? (
-            <Empty
-              icon="search-outline"
-              title="No matching meetings"
-              body="Try another place or date, or clear the filters."
-            />
-          ) : undefined
-        }
-        renderItem={({ item: { person: p, meeting } }) => {
-          const d =
-            exchangeDirection(meeting?.exchangeType) ||
-            (p.cardSlug ? "incoming" : "");
-          return (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Open ${p.name}'s card`}
-              onPress={() => onPerson(p.id)}
-              style={({ pressed }) => [
-                s.card,
-                {
-                  padding: 0,
-                  overflow: "hidden",
-                  marginBottom: 20,
-                  opacity: pressed ? 0.8 : 1,
-                },
-              ]}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: 16,
-                }}
-              >
-                <Avatar name={p.name} url={p.photoUrl} size={51} />
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{ fontSize: 18, fontWeight: "700", color: C.ink }}
-                  >
-                    {p.name}
-                  </Text>
-                  <Text
-                    numberOfLines={1}
-                    style={{ color: C.muted, fontSize: 13, marginTop: 4 }}
-                  >
-                    {[p.role, p.company].filter(Boolean).join(" · ")}
-                  </Text>
-                </View>
-                <Icon
-                  name={
-                    d === "outgoing"
-                      ? "arrow-up-outline"
-                      : d === "incoming"
-                        ? "arrow-down-outline"
-                        : "swap-vertical-outline"
-                  }
-                  size={20}
-                />
-              </View>
-              {p.businessCardUrl && (
-                <CardArtwork
-                  uri={p.businessCardUrl}
-                  name={p.name}
-                  company={p.company}
-                  role={p.role}
-                  height={185}
-                />
-              )}
-              <View style={{ padding: 16, gap: 7 }}>
-                <Text
-                  style={{ fontSize: 12, color: C.teal, fontWeight: "700" }}
-                >
-                  {d === "outgoing"
-                    ? "Shared my card"
-                    : d === "incoming"
-                      ? "Received their card"
-                      : d === "both"
-                        ? "Exchanged cards"
-                        : "Connection"}
-                  {meeting ? ` · ${dateLabel(meeting.occurredAt, true)}` : ""}
-                </Text>
-                {meeting && (
-                  <Text
-                    style={{ color: C.muted, fontSize: 13, lineHeight: 19 }}
-                  >
-                    {[
-                      meeting.eventName,
-                      meeting.location,
-                      meeting.city,
-                      countryName(meeting.countryCode),
-                    ]
-                      .filter(Boolean)
-                      .join(" · ") || "Place not recorded"}
-                  </Text>
-                )}
-                {(meeting?.originalNote || p.bio) && (
-                  <Text
-                    numberOfLines={2}
-                    style={{ color: C.ink, fontSize: 14, lineHeight: 21 }}
-                  >
-                    {meeting?.originalNote || p.bio}
-                  </Text>
-                )}
-              </View>
-            </Pressable>
-          );
+        contentContainerStyle={{
+          paddingBottom: 32,
+          maxWidth: 760,
+          width: "100%",
+          alignSelf: "center",
         }}
+        ListHeaderComponent={
+          <View
+            style={{ paddingHorizontal: 20, paddingTop: 22, paddingBottom: 14 }}
+          >
+            <View style={s.row}>
+              <Title>{mode === "sent" ? "Sent." : "Your cards."}</Title>
+              {mode === "cards" && (
+                <Button
+                  small
+                  tone="quiet"
+                  icon="scan-outline"
+                  onPress={onCapture}
+                >
+                  Add
+                </Button>
+              )}
+            </View>
+            {mode === "sent" && (
+              <Body muted style={{ marginTop: 8, marginBottom: 12 }}>
+                People you shared your card with.
+              </Body>
+            )}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 9,
+                marginTop: 16,
+                backgroundColor: C.soft,
+                borderRadius: 12,
+                paddingHorizontal: 12,
+                minHeight: 42,
+              }}
+            >
+              <Icon name="search-outline" size={18} color={C.muted} />
+              <TextInput
+                accessibilityLabel="Search cards and meetings"
+                value={query}
+                onChangeText={setQuery}
+                placeholder={
+                  mode === "sent"
+                    ? "Search your shares"
+                    : "Search names, places, dates"
+                }
+                placeholderTextColor={C.muted}
+                style={{
+                  flex: 1,
+                  color: C.ink,
+                  fontSize: 14,
+                  paddingVertical: 11,
+                }}
+              />
+              {!!query && (
+                <Pressable
+                  accessibilityLabel="Clear search"
+                  onPress={() => setQuery("")}
+                >
+                  <Icon name="close" size={17} />
+                </Pressable>
+              )}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Filter cards and meetings"
+                onPress={() => setFiltersOpen(true)}
+                style={{ padding: 5 }}
+              >
+                <Icon
+                  name="options-outline"
+                  size={20}
+                  color={active ? C.teal : C.muted}
+                />
+                {active > 0 && (
+                  <Text
+                    style={{
+                      position: "absolute",
+                      right: -4,
+                      top: -7,
+                      color: C.teal,
+                      fontSize: 10,
+                    }}
+                  >
+                    {active}
+                  </Text>
+                )}
+              </Pressable>
+            </View>
+            {!!query.trim() && (
+              <Button
+                small
+                tone="quiet"
+                icon="sparkles-outline"
+                onPress={() => setAsk(true)}
+              >
+                Ask DUIT
+              </Button>
+            )}
+            {!!error && !offline && <Notice error>{error}</Notice>}
+            {mode === "sent" &&
+              pendingExchanges.map((item) => (
+                <View key={item.clientId} style={{ paddingVertical: 14 }}>
+                  <Body>{item.name}</Body>
+                  <Text style={s.hint}>
+                    {item.error || "Saved here · waiting to sync"}
+                  </Text>
+                  {item.error && (
+                    <Button
+                      small
+                      tone="quiet"
+                      onPress={() =>
+                        void exchange({ ...item, error: undefined }).catch(
+                          (e) => notify(e.message),
+                        )
+                      }
+                    >
+                      Retry
+                    </Button>
+                  )}
+                </View>
+              ))}
+            {!data.cards.length && mode === "cards" && (
+              <Button tone="quiet" onPress={onCreate}>
+                Create my card
+              </Button>
+            )}
+          </View>
+        }
+        ListEmptyComponent={
+          <Empty
+            icon={mode === "sent" ? "paper-plane-outline" : "search-outline"}
+            title={
+              mode === "sent" && !baseRows.length
+                ? "Your next hello starts with Share."
+                : "No matching cards"
+            }
+            body={
+              baseRows.length
+                ? "Try another search or clear your filters."
+                : "Cards and meeting details will appear here as you exchange them."
+            }
+          />
+        }
       />
       <Sheet
         visible={filtersOpen}
-        title="Find that hello"
+        title="Find a meeting"
         onClose={() => setFiltersOpen(false)}
         footer={
           <Button onPress={() => setFiltersOpen(false)}>
-            Show {rows.length} people
+            Show {rows.length} {mode === "sent" ? "shares" : "cards"}
           </Button>
         }
       >
-        <Label>WHEN</Label>
-        <View
-          style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 8,
-            marginVertical: 15,
-          }}
-        >
-          {["", "Today", "Last week", "Last month"].map((value) => (
-            <Pill
-              key={value}
-              active={dates === value}
-              onPress={() => {
-                setDates(value);
-                setFrom("");
-                setUntil("");
+        <Body muted>
+          From your saved {mode === "sent" ? "shares" : "card exchanges"}.
+        </Body>
+        {options.months.length > 0 && (
+          <>
+            <Label>WHEN</Label>
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                gap: 8,
+                marginVertical: 12,
               }}
             >
-              {value || "Any time"}
-            </Pill>
-          ))}
-        </View>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <Field
-            style={{ flex: 1 }}
-            label="From"
-            value={from}
-            onChangeText={(v) => {
-              setFrom(v);
-              setDates("");
-            }}
-            placeholder="2026-01-01"
-          />
-          <Field
-            style={{ flex: 1 }}
-            label="Through"
-            value={until}
-            onChangeText={(v) => {
-              setUntil(v);
-              setDates("");
-            }}
-            placeholder="2026-01-31"
-          />
-        </View>
-        <Field
-          label="Place or city"
-          value={place}
-          onChangeText={setPlace}
-          placeholder="Gurgaon, Paris, a café…"
-        />
-        <Field
-          label="Event"
-          value={event}
-          onChangeText={setEvent}
-          placeholder="Startup summit"
-        />
-        <Label>COUNTRY</Label>
-        <View
-          style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 8,
-            marginVertical: 16,
-          }}
-        >
-          <Pill active={!country} onPress={() => setCountry("")}>
-            Anywhere
+              {options.months.map(([value, count]) => (
+                <Pill
+                  key={value}
+                  active={month === value}
+                  onPress={() => setMonth(month === value ? "" : value)}
+                >
+                  {new Date(value + "-01T12:00:00").toLocaleDateString("en", {
+                    month: "short",
+                    year: "numeric",
+                  })}{" "}
+                  · {count}
+                </Pill>
+              ))}
+            </View>
+          </>
+        )}
+        {(["places", "events"] as const).map(
+          (key) =>
+            options[key].length > 0 && (
+              <View key={key}>
+                <Label>{key === "places" ? "WHERE" : "EVENT"}</Label>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    marginVertical: 12,
+                  }}
+                >
+                  {options[key].map(([value, count]) => (
+                    <Pill
+                      key={value}
+                      active={(key === "places" ? place : event) === value}
+                      onPress={() =>
+                        key === "places"
+                          ? setPlace(place === value ? "" : value)
+                          : setEvent(event === value ? "" : value)
+                      }
+                    >
+                      {value} · {count}
+                    </Pill>
+                  ))}
+                </View>
+              </View>
+            ),
+        )}
+        {options.countries.length > 0 && (
+          <>
+            <Label>COUNTRY</Label>
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                gap: 8,
+                marginVertical: 12,
+              }}
+            >
+              {options.countries.map((c) => (
+                <Pill
+                  key={c.code}
+                  active={country === c.code}
+                  onPress={() => setCountry(country === c.code ? "" : c.code)}
+                >
+                  {c.name} · {c.count}
+                </Pill>
+              ))}
+            </View>
+          </>
+        )}
+        {baseRows.some((r) =>
+          /lead|prospect/i.test(r.person.tags.join(" ")),
+        ) && (
+          <Pill active={leadOnly} onPress={() => setLeadOnly(!leadOnly)}>
+            Potential leads
           </Pill>
-          {countries.map((c) => (
-            <Pill key={c} active={country === c} onPress={() => setCountry(c)}>
-              {countryName(c)}
-            </Pill>
-          ))}
-        </View>
-        <Pill
-          active={leadOnly}
-          icon={leadOnly ? "checkbox" : "square-outline"}
-          onPress={() => setLeadOnly(!leadOnly)}
-        >
-          Potential leads
-        </Pill>
+        )}
+        {!scope.length && (
+          <Body muted style={{ marginTop: 18 }}>
+            Your places, events and dates will appear after your first exchange.
+          </Body>
+        )}
         <Button
           tone="quiet"
           onPress={() => {
-            setCountry("");
+            setMonth("");
             setPlace("");
             setEvent("");
+            setCountry("");
             setLeadOnly(false);
-            setDates("");
-            setFrom("");
-            setUntil("");
-            setDirection("");
             setQuery("");
           }}
         >
@@ -495,18 +623,25 @@ export function PeopleHome({
         </Button>
       </Sheet>
       <Sheet
-        visible={Boolean(example)}
+        visible={!!example}
         title={example?.title || ""}
         onClose={() => setExample(null)}
       >
-        {example && <CardStory card={example} initialPage="Person" />}
+        {example && <CardStory card={example} />}
       </Sheet>
       {ask && (
         <AIReview
           visible
           task="network_search"
-          title="Find the right connection"
-          input={{ query, filters: { ...filters, terms: undefined } }}
+          title="Find a connection"
+          input={{
+            query,
+            filters: {
+              ...filters,
+              terms: undefined,
+              ...(mode === "sent" ? { direction: "outgoing" } : {}),
+            },
+          }}
           onClose={() => setAsk(false)}
           onPerson={(id) => {
             setAsk(false);

@@ -20,6 +20,9 @@ import {
   Icon,
 } from "./ui";
 import { DateTimeField } from "./DateTimeField";
+import { PhoneField } from "./PhoneField";
+import { internationalPhone } from "./phoneFormat";
+import type { CountryCode } from "libphonenumber-js/min";
 import { nearbyEvents } from "./meetingContext";
 import {
   introductionMessage,
@@ -66,7 +69,9 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
   const [cardId, setCardId] = useState(cards[0]?.id || "");
   const card = cards.find((c) => c.id === cardId) || cards[0];
   const [name, setName] = useState(""),
-    [phone, setPhone] = useState("+91");
+    [nationalPhone, setNationalPhone] = useState("");
+  const [phoneCountry, setPhoneCountry] = useState<CountryCode>("IN");
+  const phone = internationalPhone(phoneCountry, nationalPhone);
   const [topic, setTopic] = useState(""),
     [note, setNote] = useState(""),
     [topicsOpen, setTopicsOpen] = useState(false);
@@ -79,6 +84,7 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [locationText, setLocationText] = useState(""),
     [searchQuery, setSearchQuery] = useState("");
+  const [mapProvider, setMapProvider] = useState("");
   const [results, setResults] = useState<Place[]>([]),
     [searching, setSearching] = useState(false),
     [locationHint, setLocationHint] = useState("");
@@ -130,6 +136,7 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
         .then((r) => {
           if (!active) return;
           setResults(r.places || []);
+          setMapProvider(r.provider || "photon");
           setLocationHint(
             r.places?.length
               ? "Choose the place you met."
@@ -214,7 +221,10 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
             countryCode: address.countryCode,
           });
           setLocationText(address.label);
-          setLocationHint("GPS captured · address from OpenStreetMap");
+          setMapProvider(r.provider || "photon");
+          setLocationHint(
+            `GPS captured · address from ${r.provider === "google" ? "Google Maps" : "OpenStreetMap"}`,
+          );
         } else setLocationHint("GPS captured. Add a place name if you like.");
       } catch {
         if (current === revision.current)
@@ -296,7 +306,7 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
   }
   function next() {
     setName("");
-    setPhone("+91");
+    setNationalPhone("");
     setNote("");
     setTopic("");
     setLead(false);
@@ -405,12 +415,11 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
             placeholder="Their name"
             autoComplete="name"
           />
-          <Field
-            label="Their WhatsApp number"
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            placeholder="Include country code"
+          <PhoneField
+            country={phoneCountry}
+            onCountry={setPhoneCountry}
+            number={nationalPhone}
+            onNumber={setNationalPhone}
           />
           <Label>WHAT DID YOU DISCUSS?</Label>
           <Pressable
@@ -530,14 +539,27 @@ export function ExchangeScreen({ onCreate }: { onCreate: () => void }) {
               </Body>
             </Pressable>
           ))}
-          <Text
-            onPress={() =>
-              void Linking.openURL("https://www.openstreetmap.org/copyright")
-            }
-            style={[s.hint, { marginBottom: 22 }]}
-          >
-            © OpenStreetMap contributors · Photon
-          </Text>
+          {!!mapProvider && (
+            <Text
+              onPress={() =>
+                void Linking.openURL(
+                  mapProvider === "google"
+                    ? "https://maps.google.com"
+                    : "https://www.openstreetmap.org/copyright",
+                )
+              }
+              style={{
+                fontSize: 12,
+                fontWeight: "400",
+                color: "#5E5E5E",
+                marginBottom: 22,
+              }}
+            >
+              {mapProvider === "google"
+                ? "Google Maps"
+                : "© OpenStreetMap contributors · Photon"}
+            </Text>
+          )}
           <Field
             label="Event · optional"
             value={eventName}

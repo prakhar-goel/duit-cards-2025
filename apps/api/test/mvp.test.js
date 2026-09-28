@@ -169,6 +169,8 @@ test('private pilot end-to-end: two accounts, public card, verified claim and re
     });
     assert.equal(r.status, 201, JSON.stringify(r.body));
     card = r.body.card;
+    assert.match(new URL(card.publicUrl).pathname, /^\/c\/[A-Za-z0-9_-]{12}$/);
+    assert.equal((await request(`/public/cards/${new URL(card.publicUrl).pathname.split("/").pop()}`)).status, 404);
     assert.equal((await request(`/cards/${card.id}`, {
       token: other.accessToken
     })).status, 404);
@@ -202,6 +204,9 @@ test('private pilot end-to-end: two accounts, public card, verified claim and re
     })).status, 200);
     const publicCard = (await request(`/public/cards/${card.slug}`)).body.card;
     assert.equal(publicCard.company, 'Northstar Studio');
+    const shortCard = await request(`/public/cards/${new URL(card.publicUrl).pathname.split('/').pop()}`);
+    assert.equal(shortCard.status, 200);
+    assert.equal(shortCard.body.card.id, card.id);
     assert.equal(publicCard.dataOrigin, 'user_created');
     assert.ok(!('ownerId' in publicCard));
   });
@@ -426,6 +431,7 @@ test('private pilot end-to-end: two accounts, public card, verified claim and re
     });
     assert.equal(share.status, 201);
     const token = share.body.token;
+    assert.match(token, /^[A-Za-z0-9_-]{16}$/);
     const publicShare = await request(`/public/shares/${token}`);
     assert.equal(publicShare.status, 200);
     assert.ok(!JSON.stringify(publicShare.body).includes(recipient.user.email));
@@ -1089,10 +1095,18 @@ test('phone accounts and exchanges isolate identities, survive retries and keep 
   assert.equal((await request(`/events/${chosenEvent.body.event.id}`,{token:owner.accessToken})).body.event.peopleCount,1);
   assert.equal((await query('SELECT count(*)::int AS n FROM encounters WHERE owner_id=$1 AND client_id=$2',[owner.user.id,input.clientId])).rows[0].n,1);
   const token=new URL(first.body.url).pathname.split('/').pop();
+  assert.match(token, /^[A-Za-z0-9_-]{16}$/);
   const publicShare=await request(`/public/shares/${token}`);
   assert.equal(publicShare.body.claimAvailable,false);
   assert.equal(JSON.stringify(publicShare.body).includes('Hall 2'),false);
   assert.equal(JSON.stringify(publicShare.body).includes('Private pricing'),false);
+  const legacyInput = {...input, clientId:`legacy-${suffix}-exchange`};
+  const legacy = await request('/exchanges',{method:'POST',token:owner.accessToken,body:legacyInput});
+  const legacyToken = crypto.createHmac('sha256',process.env.JWT_SECRET).update(`exchange:${owner.user.id}:${legacyInput.clientId}`).digest('hex');
+  await query('UPDATE share_links SET token_hash=$1 WHERE id=$2',[crypto.createHash('sha256').update(legacyToken).digest('hex'),legacy.body.shareId]);
+  const legacyRetry = await request('/exchanges',{method:'POST',token:owner.accessToken,body:legacyInput});
+  assert.equal(new URL(legacyRetry.body.url).pathname,`/s/${legacyToken}`);
+  assert.equal((await request(`/public/shares/${legacyToken}`)).status,200);
   const received=await request(`/shares/${token}/save`,{method:'POST',token:recipient.accessToken});
   assert.equal(received.status,200,JSON.stringify(received.body));
   await request(`/shares/${token}/save`,{method:'POST',token:recipient.accessToken});

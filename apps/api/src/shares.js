@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createHmac } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import { query, transaction } from './db.js';
 import { auth, profileSchema } from './auth.js';
@@ -22,12 +22,15 @@ export function sharesRouter() {
       latitude: z.number().min(-90).max(90).optional(), longitude: z.number().min(-180).max(180).optional(),
       potentialLead: z.boolean().default(false), eventId: z.uuid().optional()
     }).parse(req.body);
-    const token = createHmac('sha256', process.env.JWT_SECRET).update(`exchange:${req.userId}:${input.clientId}`).digest('hex');
+    const digest = createHmac('sha256', process.env.JWT_SECRET).update(`exchange:${req.userId}:${input.clientId}`).digest();
+    let token = digest.subarray(0,12).toString('base64url');
     const result = await transaction(async db => {
       await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`exchange-client:${req.userId}:${input.clientId}`]);
       await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`exchange-phone:${req.userId}:${input.phone}`]);
       const prior = (await db.query('SELECT * FROM share_links WHERE owner_id=$1 AND client_id=$2', [req.userId, input.clientId])).rows[0];
       if (prior) {
+        // Preserve already-shared long invitation URLs on idempotent retries.
+        if (prior.token_hash === hash(digest.toString('hex'))) token = digest.toString('hex');
         if (prior.card_id !== input.cardId || prior.recipient_draft?.phone !== input.phone) fail(409, 'This exchange was already saved for another card or recipient. Start a new exchange.', 'EXCHANGE_CONFLICT');
         return { personId: prior.person_id, encounterId: prior.encounter_id, shareId: prior.id };
       }
@@ -78,7 +81,7 @@ export function sharesRouter() {
         role: text(120).optional()
       }).optional()
     }).parse(req.body);
-    const token = secretToken();
+    const token = randomBytes(12).toString('base64url');
     const row = (await query("INSERT INTO share_links(owner_id,card_id,token_hash,channel,recipient_draft,recipient_email,expires_at) VALUES($1,$2,$3,$4,$5,$6,now()+interval '30 days') RETURNING id", [req.userId, req.params.id, hash(token), input.channel, input.recipientDraft || null, input.recipientDraft?.email || null])).rows[0];
     res.status(201).json({
       shareId: row.id,
