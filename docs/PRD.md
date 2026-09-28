@@ -547,3 +547,16 @@ Browser review only; Android packaging waits for the user's design review.
   reporting lines. Invitations are copied for manual sharing; no SMS/email or
   WhatsApp message is sent automatically. The company dashboard requires a
   connection; the previously implemented offline personal wallet remains intact.
+
+### Phone-number selection and Truecaller — 2026-09-28
+
+- Offer Android's SIM-number chooser when phone login opens, with a manual-entry
+  fallback and an explicit control to reopen the chooser. Picking a number is not
+  authentication and does not send an SMS; retain Firebase OTP verification.
+- Support Truecaller as a proposed optional fast login, retaining OTP for other
+  users. Activation depends on DUIT's registered Truecaller Android OAuth client,
+  provider review and server-side verified identity integration. Do not imply that
+  this provider is already enabled or bypass existing phone ownership checks.
+- Native SIM selection needs a physical Android test. Chrome can review the app
+  screen but cannot reproduce the system's SIM selection sheet. No APK release is
+  authorized by this feasibility/integration iteration.
