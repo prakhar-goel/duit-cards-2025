@@ -335,7 +335,7 @@ function Landing() {
 }
 
 function DownloadPage() {
-  const [release, setRelease] = useState<{ version: string; releasedAt: string; fileName: string; downloadUrl: string } | null>(null);
+  const [release, setRelease] = useState<{ version: string; releasedAt: string; fileName: string; downloadUrl: string; otaEnabled?: boolean } | null>(null);
   const [releaseLoaded, setReleaseLoaded] = useState(false);
   const [exists, setExists] = useState<boolean | null>(null);
   useEffect(() => {
@@ -375,7 +375,7 @@ function DownloadPage() {
         <div className="apk-release-details" aria-live="polite">
           {release ? (
             <>
-              <strong>Version {release.version}</strong>
+              <strong>Version {release.version}{release.otaEnabled ? " · OTA enabled" : ""}</strong>
               <span>Released <time dateTime={release.releasedAt}>{new Intl.DateTimeFormat("en-IN", {
                 day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata",
               }).format(new Date(release.releasedAt))} IST</time></span>
@@ -384,6 +384,7 @@ function DownloadPage() {
             <span>{releaseLoaded ? "Release details temporarily unavailable." : "Loading release details…"}</span>
           )}
         </div>
+        {release?.otaEnabled && <p>Future UI updates arrive over the air. Install this APK once, then reopen DUIT to receive updates.</p>}
         {exists ? (
           <a className="button primary" href={release?.downloadUrl || "/downloads/DUIT-2026-Pilot.apk"}>
             Download the APK <Download size={18} />

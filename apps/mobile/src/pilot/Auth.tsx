@@ -22,6 +22,10 @@ import {
   Sheet,
   Notice,
 } from "./ui";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AppUpdates } from "./AppUpdates";
+import { RENDER_SERVER, LOCAL_SERVER, LOCAL_SERVER_KEY } from "./serverPresets";
+import { normalizeServer } from "./domain";
 import { usePilot } from "./store";
 import { sendPhoneCode, watchPhoneSignIn, clearPhoneSignIn } from "./phoneAuth";
 import * as api from "./api";
@@ -36,13 +40,29 @@ export function ServerSettings({
 }) {
   const { server, setServer } = usePilot();
   const [url, setUrl] = useState(server);
+  const [local, setLocal] = useState(LOCAL_SERVER);
+  const [preset, setPreset] = useState<"render" | "local" | null>(null);
+  useEffect(() => {
+    if (!visible) return;
+    setUrl(server);
+    setError("");
+    setPreset(server === RENDER_SERVER ? "render" : null);
+    void AsyncStorage.getItem(LOCAL_SERVER_KEY)
+      .then((value) => setLocal(value || LOCAL_SERVER))
+      .catch(() => {});
+  }, [visible, server]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   async function save() {
     setError("");
     setBusy(true);
     try {
-      await setServer(url);
+      const next = normalizeServer(url);
+      if (preset === "local") {
+        await AsyncStorage.setItem(LOCAL_SERVER_KEY, next);
+        setLocal(next);
+      }
+      if (next !== server) await setServer(next);
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Check the server address.");
@@ -62,6 +82,32 @@ export function ServerSettings({
         </Button>
       }
     >
+      <View style={{ flexDirection: "row", gap: 10, marginBottom: 18 }}>
+        <View style={{ flex: 1 }}>
+          <Button
+            tone={url === RENDER_SERVER ? "primary" : "secondary"}
+            onPress={() => {
+              setUrl(RENDER_SERVER);
+              setPreset("render");
+              setError("");
+            }}
+          >
+            Render
+          </Button>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button
+            tone={preset === "local" ? "primary" : "secondary"}
+            onPress={() => {
+              setUrl(local);
+              setPreset("local");
+              setError("");
+            }}
+          >
+            Local Mac
+          </Button>
+        </View>
+      </View>
       <Field
         label="Server address"
         value={url}
@@ -76,7 +122,15 @@ export function ServerSettings({
         Changing server signs you out. Saved captures stay with the account and
         server that created them.
       </Notice>
+      {preset === "local" && (
+        <Body muted>
+          Start npm run phone on your Mac and use the same Wi-Fi. If the Mac
+          name cannot be reached, paste the local address printed in its
+          terminal; DUIT will remember it.
+        </Body>
+      )}
       {error && <Notice error>{error}</Notice>}
+      <AppUpdates />
     </Sheet>
   );
 }

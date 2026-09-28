@@ -107,6 +107,9 @@ const metadata = {
   package: "io.duit.ecards.pilot",
   architecture: "arm64-v8a",
   initialApiUrl: apiUrl,
+  otaEnabled: appConfig.updates?.enabled === true,
+  otaRuntimeVersion: appConfig.runtimeVersion,
+  otaChannel: appConfig.updates?.requestHeaders?.["expo-channel-name"],
   sha256: crypto
     .createHash("sha256")
     .update(fs.readFileSync(apk))

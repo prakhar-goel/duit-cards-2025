@@ -31,7 +31,7 @@ export function createApkReleaseReader({ fetchJson = async url => {
       // shared hosting; older manifests still use the compatibility lookup.
       if (manifest.releasedAt !== undefined) {
         if (manifest.fileName !== fileName || manifest.url !== versionedUrl || typeof manifest.releasedAt !== 'string' || !Number.isFinite(Date.parse(manifest.releasedAt))) throw new Error('Invalid published release metadata');
-        return { version: manifest.version, releasedAt: new Date(manifest.releasedAt).toISOString(), fileName, downloadUrl: versionedUrl };
+        return { version: manifest.version, releasedAt: new Date(manifest.releasedAt).toISOString(), fileName, downloadUrl: versionedUrl, ...(manifest.otaEnabled === true ? { otaEnabled: true } : {}) };
       }
       const release = await fetchJson(`https://api.github.com/repos/${repository}/releases/tags/${tag}`);
       const asset = release.assets?.find(item => item.name === fileName) || release.assets?.find(item => item.name === 'DUIT-2026-Pilot.apk');

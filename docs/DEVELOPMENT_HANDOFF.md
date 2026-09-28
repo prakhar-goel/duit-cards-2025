@@ -4,7 +4,29 @@ Read this at the start of a resumed cloud or desktop task, together with
 `AGENTS.md` and `docs/MOBILE_CLOUD_DEVELOPMENT.md`. GitHub carries code and these
 notes between devices; a new conversation does not inherit the old chat.
 
-## Current milestone — visual feed, Google Maps and Android 4.6.5
+## Current milestone — OTA APK and server presets
+
+- Objective: publish one OTA-capable APK on the existing download page and make
+  Render/local server addresses quick to select. Branch: codex/ota-server-switching.
+- Version prepared once: 4.6.6 / 2026091816. Not published yet; 4.6.5 remains live.
+- Installed SDK-compatible expo-updates, enabled native Android updates, runtime
+  duit-android-4.6.6, existing Expo project b57ffffc-8706-4224-8036-ff3774883cb6.
+  Corrected local slug to the existing Expo project name; created staging channel
+  and branch. Package and signing certificate unchanged.
+- Server settings offers Render / Local Mac, remembers edited local URLs, and
+  includes native OTA check/restart controls. Local default Bonjour hostname
+  Prakhars-MacBook-Pro.local:48152 resolved successfully on this Mac.
+- Download metadata gets an OTA flag from the build; old releases stay unlabelled.
+  npm run release:ota requires clean main, passing CI and compatible native files
+  relative to the published APK. See docs/OTA_UPDATES.md.
+- Validation: cloud app checks passed (mobile tests, type checks, web builds and
+  tooling); APK metadata/OTA native consistency tests passed. Chrome verified
+  both presets populate their correct addresses. Native OTA delivery still awaits
+  signed build plus initial EAS update publication and endpoint verification.
+- Next: merge after required CI, verify signed workflow and Render deployment,
+  publish initial OTA, verify /download shows 4.6.6 OTA enabled. Do not bump again.
+
+## Previous milestone — visual feed, Google Maps and Android 4.6.5
 
 - Objective: simplify the visual relationship feed, separate outgoing shares,
   shorten card links, add country-code entry and enable Google Maps/Truecaller.
