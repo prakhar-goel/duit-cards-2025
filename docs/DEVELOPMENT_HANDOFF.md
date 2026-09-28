@@ -9,7 +9,8 @@ notes between devices; a new conversation does not inherit the old chat.
 - Objective: offline card galleries and meeting history, automatic exchange sync,
   readable/searchable GPS location, nearby saved-event tags, discussion choices,
   editable WhatsApp message and persistent sample-card gallery.
-- Branch: `codex/offline-location-sharing`; PR pending creation. No APK requested
+- Branch: `codex/offline-location-sharing`; draft PR #79:
+  https://github.com/prakhar-goel/duit-cards-2025/pull/79. No APK requested
   for this iteration; user explicitly wants Chrome review before packaging.
 - Changes: server/account-scoped snapshot and media storage; idempotent durable
   exchange outbox; reconnect/foreground sync; offline token-refresh preservation;
