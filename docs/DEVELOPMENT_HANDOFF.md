@@ -32,8 +32,10 @@ notes between devices; a new conversation does not inherit the old chat.
   verified both address presets. First APK attempt 36442409329 hit the old 512 MiB
   Gradle metaspace limit; raising it to 1 GiB fixed the signed build without
   disabling lint. No additional version bump was needed.
-- Render deployed the download-page OTA label from b0d6ac3. Label follows release
-  metadata, not guessed version numbers; metadata cache may lag up to five minutes.
+- Render deployed the download-page OTA label from b0d6ac3. Live metadata and
+  Chrome /download both verified 4.6.6, OTA enabled, versioned filename and
+  28 September 2026 21:20 IST. Label follows release metadata, not guessed versions;
+  metadata cache may lag up to five minutes.
 - Future UI-only iterations: merge checked changes, then npm run release:ota.
   Keep app version/runtime unchanged. The command blocks native/config/dependency
   changes relative to the published APK; those require a new compatible APK.
