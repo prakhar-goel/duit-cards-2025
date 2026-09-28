@@ -36,6 +36,8 @@ notes between devices; a new conversation does not inherit the old chat.
 - Offline WhatsApp uses the published public card URL; a personal invitation URL
   is generated only with network access. A queued meeting is not proof of WhatsApp
   delivery. No WhatsApp messages were sent during verification.
+- CI follow-up: location-result formatting was separated from the authenticated
+  router so its unit test runs without any local server secret.
 - Release: unchanged at 4.6.4 / 2026091814. No release bump, APK build, merge or
   Render deployment. Next: user reviews the Chrome screens; then any requested
   adjustments, Android device checks and the normal protected-main release flow.
