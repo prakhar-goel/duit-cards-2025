@@ -9,10 +9,16 @@ import { countryNames } from "../../../../packages/meeting-search/countries.js";
 import { phoneDigits } from "./phoneFormat";
 import { C, Label, Icon, Sheet } from "./ui";
 
+const names: Record<string, string> = {
+  ...countryNames,
+  AC: "Ascension Island",
+  TA: "Tristan da Cunha",
+  XK: "Kosovo",
+};
 const countries = getCountries()
   .map((code) => ({
     code,
-    name: (countryNames as Record<string, string>)[code] || code,
+    name: names[code] || code,
     dial: getCountryCallingCode(code),
   }))
   .sort((a, b) => a.name.localeCompare(b.name));

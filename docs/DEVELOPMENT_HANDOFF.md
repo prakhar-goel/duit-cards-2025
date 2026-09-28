@@ -16,14 +16,13 @@ notes between devices; a new conversation does not inherit the old chat.
   key and public TRUECALLER_CLIENT_ID were saved in Render (save only). Neither
   has been verified on a new live deployment yet. Truecaller Android credential
   was created with owner approval and the existing signing certificate.
-- Validation: 55 mobile tests, 54 API tests on the disposable local test DB,
+- Validation: 55 mobile tests, 55 API tests on the disposable local test DB,
   workspace type checks and Expo web build passed. Chrome feed inspected at
-  http://localhost:48163/phone. Final filter/phone interaction checks remain.
+  http://localhost:48163/phone. Sent city filtering and country-code search were checked; the phone field retained digits only. Maps concurrency tests also passed.
 - Release version already prepared once: 4.6.5 / 2026091815. Move its change from
   the Truecaller prerequisite PR into the final visual-feed release PR so merging
   the prerequisite does not publish an intermediate APK. Do not increment again.
-- Next: wire public client ID into Android, merge Truecaller after CI, finish feed
-  browser checks and Maps tests, merge final PR and verify signed APK plus Render
+- Next: integrate merged Truecaller main, complete final CI, merge final PR and verify signed APK plus Render
   version/date/download metadata. Published APK remains 4.6.4.
 
 ## Previous milestone — Truecaller login and requested Android release

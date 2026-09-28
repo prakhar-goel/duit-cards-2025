@@ -1120,3 +1120,23 @@ test('phone accounts and exchanges isolate identities, survive retries and keep 
   await query("UPDATE users SET status='suspended' WHERE id=$1",[recipient.user.id]);
   assert.equal((await request('/auth/phone',{method:'POST',body:{idToken:identityToken}})).status,403);
 });
+
+
+test('Maps allowance reservations serialize concurrent calls and stop before provider spending', async () => {
+  const { reserveMapLookup } = await import('../src/locations.js');
+  const user = await signup('maps-budget');
+  const fixture = (await query("INSERT INTO maps_requests(user_id,kind) SELECT $1,'reverse' FROM generate_series(1,49) RETURNING id",[user.user.id])).rows.map(r=>r.id);
+  try {
+    const attempts = await Promise.allSettled([reserveMapLookup(user.user.id,'search'),reserveMapLookup(user.user.id,'search')]);
+    assert.equal(attempts.filter(r=>r.status==='fulfilled').length,1);
+    const rejected = attempts.find(r=>r.status==='rejected');
+    assert.match(rejected.reason.message,/allowance reached/);
+    assert.equal((await query('SELECT count(*)::int n FROM maps_requests WHERE user_id=$1',[user.user.id])).rows[0].n,50);
+    const extra = (await query("INSERT INTO maps_requests(kind) SELECT 'reverse' FROM generate_series(1,50) RETURNING id")).rows.map(r=>r.id);
+    fixture.push(...extra);
+    const second = await signup('maps-budget-second');
+    await assert.rejects(reserveMapLookup(second.user.id,'search'),/allowance reached/);
+  } finally {
+    await query('DELETE FROM maps_requests WHERE user_id=$1 OR id=ANY($2::bigint[])',[user.user.id,fixture]);
+  }
+});
