@@ -1,3 +1,4 @@
+import { BusinessDashboard } from "./BusinessDashboard";
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -99,6 +100,7 @@ export function MyCardScreen() {
   const [editing, setEditing] = useState<Card | null | undefined>(undefined);
   const [sharing, setSharing] = useState<Card | null>(null);
   const [settings, setSettings] = useState(false);
+  const [business, setBusiness] = useState(false);
   const [inbox, setInbox] = useState(false);
   const [outbox, setOutbox] = useState(false);
   const [profileEditor, setProfileEditor] = useState(false);
@@ -137,6 +139,8 @@ export function MyCardScreen() {
       <Button tone="secondary" icon="mail-unread-outline" onPress={() => setInbox(true)}>
         Messages{data.leads.filter(l => l.status === 'new').length ? ` · ${data.leads.filter(l => l.status === 'new').length} new` : ''}
       </Button>
+      <Button tone="secondary" icon="business-outline" style={{ marginTop: 10, marginBottom: 18 }} onPress={() => setBusiness(true)}>My business</Button>
+      <BusinessDashboard visible={business} onClose={() => setBusiness(false)} />
       <EnquiryInbox visible={inbox} onClose={() => setInbox(false)} />
 
 

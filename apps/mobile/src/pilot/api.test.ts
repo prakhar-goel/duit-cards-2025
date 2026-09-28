@@ -14,7 +14,13 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
 }));
 vi.mock("expo-secure-store", () => ({}));
 vi.mock("expo-file-system/legacy", () => ({}));
-import { changeServer, request, saveSession } from "./api";
+import {
+  changeServer,
+  request,
+  saveSession,
+  mediaHeaders,
+  mediaUrl,
+} from "./api";
 const session = (id: string) =>
   ({
     user: { id, email: `${id}@example.test` },
@@ -27,6 +33,22 @@ describe("in-flight workspace isolation", () => {
     await saveSession(session("maya"));
   });
   afterEach(() => vi.unstubAllGlobals());
+  it("authenticates company portraits only on the selected DUIT server", () => {
+    const route = "/api/v1/business/members/123/photo";
+    expect(mediaUrl(route)).toBe("https://pilot.example" + route);
+    expect(mediaHeaders(mediaUrl(route))).toEqual({
+      Authorization: "Bearer maya-access",
+    });
+    expect(mediaHeaders("https://other.example" + route)).toBeUndefined();
+    expect(
+      mediaHeaders("https://pilot.example.evil.test" + route),
+    ).toBeUndefined();
+    expect(
+      mediaHeaders(
+        "https://pilot.example/api/v1/business/members/123/anything",
+      ),
+    ).toBeUndefined();
+  });
   it("keeps a cached session when refresh fails because the phone is offline", async () => {
     vi.stubGlobal(
       "fetch",

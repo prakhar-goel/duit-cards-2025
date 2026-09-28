@@ -67,6 +67,8 @@ export function cardDto(row, panels) {
     businessCardBackUrl: row.business_card_back_url,
     businessMedia: row.business_media || [],
     company: row.company,
+    companyId: row.company_id,
+    companyMemberId: row.company_member_id,
     role: row.role,
     bio: row.bio,
     theme: row.theme,
@@ -88,7 +90,12 @@ export async function fullCard(row, db = {
   query
 }) {
   const panels = (await db.query('SELECT id,panel_type,body,position,provenance,approved FROM pitch_panels WHERE card_id=$1 ORDER BY position', [row.id])).rows;
-  return cardDto(row, camel(panels));
+  const dto = cardDto(row, camel(panels));
+  if (row.company_id) {
+    const company = (await db.query('SELECT id,name,description,website,logo_url,address,industry FROM companies WHERE id=$1', [row.company_id])).rows[0];
+    if (company) dto.companyProfile = camel(company);
+  }
+  return dto;
 }
 export async function publishedCard(slug, db = {
   query
@@ -204,6 +211,10 @@ export function cardsRouter() {
     const card = await transaction(async db => {
       await db.query('SELECT id FROM cards WHERE id=$1 AND owner_id=$2 FOR UPDATE', [req.params.id, req.userId]);
       const row = await owned('cards', req.params.id, req.userId, db);
+      if (row.company_member_id) {
+        const member = (await db.query('SELECT status FROM company_members WHERE id=$1 FOR SHARE', [row.company_member_id])).rows[0];
+        if (!member || member.status !== 'active') fail(403, 'Your company card is paused. Ask your company owner to restore access.');
+      }
       const snapshot = await fullCard(row, db);
       if (snapshot.panels.length !== 6 || snapshot.panels.some(p => !p.approved)) fail(422, 'Review and approve all six panels before publishing', 'REVIEW_REQUIRED');
       const assets = [snapshot.imageUrl, snapshot.coverUrl, snapshot.businessCardUrl, snapshot.businessCardBackUrl].filter(Boolean).map(url => ({url, type:'image'})).concat(snapshot.businessMedia || []);

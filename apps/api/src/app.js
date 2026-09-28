@@ -7,6 +7,7 @@ import { cardsRouter } from './cards.js';
 import { sharesRouter } from './shares.js';
 import { relationshipsRouter } from './relationships.js';
 import { mediaRouter } from './media.js';
+import { companiesRouter } from './companies.js';
 import { adminRouter } from './admin.js';
 import { aiRouter } from './ai-jobs.js';
 import { webRouter } from './web.js';
@@ -53,7 +54,7 @@ export function createApp({ verifyPhone } = {}) {
   app.use(express.json({
     limit: '18mb'
   }));
-  app.use('/api/v1', authRouter({ verifyPhone }), cardsRouter(), sharesRouter(), mediaRouter(), adminRouter(), aiRouter(), relationshipsRouter(), locationsRouter());
+  app.use('/api/v1', authRouter({ verifyPhone }), cardsRouter(), sharesRouter(), mediaRouter(), adminRouter(), aiRouter(), relationshipsRouter(), locationsRouter(), companiesRouter());
   app.use(webRouter());
   app.use((req, res) => res.status(404).json({
     error: {

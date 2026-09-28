@@ -516,3 +516,34 @@ separate city/country inputs and event-selected GPS replacement described above.
   edits when creating the personal invitation link.
 - Keep the curated published card gallery visible for new and existing accounts;
   never turn these examples into fabricated exchanges in the user's network.
+
+
+### Company onboarding and team management — 2026-09-28
+
+Browser review only; Android packaging waits for the user's design review.
+
+- DUIT Master is a separate responsive admin workspace at `/master`. Platform
+  admins can create shared company profiles, prepare individual or employee
+  profiles, attach a portrait/visiting-card image and issue an invitation.
+- A company can have multiple owners, managers and employees. The platform admin
+  can explicitly link an existing account and an unlinked card owned by that
+  account. A matching profile email or phone never grants account ownership.
+- New invitations are single-use, expire after seven days and require the same
+  Firebase-verified mobile number. Regenerating an invitation invalidates its
+  predecessor. Claiming creates a private card draft with owned image copies;
+  the recipient reviews its content before publishing.
+- `My card → My business` shows team members, company-linked cards, engagement
+  and incoming enquiries. Owners/managers can invite teammates, maintain their
+  job titles/departments, pause access/cards, and assign or progress enquiries.
+  Employees see their own company cards and enquiries assigned to them.
+- Shared company information is one record linked to employees and cards. New
+  drafts inherit it. Publication retains a reviewed snapshot; editing the company
+  does not silently overwrite already published employee cards.
+- Company management does not expose employees' personal contacts, encounters,
+  meeting locations, private notes or unrelated cards. Pausing company access
+  unpublishes company cards and prevents republishing until access is restored;
+  the employee's personal DUIT account stays usable.
+- This first browser iteration has one company-wide manager scope, not nested
+  reporting lines. Invitations are copied for manual sharing; no SMS/email or
+  WhatsApp message is sent automatically. The company dashboard requires a
+  connection; the previously implemented offline personal wallet remains intact.
