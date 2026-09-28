@@ -41,15 +41,33 @@ export function ServerSettings({
   const { server, setServer } = usePilot();
   const [url, setUrl] = useState(server);
   const [local, setLocal] = useState(LOCAL_SERVER);
+  const presetEdited = useRef(false);
   const [preset, setPreset] = useState<"render" | "local" | null>(null);
   useEffect(() => {
     if (!visible) return;
+    presetEdited.current = false;
     setUrl(server);
     setError("");
     setPreset(server === RENDER_SERVER ? "render" : null);
+    let active = true;
     void AsyncStorage.getItem(LOCAL_SERVER_KEY)
-      .then((value) => setLocal(value || LOCAL_SERVER))
+      .then((value) => {
+        if (!active) return;
+        const savedLocal = value || LOCAL_SERVER;
+        setLocal(savedLocal);
+        if (!presetEdited.current)
+          setPreset(
+            server === RENDER_SERVER
+              ? "render"
+              : server === savedLocal
+                ? "local"
+                : null,
+          );
+      })
       .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, [visible, server]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -87,6 +105,7 @@ export function ServerSettings({
           <Button
             tone={url === RENDER_SERVER ? "primary" : "secondary"}
             onPress={() => {
+              presetEdited.current = true;
               setUrl(RENDER_SERVER);
               setPreset("render");
               setError("");
@@ -99,6 +118,7 @@ export function ServerSettings({
           <Button
             tone={preset === "local" ? "primary" : "secondary"}
             onPress={() => {
+              presetEdited.current = true;
               setUrl(local);
               setPreset("local");
               setError("");
@@ -111,7 +131,10 @@ export function ServerSettings({
       <Field
         label="Server address"
         value={url}
-        onChangeText={setUrl}
+        onChangeText={(value) => {
+          presetEdited.current = true;
+          setUrl(value);
+        }}
         autoCapitalize="none"
         autoCorrect={false}
         keyboardType="url"
