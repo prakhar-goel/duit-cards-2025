@@ -59,6 +59,10 @@ type Store = {
     inviteCode?: string,
   ) => Promise<void>;
   signInPhone: (idToken: string) => Promise<void>;
+  signInTruecaller: (proof: {
+    authorizationCode: string;
+    codeVerifier: string;
+  }) => Promise<void>;
   logout: () => Promise<void>;
   setServer: (url: string) => Promise<void>;
   capture: (
@@ -295,7 +299,19 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
     setOffline(false);
   }
   async function signInPhone(idToken: string) {
-    const res = await api.post<Session>("/auth/phone", { idToken });
+    await acceptPhoneSession(
+      await api.post<Session>("/auth/phone", { idToken }),
+    );
+  }
+  async function signInTruecaller(proof: {
+    authorizationCode: string;
+    codeVerifier: string;
+  }) {
+    await acceptPhoneSession(
+      await api.post<Session>("/auth/truecaller", proof),
+    );
+  }
+  async function acceptPhoneSession(res: Session) {
     await api.saveSession(res);
     setSession(res);
     setData(emptySnapshot);
@@ -558,11 +574,19 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
         // Coordinates captured offline are useful even when address lookup failed.
         // Resolve them on reconnect without replacing a place the user entered.
         if (!item.location && item.latitude != null && item.longitude != null) {
-          const lookup = await api.get(`/locations?latitude=${item.latitude}&longitude=${item.longitude}`).catch(() => null);
+          const lookup = await api
+            .get(
+              `/locations?latitude=${item.latitude}&longitude=${item.longitude}`,
+            )
+            .catch(() => null);
           const place = lookup?.places?.[0];
           if (place) {
-            item.location = place.location; item.city = place.city; item.countryCode = place.countryCode;
-            await updateExchanges(scope, items => items.map(i => i.clientId === item.clientId ? item : i));
+            item.location = place.location;
+            item.city = place.city;
+            item.countryCode = place.countryCode;
+            await updateExchanges(scope, (items) =>
+              items.map((i) => (i.clientId === item.clientId ? item : i)),
+            );
           }
         }
         api.assertWorkspace(owner, origin);
@@ -685,6 +709,7 @@ export function PilotProvider({ children }: { children: React.ReactNode }) {
         refresh,
         signIn,
         signInPhone,
+        signInTruecaller,
         logout,
         setServer,
         capture,

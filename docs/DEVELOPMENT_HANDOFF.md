@@ -4,7 +4,34 @@ Read this at the start of a resumed cloud or desktop task, together with
 `AGENTS.md` and `docs/MOBILE_CLOUD_DEVELOPMENT.md`. GitHub carries code and these
 notes between devices; a new conversation does not inherit the old chat.
 
-## Current milestone — Android phone-number selection
+## Current milestone — Truecaller login and requested Android release
+
+- Objective: connect the owner's newly created Truecaller project and publish an
+  installable APK. The latest request explicitly authorizes packaging, superseding
+  the earlier Chrome-only review phase.
+- Branch: `codex/truecaller-login`, based on phone-number selection `7993b87`.
+  Offline PR #79, company PR #80 and phone-number PR #81 were merged
+  after their CI passed (main `ee54bb0`). Chrome review of the local mobile business
+  dashboard and DUIT Master completed successfully now that the Mac is unlocked.
+- Changes: native Truecaller OAuth SDK 3.3.0/PKCE/state checking and OTP fallback;
+  server-side code exchange/verified-phone account mapping; additive v8 provider
+  identity column; company invitation claims accept either verified provider.
+- Validation so far: 51 API and 51 mobile tests passed; type checks, both browser
+  builds and 13 tooling checks passed. Android compileDebugKotlin passed. Test
+  provider responses are mocked; no live Truecaller phone verification claimed.
+- Console setup is pending: Android package and existing SHA-1 are filled in the
+  credential form, but Save awaits the browser-required user confirmation. The
+  owner asked how to add test numbers/consent details and was given exact steps.
+  Do not submit an authentication credential without that confirmation. The
+  Android client ID resource is intentionally empty until the credential exists;
+  the login button stays hidden without matching non-empty server/native IDs.
+- Version prepared once: 4.6.5 / 2026091815. No APK has been built or published for
+  this milestone yet; the downloadable version is still 4.6.4. Do not bump again.
+- Next: obtain client ID and configure test consent/numbers; set matching public
+  client ID in Render; finish tests, push PR, merge after CI, then verify protected
+  main Android release and Render download metadata. No secrets in these notes.
+
+## Previous milestone — Android phone-number selection
 
 - Objective: reduce phone-login typing and evaluate optional Truecaller login.
 - Branch: `codex/phone-number-selection`; implementation `74aaddd`; draft PR #81:

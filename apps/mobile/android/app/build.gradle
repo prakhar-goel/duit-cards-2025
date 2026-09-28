@@ -98,8 +98,8 @@ android {
         applicationId 'io.duit.ecards.pilot'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2026091814
-        versionName "4.6.4"
+        versionCode 2026091815
+        versionName "4.6.5"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
@@ -165,6 +165,7 @@ android {
 }
 
 dependencies {
+    implementation("com.truecaller.android.sdk:truecaller-sdk:3.3.0")
     implementation("com.google.android.gms:play-services-auth:22.0.0")
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")

@@ -12,7 +12,7 @@ import { adminRouter } from './admin.js';
 import { aiRouter } from './ai-jobs.js';
 import { webRouter } from './web.js';
 import { rateLimit } from './common.js';
-export function createApp({ verifyPhone } = {}) {
+export function createApp({ verifyPhone, verifyTruecaller } = {}) {
   const app = express();
   app.disable('x-powered-by');
   if (process.env.TRUST_PROXY_HOPS === '1') app.set('trust proxy', 1);
@@ -54,7 +54,7 @@ export function createApp({ verifyPhone } = {}) {
   app.use(express.json({
     limit: '18mb'
   }));
-  app.use('/api/v1', authRouter({ verifyPhone }), cardsRouter(), sharesRouter(), mediaRouter(), adminRouter(), aiRouter(), relationshipsRouter(), locationsRouter(), companiesRouter());
+  app.use('/api/v1', authRouter({ verifyPhone, verifyTruecaller }), cardsRouter(), sharesRouter(), mediaRouter(), adminRouter(), aiRouter(), relationshipsRouter(), locationsRouter(), companiesRouter());
   app.use(webRouter());
   app.use((req, res) => res.status(404).json({
     error: {

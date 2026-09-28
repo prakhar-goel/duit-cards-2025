@@ -24,6 +24,8 @@ import {
 } from "./ui";
 import { usePilot } from "./store";
 import { sendPhoneCode, watchPhoneSignIn, clearPhoneSignIn } from "./phoneAuth";
+import * as api from "./api";
+import { canUseTruecaller, authorizeTruecaller } from "./truecallerAuth";
 import { canChoosePhoneNumber, choosePhoneNumber } from "./phoneNumberHint";
 export function ServerSettings({
   visible,
@@ -79,7 +81,23 @@ export function ServerSettings({
   );
 }
 export function AuthScreen() {
-  const { signInPhone } = usePilot();
+  const { signInPhone, signInTruecaller, server } = usePilot();
+  const [truecallerClientId, setTruecallerClientId] = useState<string | null>(
+    null,
+  );
+  useEffect(() => {
+    let active = true;
+    setTruecallerClientId(null);
+    void api
+      .get<{ truecallerClientId?: string }>("/auth/capabilities")
+      .then((value) => {
+        if (active) setTruecallerClientId(value.truecallerClientId || null);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [server]);
   const [started, setStarted] = useState(false);
   const [phone, setPhone] = useState("+91");
   const [choosingNumber, setChoosingNumber] = useState(false);
@@ -188,6 +206,23 @@ export function AuthScreen() {
     const listener = Keyboard.addListener("keyboardDidShow", reveal);
     return () => listener.remove();
   }, []);
+  async function useTruecaller() {
+    if (busy || choosingNumber || exchanging.current) return;
+    setBusy(true);
+    setError("");
+    requesting.current = false;
+    Keyboard.dismiss();
+    try {
+      const proof = await authorizeTruecaller(truecallerClientId);
+      if (proof) await signInTruecaller(proof);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Use your mobile number instead.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   async function send() {
     if (remaining > 0 || busy) return;
     setBusy(true);
@@ -358,6 +393,15 @@ export function AuthScreen() {
                     : "One number to sign in or create your account."}
                 </Body>
               </View>
+              {!confirm && canUseTruecaller(truecallerClientId) && (
+                <Button
+                  disabled={busy || choosingNumber}
+                  onPress={() => void useTruecaller()}
+                  style={{ marginBottom: 16 }}
+                >
+                  Continue with Truecaller
+                </Button>
+              )}
               {!confirm && canChoosePhoneNumber && (
                 <Button
                   tone="secondary"
@@ -455,8 +499,8 @@ export function AuthScreen() {
                   marginTop: 24,
                 }}
               >
-                By continuing, you agree to receive a verification SMS. Google
-                processes your number to verify sign-in and prevent abuse.
+                Send code requests a verification SMS. Google processes your
+                number to verify sign-in and prevent abuse.
               </Text>
               <View nativeID="phone-recaptcha" />
             </>

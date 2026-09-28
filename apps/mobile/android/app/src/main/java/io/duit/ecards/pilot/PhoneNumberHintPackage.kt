@@ -7,6 +7,6 @@ import com.facebook.react.uimanager.ViewManager
 
 class PhoneNumberHintPackage : ReactPackage {
   override fun createNativeModules(context: ReactApplicationContext): List<NativeModule> =
-    listOf(PhoneNumberHintModule(context))
+    listOf(PhoneNumberHintModule(context), TruecallerModule(context))
   override fun createViewManagers(context: ReactApplicationContext): List<ViewManager<*, *>> = emptyList()
 }

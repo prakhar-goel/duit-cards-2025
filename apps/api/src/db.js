@@ -204,5 +204,9 @@ export async function migrate() {
         INSERT INTO schema_migrations(version) VALUES('2026-companies-v7');
       `);
     }
+    if (!(await db.query("SELECT 1 FROM schema_migrations WHERE version='2026-truecaller-v8'")).rowCount) {
+      await db.query(`ALTER TABLE users ADD COLUMN truecaller_uid TEXT UNIQUE;
+        INSERT INTO schema_migrations(version) VALUES('2026-truecaller-v8');`);
+    }
   });
 }
