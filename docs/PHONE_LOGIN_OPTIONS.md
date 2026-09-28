@@ -17,7 +17,7 @@ Implementation uses the checked-in Android project and a small React Native nati
 module. If regenerating Android with Expo prebuild, preserve the package
 registration, module files and Google Play services dependency. Web/iOS/older APKs
 without this module keep manual entry. This native system sheet cannot be reviewed
-in Chrome; it needs a physical Android SIM/device smoke test before release.
+in Chrome; its actual SIM-number choices need a physical Android device smoke test.
 
 Source: https://developer.android.com/identity/phone-number-hint
 
