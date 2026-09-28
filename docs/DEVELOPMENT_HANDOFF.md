@@ -33,10 +33,15 @@ notes between devices; a new conversation does not inherit the old chat.
   search, digit-only entry and populated new-user feed. No WhatsApp message sent.
 - Render deployed exact release source successfully at stable URL
   https://duit-cards-staging.onrender.com. No Mac or tunnel is needed.
-- Android release 4.6.5 / 2026091815 is building in trusted workflow 36436708222.
-  Published APK remains 4.6.4 until that workflow finishes and the immutable
-  GitHub Release plus Render channel metadata are verified. Do not bump again.
-- Next: verify APK publication/version/date/filename/checksum; install over the
+- Android release 4.6.5 / 2026091815 published successfully in trusted workflow
+  36436708222 from the release source above. Immutable release:
+  https://github.com/prakhar-goel/duit-cards-2025/releases/tag/v4.6.5-staging.
+  Render /download and /downloads/release.json both verified version 4.6.5,
+  filename DUIT-2026-4.6.5.apk and release time 28 September 2026, 20:14 IST.
+  APK SHA-256: 49376b13d1827632aa5e423af3d1a36ab0185c7415246f6c004e3bcf75d0c006.
+  Release provenance matches GitHub asset digest, source and existing signing
+  certificate. Documentation handoff is PR #84; no additional version bump.
+- Next: install from https://duit-cards-staging.onrender.com/download over the
   existing signed app and test native Truecaller, SIM picker and physical GPS.
   Test mode only permits the Truecaller numbers listed in its console.
 - Local Chrome review: http://localhost:48163/review (Maya or new-user workspace);
