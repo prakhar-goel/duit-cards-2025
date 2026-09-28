@@ -4,7 +4,28 @@ Read this at the start of a resumed cloud or desktop task, together with
 `AGENTS.md` and `docs/MOBILE_CLOUD_DEVELOPMENT.md`. GitHub carries code and these
 notes between devices; a new conversation does not inherit the old chat.
 
-## Current milestone — Truecaller login and requested Android release
+## Current milestone — visual card feed and sharing
+
+- Branch `codex/visual-network-feed`, based on Truecaller PR #82. Exact owner
+  feedback is logged in `a6a4cbc`. Cards/Sent/Share/Meetings/My Card navigation,
+  grouped business images, quieter search, account-derived filters and a searchable
+  country dial-code picker are implemented. Number entry strips non-digits.
+- Added stable short published-card aliases and shorter invitation tokens while
+  preserving old URLs and idempotent legacy retries. Additive v9 migration.
+- Google Maps APIs enabled in `duit-cards-2025`; a dedicated API-restricted server
+  key and public TRUECALLER_CLIENT_ID were saved in Render (save only). Neither
+  has been verified on a new live deployment yet. Truecaller Android credential
+  was created with owner approval and the existing signing certificate.
+- Validation: 55 mobile tests, 55 API tests on the disposable local test DB,
+  workspace type checks and Expo web build passed. Chrome feed inspected at
+  http://localhost:48163/phone. Sent city filtering and country-code search were checked; the phone field retained digits only. Maps concurrency tests also passed.
+- Release version already prepared once: 4.6.5 / 2026091815. Move its change from
+  the Truecaller prerequisite PR into the final visual-feed release PR so merging
+  the prerequisite does not publish an intermediate APK. Do not increment again.
+- Next: integrate merged Truecaller main, complete final CI, merge final PR and verify signed APK plus Render
+  version/date/download metadata. Published APK remains 4.6.4.
+
+## Previous milestone — Truecaller login and requested Android release
 
 - Objective: connect the owner's newly created Truecaller project and publish an
   installable APK. The latest request explicitly authorizes packaging, superseding

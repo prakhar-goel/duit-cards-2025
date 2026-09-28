@@ -208,5 +208,13 @@ export async function migrate() {
       await db.query(`ALTER TABLE users ADD COLUMN truecaller_uid TEXT UNIQUE;
         INSERT INTO schema_migrations(version) VALUES('2026-truecaller-v8');`);
     }
+    if (!(await db.query("SELECT 1 FROM schema_migrations WHERE version='2026-sharing-v9'")).rowCount) {
+      await db.query(`
+        ALTER TABLE cards ADD COLUMN short_code TEXT UNIQUE DEFAULT translate(rtrim(encode(gen_random_bytes(9),'base64'),'='),'+/','-_');
+        CREATE TABLE maps_requests(id BIGSERIAL PRIMARY KEY, user_id UUID REFERENCES users(id) ON DELETE SET NULL, kind TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+        CREATE INDEX maps_requests_created_idx ON maps_requests(created_at);
+        INSERT INTO schema_migrations(version) VALUES('2026-sharing-v9');
+      `);
+    }
   });
 }
