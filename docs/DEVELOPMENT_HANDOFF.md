@@ -9,7 +9,9 @@ notes between devices; a new conversation does not inherit the old chat.
 - Objective: connect the owner's newly created Truecaller project and publish an
   installable APK. The latest request explicitly authorizes packaging, superseding
   the earlier Chrome-only review phase.
-- Branch: `codex/truecaller-login`, based on phone-number selection `7993b87`.
+- Branch: `codex/truecaller-login`; implementation `d7dd8fc`; draft PR #82:
+  https://github.com/prakhar-goel/duit-cards-2025/pull/82. Based on phone-number
+  selection `7993b87` and updated to merged main.
   Offline PR #79, company PR #80 and phone-number PR #81 were merged
   after their CI passed (main `ee54bb0`). Chrome review of the local mobile business
   dashboard and DUIT Master completed successfully now that the Mac is unlocked.

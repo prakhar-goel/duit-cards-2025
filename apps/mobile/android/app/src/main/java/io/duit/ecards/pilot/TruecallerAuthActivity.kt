@@ -25,7 +25,9 @@ class TruecallerAuthActivity : ComponentActivity() {
   private var completed = false
   private val timeout = Runnable { finishFlow("Truecaller timed out. Use your mobile number instead.") }
   private val launcher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-    try { TcSdk.getInstance().onActivityResultObtained(this, result.resultCode, result.data) }
+    try {
+      if (!TcSdk.getInstance().onActivityResultObtained(this, result.resultCode, result.data)) finishFlow(null)
+    }
     catch (_: Exception) { finishFlow("Use your mobile number to continue.") }
   }
   private fun randomToken(): String = Base64.encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) }, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
