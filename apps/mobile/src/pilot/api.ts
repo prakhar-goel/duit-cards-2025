@@ -89,7 +89,11 @@ export function shareUrl(value: string) {
   return value;
 }
 export function mediaHeaders(uri?: string) {
-  return uri?.startsWith(server + "/api/v1/media/") && session
+  return (uri?.startsWith(server + "/api/v1/media/") ||
+    (!!uri &&
+      uri.startsWith(server + "/api/v1/business/members/") &&
+      /\/photo$/.test(uri))) &&
+    session
     ? { Authorization: `Bearer ${session.accessToken}` }
     : undefined;
 }
@@ -157,7 +161,12 @@ export async function request<T = any>(
       return request<T>(path, init, false);
     } catch (error) {
       assertWorkspace(ownerId, origin);
-      if (error instanceof ApiError && error.status !== 401 && error.status !== 403) throw error;
+      if (
+        error instanceof ApiError &&
+        error.status !== 401 &&
+        error.status !== 403
+      )
+        throw error;
       throw new ApiError(
         401,
         "Your session has expired. Please sign in again.",

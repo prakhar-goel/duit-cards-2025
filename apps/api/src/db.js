@@ -181,5 +181,28 @@ export async function migrate() {
         CREATE INDEX people_owner_phone_idx ON people(owner_id,phone);
         INSERT INTO schema_migrations(version) VALUES('2026-phone-exchanges-v6');`);
     }
+    if (!(await db.query("SELECT 1 FROM schema_migrations WHERE version='2026-companies-v7'")).rowCount) {
+      await db.query(`
+        CREATE TABLE companies (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(), name TEXT NOT NULL, description TEXT NOT NULL DEFAULT '',
+          website TEXT NOT NULL DEFAULT '', logo_url TEXT NOT NULL DEFAULT '', address TEXT NOT NULL DEFAULT '', industry TEXT NOT NULL DEFAULT '',
+          created_by UUID REFERENCES users(id) ON DELETE SET NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        );
+        CREATE TABLE company_members (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(), company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+          user_id UUID REFERENCES users(id) ON DELETE SET NULL, name TEXT NOT NULL, phone TEXT NOT NULL DEFAULT '', email TEXT NOT NULL DEFAULT '',
+          title TEXT NOT NULL DEFAULT '', department TEXT NOT NULL DEFAULT '', role TEXT NOT NULL DEFAULT 'member' CHECK(role IN ('owner','manager','member')),
+          status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','active','paused')), profile JSONB NOT NULL DEFAULT '{}',
+          invite_hash TEXT UNIQUE, invite_expires_at TIMESTAMPTZ, created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now(), UNIQUE(company_id,user_id)
+        );
+        ALTER TABLE cards ADD COLUMN company_id UUID REFERENCES companies(id) ON DELETE SET NULL,
+          ADD COLUMN company_member_id UUID REFERENCES company_members(id) ON DELETE SET NULL;
+        ALTER TABLE leads ADD COLUMN assigned_member_id UUID REFERENCES company_members(id) ON DELETE SET NULL;
+        CREATE INDEX company_members_user_idx ON company_members(user_id);
+        CREATE INDEX cards_company_idx ON cards(company_id);
+        INSERT INTO schema_migrations(version) VALUES('2026-companies-v7');
+      `);
+    }
   });
 }

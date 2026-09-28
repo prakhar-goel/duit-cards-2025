@@ -111,6 +111,6 @@ export function webRouter() {
     const published = await publicCardById(share.card_id);
     res.type('html').send(await shell(dist, presentPublicCard(published.snapshot, req)));
   }));
-  router.get(['/', '/download', '/admin', '/admin/{*path}'], wrap(async (req, res) => res.type('html').send(await shell(dist))));
+  router.get(['/', '/download', '/master', '/admin', '/admin/{*path}'], wrap(async (req, res) => res.type('html').send(await shell(dist))));
   return router;
 }

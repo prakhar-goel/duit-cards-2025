@@ -4,7 +4,49 @@ Read this at the start of a resumed cloud or desktop task, together with
 `AGENTS.md` and `docs/MOBILE_CLOUD_DEVELOPMENT.md`. GitHub carries code and these
 notes between devices; a new conversation does not inherit the old chat.
 
-## Current milestone — offline wallet and sharing browser review
+## Current milestone — company onboarding browser review
+
+- Objective: a separate DUIT Master admin workspace, shared company profiles
+  linked to multiple employees, and an in-app team/card/enquiry dashboard.
+- Branch: `codex/company-onboarding`; implementation `858181a`; draft PR #80:
+  https://github.com/prakhar-goel/duit-cards-2025/pull/80. Based on `82f07da` from the still-open
+  offline review PR #79. This preview intentionally includes that prior work.
+  Both features await browser feedback; do not merge or bump the APK version.
+- Implementation: additive v7 companies/members migration; scoped business API;
+  standalone `/master` web app; `My card → My business` in React Native.
+  Includes person/company creation, image uploads, existing-account/card linking,
+  phone-bound seven-day invitations, safe image copies into claimed drafts,
+  team access/card pausing and company enquiry assignment/status changes.
+- Local review data: `scripts/seed-company-review.mjs` accepts only a loopback
+  `duit_2026_pilot` database. It adds Northstar Studio's authored six-person team,
+  four linked cards and four enquiries, plus two company shells. Never run it
+  against hosted staging or historical data. Fixture employee accounts have
+  random passwords, not reusable credentials.
+- Running previews: `http://localhost:48164/review` opens DUIT Master using a
+  loopback-only local admin launcher. `http://localhost:48163/review` opens the
+  mobile app as Maya; choose My card → My business. The private local helpers
+  `.local/master-review.mjs` and `.local/preview-review.mjs` are not committed.
+  The isolated API is 48162; existing 48152 and Render settings are untouched.
+- Validation: 47 API checks and 45 mobile tests passed; workspace type checks,
+  public web build, Expo web export and 13 tooling checks passed. Both preview
+  launchers return HTTP 200; authenticated admin/Maya requests show six team
+  members, four cards and ten enquiries (including six existing enquiries).
+  The company integration test
+  exercises wrong-phone/unverified/replayed/expired invitations, image ownership,
+  tenant/role isolation, assignment validation and paused-card publication denial.
+- Chrome visual inspection is pending: CUA reports that the Mac is locked and
+  automatic unlock failed. User has been asked to unlock it. Do not claim that
+  the new screens have been visually checked until that check is completed.
+- Limits: master app is a responsive web workspace in this iteration, not a second
+  packaged Android app. Invitations are copy-and-share codes; no automatic message
+  is sent. Owners/managers have company-wide scope, not nested reporting lines.
+  Company dashboards require network access. Company edits apply to the shared
+  record/new drafts; published cards retain their approved snapshots.
+- Release stays **4.6.4 / 2026091814**. No APK, version bump, merge or deployment.
+  Next: unlock Mac, inspect both Chrome previews, iterate on user feedback, then
+  decide on packaging through the protected-main release workflow.
+
+## Previous review milestone — offline wallet and sharing browser review
 
 - Objective: offline card galleries and meeting history, automatic exchange sync,
   readable/searchable GPS location, nearby saved-event tags, discussion choices,

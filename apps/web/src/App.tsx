@@ -1,3 +1,4 @@
+import MasterApp from './MasterApp';
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ArrowUpRight,
@@ -1323,6 +1324,7 @@ function ClaimModal({
 
 export default function App() {
   const path = location.pathname;
+  if (path === "/master") return <MasterApp />;
   const slug = path.match(/^\/c\/([^/]+)\/?$/)?.[1],
     share = path.match(/^\/s\/([^/]+)\/?$/)?.[1];
   if (slug || share) return <PublicCard slug={slug} shareToken={share} />;

@@ -354,3 +354,14 @@ As a new user, I dont see any sample cards. Show me some beautiful sample cards 
 
 
 Dont create the app. Show me the changes on chrome before packing the app
+
+
+## 2026-09-28T16:38:22+05:30
+
+- Create another master app for duit admins for quickly creating profile for someone to onboard them to duit platform. Or their company.
+
+* Allow company profile to be linked to multiple employees.
+
+- Create A business dashboard, within the app to show the details of subordinates a and their card management, leads etc.
+
+Again, before packing the app, show me the app via chrome for quick iterations.
