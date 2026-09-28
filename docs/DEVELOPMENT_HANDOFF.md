@@ -43,17 +43,15 @@ notes between devices; a new conversation does not inherit the old chat.
 - Validation so far: 51 API and 51 mobile tests passed; type checks, both browser
   builds and 13 tooling checks passed. Android compileDebugKotlin passed. Test
   provider responses are mocked; no live Truecaller phone verification claimed.
-- Console setup is pending: Android package and existing SHA-1 are filled in the
-  credential form, but Save awaits the browser-required user confirmation. The
-  owner asked how to add test numbers/consent details and was given exact steps.
-  Do not submit an authentication credential without that confirmation. The
-  Android client ID resource is intentionally empty until the credential exists;
-  the login button stays hidden without matching non-empty server/native IDs.
-- Version prepared once: 4.6.5 / 2026091815. No APK has been built or published for
-  this milestone yet; the downloadable version is still 4.6.4. Do not bump again.
-- Next: obtain client ID and configure test consent/numbers; set matching public
-  client ID in Render; finish tests, push PR, merge after CI, then verify protected
-  main Android release and Render download metadata. No secrets in these notes.
+- Console setup completed with owner approval: Android credential uses the existing
+  signed APK certificate. Its public client ID is wired into Android and saved
+  in Render. Test consent details are owner-managed. Physical phone login still
+  needs the new APK; Chrome cannot exercise native Truecaller.
+- Version remains 4.6.4 on this prerequisite branch. The already prepared 4.6.5 /
+  2026091815 version is reserved for `codex/visual-network-feed`, so the next APK
+  includes the latest requested feed/sharing work. Do not bump again.
+- Next: merge this prerequisite after CI, integrate into the visual-feed branch,
+  then release that branch through protected main.
 
 ## Previous milestone — Android phone-number selection
 
