@@ -8,7 +8,8 @@ notes between devices; a new conversation does not inherit the old chat.
 
 - Objective: a separate DUIT Master admin workspace, shared company profiles
   linked to multiple employees, and an in-app team/card/enquiry dashboard.
-- Branch: `codex/company-onboarding`, based on `82f07da` from the still-open
+- Branch: `codex/company-onboarding`; implementation `858181a`; draft PR #80:
+  https://github.com/prakhar-goel/duit-cards-2025/pull/80. Based on `82f07da` from the still-open
   offline review PR #79. This preview intentionally includes that prior work.
   Both features await browser feedback; do not merge or bump the APK version.
 - Implementation: additive v7 companies/members migration; scoped business API;
