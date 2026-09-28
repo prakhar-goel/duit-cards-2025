@@ -24,6 +24,7 @@ import {
 } from "./ui";
 import { usePilot } from "./store";
 import { sendPhoneCode, watchPhoneSignIn, clearPhoneSignIn } from "./phoneAuth";
+import { canChoosePhoneNumber, choosePhoneNumber } from "./phoneNumberHint";
 export function ServerSettings({
   visible,
   onClose,
@@ -81,6 +82,10 @@ export function AuthScreen() {
   const { signInPhone } = usePilot();
   const [started, setStarted] = useState(false);
   const [phone, setPhone] = useState("+91");
+  const [choosingNumber, setChoosingNumber] = useState(false);
+  const [numberHint, setNumberHint] = useState("");
+  const hintOffered = useRef(false);
+  const hintPending = useRef(false);
   const [code, setCode] = useState("");
   const [confirm, setConfirm] = useState<
     ((code: string) => Promise<string>) | null
@@ -96,6 +101,39 @@ export function AuthScreen() {
   const exchanging = useRef(false);
   const requesting = useRef(false);
   const scroll = useRef<ScrollView>(null);
+  async function pickNumber() {
+    if (hintPending.current || busy || confirm) return;
+    hintPending.current = true;
+    setChoosingNumber(true);
+    setNumberHint("");
+    Keyboard.dismiss();
+    try {
+      const selected = await choosePhoneNumber();
+      if (selected) {
+        setPhone(selected);
+        setVerified(null);
+        requesting.current = false;
+        setError("");
+        if (!/^\+[1-9]\d{7,14}$/.test(selected))
+          setNumberHint(
+            "Please include your country code before sending the code.",
+          );
+      }
+    } catch {
+      setNumberHint(
+        "Your phone couldn't suggest a number. You can type it below.",
+      );
+    } finally {
+      hintPending.current = false;
+      setChoosingNumber(false);
+    }
+  }
+  useEffect(() => {
+    if (started && canChoosePhoneNumber && !hintOffered.current) {
+      hintOffered.current = true;
+      void pickNumber();
+    }
+  }, [started]);
   async function finish(token: string) {
     if (exchanging.current) return;
     exchanging.current = true;
@@ -320,6 +358,23 @@ export function AuthScreen() {
                     : "One number to sign in or create your account."}
                 </Body>
               </View>
+              {!confirm && canChoosePhoneNumber && (
+                <Button
+                  tone="secondary"
+                  icon="phone-portrait-outline"
+                  busy={choosingNumber}
+                  disabled={busy}
+                  style={{ marginBottom: 16 }}
+                  onPress={() => void pickNumber()}
+                >
+                  Choose my number
+                </Button>
+              )}
+              {!!numberHint && !confirm && (
+                <Body muted style={{ marginBottom: 12, fontSize: 13 }}>
+                  {numberHint}
+                </Body>
+              )}
               {!confirm ? (
                 <Field
                   label="Mobile number with country code"
@@ -352,12 +407,15 @@ export function AuthScreen() {
               <Button
                 busy={busy}
                 disabled={
-                  verified
+                  choosingNumber ||
+                  (verified
                     ? false
                     : confirm
                       ? code.length !== 6
                       : remaining > 0 ||
-                        !/^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s()-]/g, ""))
+                        !/^\+[1-9]\d{7,14}$/.test(
+                          phone.replace(/[\s()-]/g, ""),
+                        ))
                 }
                 onPress={() => void (confirm || verified ? verify() : send())}
               >

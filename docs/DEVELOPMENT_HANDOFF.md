@@ -4,7 +4,31 @@ Read this at the start of a resumed cloud or desktop task, together with
 `AGENTS.md` and `docs/MOBILE_CLOUD_DEVELOPMENT.md`. GitHub carries code and these
 notes between devices; a new conversation does not inherit the old chat.
 
-## Current milestone — company onboarding browser review
+## Current milestone — Android phone-number selection
+
+- Objective: reduce phone-login typing and evaluate optional Truecaller login.
+- Branch: `codex/phone-number-selection`, based on company-review commit `f4fe442`
+  (draft PR #80), which includes offline-review PR #79. Preserve those review
+  milestones; none is approved for APK packaging yet.
+- Changes: small Android Google Phone Number Hint bridge using Play services auth
+  22.0.0, registered in MainApplication; show the SIM chooser once after the intro
+  and offer a Choose my number button. Cancel/no-number/unsupported-platform paths
+  retain manual entry. Selection only fills the number; Firebase verification and
+  explicit Send code are unchanged. No phone/SMS permission added.
+- Validation: workspace type checks and 49 mobile tests passed; Android
+  `:app:compileDebugKotlin` and Expo web export succeeded. Actual SIM selection still needs a physical Android device test.
+- Truecaller remains unconfigured and unimplemented. Owner was asked whether DUIT
+  is registered. Next dependency is its Android OAuth client ID for package
+  `io.duit.ecards.pilot` and the existing release certificate SHA-1; provider review
+  and verified server-side identity integration are also required. See
+  `docs/PHONE_LOGIN_OPTIONS.md` for sources and the account-linking constraints.
+- No APK was built, signed, published or version-bumped; published 4.6.4 remains
+  unchanged. Chrome cannot display Android's native SIM-number chooser.
+- Next: obtain Truecaller registration/client ID, implement its verified login
+  adapter with OTP fallback, and test native number selection before release.
+  Company/offline Chrome review remains pending the Mac unlock from the prior task.
+
+## Previous review milestone — company onboarding browser review
 
 - Objective: a separate DUIT Master admin workspace, shared company profiles
   linked to multiple employees, and an in-app team/card/enquiry dashboard.

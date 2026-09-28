@@ -365,3 +365,8 @@ Dont create the app. Show me the changes on chrome before packing the app
 - Create A business dashboard, within the app to show the details of subordinates a and their card management, leads etc.
 
 Again, before packing the app, show me the app via chrome for quick iterations.
+
+
+## 2026-09-28T18:55:41+05:30
+
+Can we Allow login via Truecaller and auto selection of phone number on the phone (in app)?
