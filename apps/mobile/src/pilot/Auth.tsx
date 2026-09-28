@@ -47,9 +47,24 @@ export function ServerSettings({
     setUrl(server);
     setError("");
     setPreset(server === RENDER_SERVER ? "render" : null);
+    let active = true;
     void AsyncStorage.getItem(LOCAL_SERVER_KEY)
-      .then((value) => setLocal(value || LOCAL_SERVER))
+      .then((value) => {
+        if (!active) return;
+        const savedLocal = value || LOCAL_SERVER;
+        setLocal(savedLocal);
+        setPreset(
+          server === RENDER_SERVER
+            ? "render"
+            : server === savedLocal
+              ? "local"
+              : null,
+        );
+      })
       .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, [visible, server]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
