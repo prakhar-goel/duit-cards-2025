@@ -4,31 +4,45 @@ Read this at the start of a resumed cloud or desktop task, together with
 `AGENTS.md` and `docs/MOBILE_CLOUD_DEVELOPMENT.md`. GitHub carries code and these
 notes between devices; a new conversation does not inherit the old chat.
 
-## Current milestone — OTA APK and server presets
+## Current milestone — OTA APK and server presets released
 
-- Objective: publish one OTA-capable APK on the existing download page and make
-  Render/local server addresses quick to select. Branch: codex/ota-server-switching.
-- Version prepared once: 4.6.6 / 2026091816. Not published yet; 4.6.5 remains live.
-- Installed SDK-compatible expo-updates, enabled native Android updates, runtime
-  duit-android-4.6.6, existing Expo project b57ffffc-8706-4224-8036-ff3774883cb6.
-  Corrected local slug to the existing Expo project name; created staging channel
-  and branch. Package and signing certificate unchanged.
-- Server settings offers Render / Local Mac, remembers edited local URLs, and
-  includes native OTA check/restart controls. Local default Bonjour hostname
-  Prakhars-MacBook-Pro.local:48152 resolved successfully on this Mac.
-- Download metadata gets an OTA flag from the build; old releases stay unlabelled.
-  npm run release:ota requires clean main, passing CI and compatible native files
-  relative to the published APK. See docs/OTA_UPDATES.md.
-- Validation: cloud app checks passed (mobile tests, type checks, web builds and
-  tooling); APK metadata/OTA native consistency tests passed. Chrome verified
-  both presets populate their correct addresses. Native OTA delivery still awaits
-  signed build plus initial EAS update publication and endpoint verification.
-- First signed build 36442409329 failed at Android lint with JVM Metaspace
-  exhaustion (512 MiB). Follow-up PR #86 raises metaspace to 1 GiB and fixes
-  remembered-local-preset selection. No APK was published; keep version 4.6.6.
-  Render b0d6ac3 deployed successfully.
-- Next: merge after required CI, verify signed workflow and Render deployment,
-  publish initial OTA, verify /download shows 4.6.6 OTA enabled. Do not bump again.
+- Objective completed: OTA-capable APK and prefilled Render/Local Mac choices.
+  PRs #85 and #86 merged. Signed source ad311d30a2a4343e3922e176fefa53ac38bde304.
+- APK 4.6.6 / 2026091816 published by workflow 36445184657 on 28 September 2026,
+  21:20 IST. Existing package and signing certificate retained. Download:
+  https://duit-cards-staging.onrender.com/download.
+  Immutable release: https://github.com/prakhar-goel/duit-cards-2025/releases/tag/v4.6.6-staging.
+  Filename DUIT-2026-4.6.6.apk; SHA-256
+  e2da67d624da5c669b2437f4295befe2f4e6eddd04c30826f7f6c3e0731d056a.
+- Downloaded release checksum and signer verified independently. Compiled Android
+  manifest enables OTA on staging; runtime string duit-android-4.6.6 verified in
+  APK resources. Embedded app.manifest exists for offline startup.
+- First OTA published from clean main via npm run release:ota. Expo project
+  b57ffffc-8706-4224-8036-ff3774883cb6, channel/branch staging; update group
+  6e8ebbaa-f6e6-484b-9a66-8a316f629909; Android update
+  01a0e8b7-9d30-713e-acb3-3cc63d11bbbe. Protocol endpoint returned HTTP 200 with
+  matching runtime; launch bundle returned HTTP 200 and matched manifest SHA-256
+  when using the asset request headers supplied in the multipart response.
+- Server settings offers Render / Local Mac, remembers edits and preserves user
+  selections while saved settings load. Local default Bonjour hostname
+  Prakhars-MacBook-Pro.local:48152 resolved on this Mac; same Wi-Fi and npm run
+  phone required. Native settings has Check for updates / Restart to update.
+- Validation: 55 mobile tests, required API CI, type checks and both web builds
+  passed. Release metadata and native OTA consistency checks passed. Chrome
+  verified both address presets. First APK attempt 36442409329 hit the old 512 MiB
+  Gradle metaspace limit; raising it to 1 GiB fixed the signed build without
+  disabling lint. No additional version bump was needed.
+- Render deployed the download-page OTA label from b0d6ac3. Live metadata and
+  Chrome /download both verified 4.6.6, OTA enabled, versioned filename and
+  28 September 2026 21:20 IST. Label follows release metadata, not guessed versions;
+  metadata cache may lag up to five minutes.
+- Future UI-only iterations: merge checked changes, then npm run release:ota.
+  Keep app version/runtime unchanged. The command blocks native/config/dependency
+  changes relative to the published APK; those require a new compatible APK.
+  See docs/OTA_UPDATES.md. Do not rebuild APKs for ordinary UI iterations.
+- Phone follow-up: install 4.6.6 once over the existing app; use Check for updates
+  then Restart to update to exercise actual device delivery. Native Samsung OTA
+  application, Truecaller and GPS have not been exercised on a physical phone.
 
 ## Previous milestone — visual feed, Google Maps and Android 4.6.5
 
