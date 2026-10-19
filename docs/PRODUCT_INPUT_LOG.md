@@ -394,3 +394,17 @@ You may add a few more options in the bottom bar
 ## 2026-09-28T20:36:43.177137+05:30
 
 ok make another apk, on the same download page, marking it for ota. prefill local and onrender server pages for quick switching
+
+
+## 2026-10-20T01:44:53.517757+05:30
+
+check the whole app UX. Lets talk and discuss the UX and the features before implementation. Tell me what all features are there (see the actual rendered UX, not just the code). Tell me what all features are there and what all features, do you think are missing etc? Lets improve the PRD while we are desigining the app.
+
+
+
+Right now, assume that I am the only user for this app. I am making this for myself. I need the following:
+
+1. I should be able to share my card with others.
+2. I should be able to scan someones visiting card, or simply save their contact even without their visiting card, into my app, along with an option to sync the contact with my phone (similar to whatsapp).
+
+For now this is it. Lets discuss the PRD and the features and your suggestions.
