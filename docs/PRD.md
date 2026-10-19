@@ -9,6 +9,14 @@
 | Product owner | Prakhar Goel |
 | Source of truth | This document for product intent; `PRODUCT_INPUT_LOG.md` for verbatim user input |
 
+## Personal MVP scope decision · 20 October 2026
+
+The owner has narrowed the immediate product to personal use: assume Prakhar is the only app user. The two required jobs are (1) sharing his own card and (2) saving another person's contact by scanning a visiting card or entering contact details without a card, with an optional way to sync that contact to his phone.
+
+This scope takes precedence over the broader pilot requirements below for the next design discussion. The existing broader vision and historical decisions are retained, but are not a mandate to implement team management, social feeds, lead funnels or further AI features now. No feature implementation or release is authorized by this review milestone.
+
+Detailed navigation, minimal required fields, one-way phone contact saving versus two-way synchronization, and the role of meeting context remain discussion decisions. See [rendered UX review](UX_REVIEW_2026-10-20.md) for observed behavior and explicitly proposed changes.
+
 ## Current design decision · 18 September 2026
 
 The latest user feedback takes precedence over the earlier text-led pilot layout. DUIT should feel like exchanging a memorable **business card**, with an immediately recognisable visual identity, not browsing another career profile.

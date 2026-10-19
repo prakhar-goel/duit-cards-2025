@@ -4,7 +4,15 @@ Read this at the start of a resumed cloud or desktop task, together with
 `AGENTS.md` and `docs/MOBILE_CLOUD_DEVELOPMENT.md`. GitHub carries code and these
 notes between devices; a new conversation does not inherit the old chat.
 
-## Current milestone — OTA APK and server presets released
+## Current milestone — personal UX review (discussion only)
+
+- Branch: codex/personal-ux-review. Owner narrowed immediate scope to sharing his card and saving others via scan/manual entry with optional phone contact sync.
+- Exact input appended to PRODUCT_INPUT_LOG; scope precedence recorded in PRD; rendered evidence and proposals in UX_REVIEW_2026-10-20.md.
+- Chrome reviewed populated and new-user local workspaces from rebuilt main d477811. Capture, share, sent, meetings, own/received cards, enquiry form, editor, company dashboard and new-user flow inspected without submitting records/messages.
+- npm run build:web passed. No application code, APK, OTA or hosted deployment changes. Native GPS, camera/OCR, contacts synchronization, offline recovery and AI results remain unverified by this browser review.
+- Next: discuss phone-sync semantics, optional meeting context and simpler personal navigation before implementation.
+
+## Previous milestone — OTA APK and server presets released
 
 - Objective completed: OTA-capable APK and prefilled Render/Local Mac choices.
   PRs #85 and #86 merged. Signed source ad311d30a2a4343e3922e176fefa53ac38bde304.
