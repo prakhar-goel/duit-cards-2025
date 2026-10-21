@@ -394,3 +394,8 @@ You may add a few more options in the bottom bar
 ## 2026-09-28T20:36:43.177137+05:30
 
 ok make another apk, on the same download page, marking it for ota. prefill local and onrender server pages for quick switching
+
+
+## 2026-10-21T16:26:29.534316+05:30
+
+Can you create balsemiq like mocks for the app? Lets iron out the UX and the features before building the app

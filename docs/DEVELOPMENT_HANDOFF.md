@@ -314,3 +314,10 @@ Resume unfinished work on either device:
 > Resume [branch or PR URL]. Read AGENTS.md and docs/DEVELOPMENT_HANDOFF.md.
 > Verify the latest GitHub commit before editing, preserve any local changes,
 > and continue the recorded next steps.
+
+## Wireframe discussion — 21 October 2026
+
+- Branch: codex/personal-wireframes. Created an isolated in-conversation sketch prototype for personal contact capture and card sharing; no app code or APK/OTA changes.
+- Exact request appended to PRODUCT_INPUT_LOG. Screen inventory and unresolved design decisions recorded in WIREFRAME_REVIEW.md.
+- Chrome checked visual layout, Add person navigation, manual validation and saved-person confirmation. No native integration or real data changes.
+- Next: owner reviews the clickable flows; incorporate feedback before implementing. Prior UX review PR #90 was still open when this work began.
