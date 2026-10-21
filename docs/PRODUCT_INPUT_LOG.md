@@ -399,3 +399,8 @@ ok make another apk, on the same download page, marking it for ota. prefill loca
 ## 2026-10-21T16:26:29.534316+05:30
 
 Can you create balsemiq like mocks for the app? Lets iron out the UX and the features before building the app
+
+
+## 2026-10-21T16:33:26.194392+05:30
+
+Create all the mocks for all the screens

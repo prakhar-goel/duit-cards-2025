@@ -321,3 +321,11 @@ Resume unfinished work on either device:
 - Exact request appended to PRODUCT_INPUT_LOG. Screen inventory and unresolved design decisions recorded in WIREFRAME_REVIEW.md.
 - Chrome checked visual layout, Add person navigation, manual validation and saved-person confirmation. No native integration or real data changes.
 - Next: owner reviews the clickable flows; incorporate feedback before implementing. Prior UX review PR #90 was still open when this work began.
+
+
+## Complete screen wireframes — 21 October 2026
+
+- Branch: codex/complete-screen-mocks. Expanded the discussion prototype to 116 screens/states in 11 flows; index in WIREFRAME_SCREEN_INVENTORY.md.
+- Exact user request appended to PRODUCT_INPUT_LOG. No app code, API calls, contacts, messages, APK or OTA changes.
+- Validation: JavaScript syntax passed; Chrome selected all 116 screens and verified matching headings; home and duplicate-review layouts inspected and duplicate flow exercised.
+- Next: review the proposed personal flows with the owner before implementation. Business/admin tools are optional/deferred. Earlier documentation PRs #90 and #91 were still open when this milestone began; this branch includes #91 documentation.
