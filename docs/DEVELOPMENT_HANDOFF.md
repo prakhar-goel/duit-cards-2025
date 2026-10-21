@@ -329,3 +329,10 @@ Resume unfinished work on either device:
 - Exact user request appended to PRODUCT_INPUT_LOG. No app code, API calls, contacts, messages, APK or OTA changes.
 - Validation: JavaScript syntax passed; Chrome selected all 116 screens and verified matching headings; home and duplicate-review layouts inspected and duplicate flow exercised.
 - Next: review the proposed personal flows with the owner before implementation. Business/admin tools are optional/deferred. Earlier documentation PRs #90 and #91 were still open when this milestone began; this branch includes #91 documentation.
+
+## Clickable personal prototype
+
+- Branch: codex/clickable-personal-prototype. Added a connected in-conversation prototype using the sketch mocks; documented behavior in CLICKABLE_PROTOTYPE_REVIEW.md.
+- Inputs propagate into prototype contacts, notes, card previews and sharing. External/native actions remain simulated. No real app implementation or release.
+- Chrome verified manual capture creates the correct People row and own-card edits render. JavaScript syntax passed.
+- Next: discuss and revise journeys before building the app. Branch includes prior open wireframe documentation milestones.

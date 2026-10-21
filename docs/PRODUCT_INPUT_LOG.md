@@ -404,3 +404,8 @@ Can you create balsemiq like mocks for the app? Lets iron out the UX and the fea
 ## 2026-10-21T16:33:26.194392+05:30
 
 Create all the mocks for all the screens
+
+
+## 2026-10-21T16:38:27.690628+05:30
+
+And if possible, also create a clickable prototype of the app using your balsemiq mocks
